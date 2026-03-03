@@ -48,4 +48,4 @@ jobs:
     needs: build
     steps:
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4depo
+        uses: actions/deploy-pages@v4
