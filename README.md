@@ -1,40 +1,21 @@
-# Sportmateriaal Tracker
+# Materiaalhok - Beweegteam Opsterland
 
-Een web-applicatie om sportmateriaal te registreren, bij te houden wie het gebruikt, waar het is en wanneer het terugkomt.
+Registratiesysteem voor sportmateriaal met uitleenlogboek.
 
 ## Features
-
-- **Overzicht** - Dashboard met statistieken (totaal, beschikbaar, in gebruik, onderhoud)
-- **Zoeken en filteren** - Op naam, gebruiker, locatie, categorie en status
-- **Uitlenen en retour** - Registreer wie materiaal leent en wanneer het terug moet zijn
-- **Te laat-waarschuwingen** - Automatische alerts voor materiaal dat over de retourdatum is
-- **Snelle retour** - Een klik om materiaal als teruggebracht te markeren
-- **Toevoegen/bewerken/verwijderen** - Volledig CRUD-beheer van al het materiaal
-- **Lokale opslag** - Data wordt bewaard in de browser (localStorage)
+- 172 items uit de officiele materiaallijst met inkoopprijzen
+- Uitleensysteem met logboek
+- Zoeken en filteren op categorie en status
+- Te laat-waarschuwingen
+- Totale waarde overzicht
 
 ## Installatie
 
-```bash
-git clone https://github.com/jouw-gebruiker/sportmateriaal-tracker.git
-cd sportmateriaal-tracker
 npm install
 npm run dev
-```
-
-De app draait dan op http://localhost:5173
-
-## Bouwen voor productie
-
-```bash
-npm run build
-```
 
 ## Tech Stack
-
-- React
-- Vite
-- Tailwind CSS
+- React + Vite + Tailwind CSS
 
 ## Licentie
-
 MIT
