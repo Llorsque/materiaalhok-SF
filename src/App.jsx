@@ -614,45 +614,132 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
   // HOME
   if(!mode) return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex flex-col">
     <AppHeader branding={branding} role="user" onLogout={onLogout}>
-      <div className="max-w-lg mx-auto px-4 pb-2"><p className="text-xs text-gray-500">Welkom, {user.label}</p></div>
+      <div className="max-w-xl mx-auto px-5 pb-3"><p className="text-sm text-gray-500">Welkom, {user.label}</p></div>
     </AppHeader>
-    {done&&<div className="max-w-lg mx-auto mt-4 px-4"><div className={`rounded-2xl px-5 py-4 text-center font-semibold border ${done.action==="loan"?"bg-blue-50 text-blue-800 border-blue-200":done.action==="return"?"bg-emerald-50 text-emerald-800 border-emerald-200":done.action==="reservation"?"bg-purple-50 text-purple-800 border-purple-200":"bg-amber-50 text-amber-800 border-amber-200"}`}>{done.text}</div></div>}
-    <div className="flex-1 flex items-center justify-center p-4"><div className="w-full max-w-sm space-y-3">
-      <button onClick={()=>setMode("loan")} className="w-full py-7 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-lg font-bold shadow-lg transition-all hover:scale-105 active:scale-95"><span className="text-2xl block mb-1">{"\ud83d\udce4"}</span>Nieuwe uitlening</button>
-      <button onClick={()=>{setMode("loan");setIsReservation(true)}} className="w-full py-7 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white text-lg font-bold shadow-lg transition-all hover:scale-105 active:scale-95"><span className="text-2xl block mb-1">{"\ud83d\udcc5"}</span>Reserveren</button>
-      <button onClick={()=>setMode("return")} className="w-full py-7 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold shadow-lg transition-all hover:scale-105 active:scale-95"><span className="text-2xl block mb-1">{"\ud83d\udce5"}</span>Retourneren / Ophalen</button>
-      {myBons.length>0&&<div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"><p className="text-xs font-semibold text-gray-500 uppercase mb-3">Actieve bonnen ({myBons.length})</p><div className="space-y-2">{myBons.map(b=><div key={b.id} className={`rounded-xl p-3 border ${bonIsOverdue(b)?"border-red-200 bg-red-50":"border-gray-100"}`}><div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-blue-600">{b.number}</span><BonBadge bon={b}/></div><p className="text-xs text-gray-500 mt-1">{fmtDate(b.startDate)} {"\u2192"} {fmtDate(b.endDate)}</p></div>)}</div></div>}
-    </div></div>
+    {done&&<div className="max-w-xl mx-auto mt-4 px-5"><div className={`rounded-2xl px-5 py-4 text-center font-semibold border text-base ${done.action==="loan"?"bg-blue-50 text-blue-800 border-blue-200":done.action==="return"?"bg-emerald-50 text-emerald-800 border-emerald-200":done.action==="reservation"?"bg-purple-50 text-purple-800 border-purple-200":"bg-amber-50 text-amber-800 border-amber-200"}`}>{done.text}</div></div>}
+    <div className="flex-1 flex items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-4">
+        <button onClick={()=>setMode("loan")} className="w-full py-10 rounded-3xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udce4"}</span><span className="text-xl">Materiaal lenen</span>
+        </button>
+        <button onClick={()=>{setMode("loan");setIsReservation(true)}} className="w-full py-10 rounded-3xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udcc5"}</span><span className="text-xl">Reserveren</span>
+        </button>
+        <button onClick={()=>setMode("return")} className="w-full py-10 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udce5"}</span><span className="text-xl">Retourneren / Ophalen</span>
+        </button>
+
+        {myBons.length>0&&<div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mt-6">
+          <p className="text-sm font-semibold text-gray-500 uppercase mb-3">Actieve bonnen ({myBons.length})</p>
+          <div className="space-y-3">{myBons.map(b=><div key={b.id} className={`rounded-xl p-4 border ${bonIsOverdue(b)?"border-red-200 bg-red-50":"border-gray-100 bg-gray-50"}`}>
+            <div className="flex items-center justify-between"><span className="font-mono text-sm font-bold text-blue-600">{b.number}</span><BonBadge bon={b}/></div>
+            <p className="text-sm text-gray-500 mt-2">{fmtDate(b.startDate)} {"\u2192"} {fmtDate(b.endDate)}</p>
+            <p className="text-xs text-gray-400 mt-1">{b.items.map(i=>i.itemName).join(", ")}</p>
+          </div>)}</div>
+        </div>}
+      </div>
+    </div>
   </div>;
 
-  // NEW LOAN / RESERVATION
-  if(mode==="loan") return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
-    <div className="bg-white border-b border-gray-100 shadow-sm"><div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-      <button onClick={()=>{setMode(null);setCart([]);setEndDate("");setIsReservation(false);setQ("");setCat("Alle")}} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
-      <h2 className="text-lg font-bold text-gray-900">{isReservation?"Reservering":"Nieuwe bon"}</h2><div className="w-16"/>
-    </div></div>
-    <div className="max-w-2xl mx-auto px-4 py-6"><div className="grid md:grid-cols-2 gap-6">
-      <div className="space-y-3">
-        <div className="relative"><svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="Zoek materiaal..." value={q} onChange={e=>setQ(e.target.value)} autoFocus/></div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1">{CATS.map(c=><button key={c} onClick={()=>setCat(c)} className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${cat===c?"bg-blue-600 text-white":"bg-gray-100 text-gray-600"}`}>{c}</button>)}</div>
-        <div className="space-y-1.5 max-h-96 overflow-y-auto">{available.map(i=>{const av=availQty(i,bons);const inC=cart.find(c=>c.itemId===i.id)?.qty||0;return <div key={i.id} className="bg-white rounded-xl px-4 py-3 border border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            {i.photo?<img src={i.photo} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" alt=""/>:<div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm flex-shrink-0">{getIcon(i.category)}</div>}
-            <div className="min-w-0"><p className="text-sm font-medium text-gray-900 truncate">{i.name}</p><p className="text-xs text-gray-500">{av} beschikbaar</p></div>
-          </div>
-          <div className="flex items-center gap-2">{inC>0&&<><button onClick={()=>removeFromCart(i.id)} className="w-7 h-7 rounded-lg bg-gray-100 font-bold text-sm hover:bg-gray-200">-</button><span className="text-sm font-bold w-6 text-center">{inC}</span></>}<button onClick={()=>addToCart(i)} disabled={inC>=av} className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 font-bold text-sm hover:bg-blue-200 disabled:opacity-30">+</button></div>
-        </div>})}</div>
+  // NEW LOAN / RESERVATION — step-based
+  const [loanStep, setLoanStep] = useState(1);
+  const totalCartQty = cart.reduce((s, c) => s + c.qty, 0);
+
+  if(mode==="loan") return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 pb-32">
+    <div className="bg-white border-b border-gray-100 shadow-sm">
+      <div className="max-w-xl mx-auto px-5 py-4 flex items-center justify-between">
+        <button onClick={()=>{if(loanStep>1)setLoanStep(loanStep-1);else{setMode(null);setCart([]);setEndDate("");setIsReservation(false);setQ("");setCat("Alle");setLoanStep(1)}}} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>{loanStep>1?"Vorige":"Terug"}</button>
+        <h2 className="text-lg font-bold text-gray-900">{isReservation?"Reservering":"Nieuwe bon"}</h2>
+        <div className="w-16"/>
       </div>
-      <div className="space-y-4"><div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-900 mb-3">{isReservation?"\ud83d\udcc5 Reservering":"\ud83d\uddd2 Bon"}</h3>
-        {cart.length===0?<p className="text-sm text-gray-400 py-4 text-center">Voeg materiaal toe</p>:<div className="space-y-2 mb-4">{cart.map(c=><div key={c.itemId} className="flex items-center justify-between bg-blue-50 rounded-xl px-3 py-2"><span className="text-sm font-medium text-blue-900">{c.qty}x {c.itemName}</span><button onClick={()=>setCart(p=>p.filter(x=>x.itemId!==c.itemId))} className="text-red-400 hover:text-red-600 text-xs">{"\u2715"}</button></div>)}</div>}
-        <div className="border-t border-gray-100 pt-4 space-y-3">
-          {isReservation&&<div><label className="block text-sm font-medium text-gray-700 mb-1.5">Ophaaldatum</label><input type="date" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/></div>}
-          <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Retourdatum *</label><input type="date" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/></div>
-          <button onClick={submitBon} disabled={cart.length===0||!endDate} className={`w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-40 ${isReservation?"bg-purple-500 hover:bg-purple-600":"bg-amber-500 hover:bg-amber-600"}`}>{isReservation?"\ud83d\udcc5 Reserveren":"\ud83d\udce4 Bon aanmaken"} ({cart.length})</button>
+      {/* Step indicator */}
+      <div className="max-w-xl mx-auto px-5 pb-3 flex items-center gap-2">
+        {[1,2].map(s => <div key={s} className="flex items-center gap-2 flex-1">
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${loanStep>=s?"bg-blue-600 text-white":"bg-gray-200 text-gray-500"}`}>{s}</div>
+          <span className={`text-xs font-medium ${loanStep>=s?"text-gray-900":"text-gray-400"}`}>{s===1?"Kies materiaal":"Bevestig"}</span>
+          {s<2&&<div className={`flex-1 h-0.5 rounded ${loanStep>s?"bg-blue-600":"bg-gray-200"}`}/>}
+        </div>)}
+      </div>
+    </div>
+
+    {/* STEP 1: Select items */}
+    {loanStep===1 && <div className="max-w-xl mx-auto px-5 py-6 space-y-4">
+      <div className="relative">
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-gray-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="Zoek materiaal..." value={q} onChange={e=>setQ(e.target.value)} autoFocus/>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {CATS.map(c => <button key={c} onClick={()=>setCat(c)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${cat===c?"bg-blue-600 text-white shadow-sm":"bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}>{c}</button>)}
+      </div>
+
+      <div className="space-y-3">
+        {available.length===0 ? <div className="bg-white rounded-2xl p-10 text-center border border-gray-100"><p className="text-gray-400">Geen materiaal gevonden</p></div>
+        : available.map(i => {
+          const av = availQty(i, bons);
+          const inC = cart.find(c => c.itemId === i.id)?.qty || 0;
+          return <div key={i.id} className={`bg-white rounded-2xl px-5 py-4 border-2 transition-all ${inC > 0 ? "border-blue-400 shadow-md" : "border-gray-100 hover:border-gray-200"}`}>
+            <div className="flex items-center gap-4">
+              {i.photo ? <img src={i.photo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" alt=""/> : <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">{getIcon(i.category)}</div>}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 text-base">{i.name}</p>
+                <p className="text-sm text-gray-500 mt-0.5">{i.category} {"\u00b7"} <span className="text-emerald-600 font-medium">{av} beschikbaar</span></p>
+              </div>
+              <div className="flex items-center gap-2">
+                {inC > 0 && <button onClick={() => removeFromCart(i.id)} className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-bold text-lg hover:bg-gray-200 flex items-center justify-center">-</button>}
+                {inC > 0 && <span className="text-lg font-bold w-8 text-center text-blue-600">{inC}</span>}
+                <button onClick={() => addToCart(i)} disabled={inC >= av} className="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 disabled:opacity-30 flex items-center justify-center">+</button>
+              </div>
+            </div>
+          </div>;
+        })}
+      </div>
+    </div>}
+
+    {/* STEP 2: Confirm */}
+    {loanStep===2 && <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 className="font-bold text-gray-900 text-lg mb-4">{isReservation ? "\ud83d\udcc5 Reservering overzicht" : "\ud83d\uddd2 Bon overzicht"}</h3>
+        <div className="space-y-3">
+          {cart.map(c => <div key={c.itemId} className="flex items-center justify-between bg-blue-50 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 font-bold text-sm flex items-center justify-center">{c.qty}x</span>
+              <span className="font-medium text-gray-900">{c.itemName}</span>
+            </div>
+            <button onClick={() => setCart(p => p.filter(x => x.itemId !== c.itemId))} className="text-red-400 hover:text-red-600 p-1"><svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 5L5 13M5 5l8 8"/></svg></button>
+          </div>)}
         </div>
-      </div></div>
-    </div></div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
+        <h3 className="font-bold text-gray-900 text-lg">Datums</h3>
+        {isReservation && <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Ophaaldatum</label>
+          <input type="date" className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={startDate} onChange={e => setStartDate(e.target.value)} min={today()}/>
+        </div>}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Retourdatum *</label>
+          <input type="date" className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate || today()}/>
+        </div>
+      </div>
+
+      <button onClick={submitBon} disabled={cart.length === 0 || !endDate} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-amber-500 hover:bg-amber-600"}`}>
+        {isReservation ? "\ud83d\udcc5 Reservering bevestigen" : "\ud83d\udce4 Bon aanmaken"} ({totalCartQty} items)
+      </button>
+    </div>}
+
+    {/* Floating cart bar */}
+    {loanStep === 1 && <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-xl p-4 z-40">
+      <div className="max-w-xl mx-auto flex items-center justify-between">
+        <div>
+          {cart.length > 0 ? <p className="font-semibold text-gray-900">{totalCartQty} item{totalCartQty !== 1 ? "s" : ""} geselecteerd</p> : <p className="text-gray-400">Selecteer materiaal</p>}
+          {cart.length > 0 && <p className="text-xs text-gray-500 mt-0.5">{cart.map(c => `${c.qty}x ${c.itemName}`).join(", ")}</p>}
+        </div>
+        <button onClick={() => setLoanStep(2)} disabled={cart.length === 0} className={`px-6 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-30 shadow-sm ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-600 hover:bg-blue-700"}`}>
+          Ga verder {"\u2192"}
+        </button>
+      </div>
+    </div>}
   </div>;
 
   // RETURN / PICKUP - select bon
