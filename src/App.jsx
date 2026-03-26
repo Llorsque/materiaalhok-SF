@@ -204,7 +204,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 
-const DEFAULT_BRANDING = { logo: "", title: "Materiaalhok", subtitle: "Beweegteam Opsterland", color: "#2563eb", loginBg: "" };
+const DEFAULT_BRANDING = { logo: "", title: "Materiaalhok", subtitle: "Beweegteam Opsterland", color: "#2563eb", loginBg: "", logoSize: 40, loginLogoSize: 64 };
 
 // --- Stock & Bon helpers ---
 function loanedQty(bons, itemId) {
@@ -318,7 +318,7 @@ function AppHeader({ branding, role, onLogout, children, onAdd }) {
   return <div className="bg-white border-b border-gray-100 shadow-sm">
     <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        {branding.logo ? <img src={branding.logo} className="w-10 h-10 rounded-xl object-cover" alt=""/> : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg" style={{backgroundColor:branding.color}}>{"\ud83c\udfc5"}</div>}
+        {branding.logo ? <img src={branding.logo} className="rounded-xl object-contain" style={{width:branding.logoSize||40,height:branding.logoSize||40}} alt=""/> : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg" style={{backgroundColor:branding.color}}>{"\ud83c\udfc5"}</div>}
         <div><h1 className="text-xl font-bold text-gray-900">{branding.title}</h1><p className="text-xs text-gray-500">{role === "admin" ? "Beheerder" : branding.subtitle}</p></div>
       </div>
       <div className="flex items-center gap-2">
@@ -337,7 +337,7 @@ function LoginScreen({ onLogin, branding }) {
   return <div className="min-h-screen flex items-center justify-center p-4" style={{background: branding.loginBg ? `url(${branding.loginBg}) center/cover` : `linear-gradient(135deg, ${branding.color}15, #f8fafc, ${branding.color}10)`}}>
     <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8">
       <div className="text-center mb-8">
-        {branding.logo ? <img src={branding.logo} className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4" alt=""/> : <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-4" style={{backgroundColor:branding.color}}>{"\ud83c\udfc5"}</div>}
+        {branding.logo ? <img src={branding.logo} className="rounded-2xl object-contain mx-auto mb-4" style={{width:branding.loginLogoSize||64,height:branding.loginLogoSize||64}} alt=""/> : <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-4" style={{backgroundColor:branding.color}}>{"\ud83c\udfc5"}</div>}
         <h1 className="text-2xl font-bold text-gray-900">{branding.title}</h1>
         <p className="text-sm text-gray-500 mt-1">{branding.subtitle}</p>
       </div>
@@ -485,6 +485,26 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
           <h4 className="font-semibold text-gray-800">Branding</h4>
           <ImageUpload value={branding.logo} onChange={v=>setBranding(p=>({...p,logo:v}))} label="Logo"/>
+          {branding.logo && <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Logo formaat header ({branding.logoSize || 40}px)</label>
+              <div className="flex items-center gap-4">
+                <input type="range" min="20" max="80" value={branding.logoSize || 40} onChange={e => setBranding(p => ({...p, logoSize: parseInt(e.target.value)}))} className="flex-1 accent-blue-600"/>
+                <div className="bg-gray-100 rounded-xl p-2 flex items-center justify-center" style={{width:80,height:80}}>
+                  <img src={branding.logo} className="rounded-lg object-contain" style={{width:branding.logoSize||40,height:branding.logoSize||40}} alt="preview"/>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Logo formaat loginscherm ({branding.loginLogoSize || 64}px)</label>
+              <div className="flex items-center gap-4">
+                <input type="range" min="32" max="160" value={branding.loginLogoSize || 64} onChange={e => setBranding(p => ({...p, loginLogoSize: parseInt(e.target.value)}))} className="flex-1 accent-blue-600"/>
+                <div className="bg-gray-100 rounded-xl p-2 flex items-center justify-center" style={{width:100,height:100}}>
+                  <img src={branding.logo} className="rounded-lg object-contain" style={{width:branding.loginLogoSize||64,height:branding.loginLogoSize||64}} alt="preview"/>
+                </div>
+              </div>
+            </div>
+          </>}
           <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Titel</label><input className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.title} onChange={e=>setBranding(p=>({...p,title:e.target.value}))}/></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Ondertitel</label><input className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.subtitle} onChange={e=>setBranding(p=>({...p,subtitle:e.target.value}))}/></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Kleur</label><div className="flex items-center gap-3"><input type="color" value={branding.color} onChange={e=>setBranding(p=>({...p,color:e.target.value}))} className="w-10 h-10 rounded-lg cursor-pointer border-0"/><span className="text-sm text-gray-500">{branding.color}</span></div></div>
@@ -544,6 +564,8 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
   const [returnBon, setReturnBon] = useState(null);
   const [scanInput, setScanInput] = useState(""); const [scanMsg, setScanMsg] = useState(null);
   const [done, setDone] = useState(null);
+  const [loanStep, setLoanStep] = useState(1);
+  const totalCartQty = cart.reduce((s, c) => s + c.qty, 0);
 
   const myBons = bons.filter(b=>b.user===user.label&&b.status!=="completed");
 
@@ -563,7 +585,7 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
     const desc=cart.map(c=>`${c.qty}x ${c.itemName}`).join(", ");
     addLog(isReservation?"reservation":"loan",`${bon.number}: ${desc} ${isReservation?"gereserveerd":"uitgeleend"} door ${user.label} (${fmtDate(startDate)} - ${fmtDate(endDate)})`);
     setDone({action:isReservation?"reservation":"loan",text:`${bon.number} ${isReservation?"gereserveerd":"aangemaakt"}!`});
-    setCart([]);setEndDate("");setStartDate(today());setMode(null);setIsReservation(false);
+    setCart([]);setEndDate("");setStartDate(today());setMode(null);setIsReservation(false);setLoanStep(1);
     setTimeout(()=>setDone(null),4000);
   };
 
@@ -642,8 +664,6 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
   </div>;
 
   // NEW LOAN / RESERVATION — step-based
-  const [loanStep, setLoanStep] = useState(1);
-  const totalCartQty = cart.reduce((s, c) => s + c.qty, 0);
 
   if(mode==="loan") return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 pb-32">
     <div className="bg-white border-b border-gray-100 shadow-sm">
