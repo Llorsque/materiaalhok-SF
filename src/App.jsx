@@ -187,9 +187,11 @@ const today = () => new Date().toISOString().split("T")[0];
 const isoNow = () => new Date().toISOString();
 
 const DEFAULT_USERS = [
-  { username: "admin", password: "admin123", role: "admin", label: "Beheerder" },
-  { username: "gebruiker1", password: "welkom123", role: "user", label: "Gebruiker 1" },
+  { username: "admin", password: "admin123", role: "admin", label: "Beheerder", loginCode: "USR00001" },
+  { username: "gebruiker1", password: "welkom123", role: "user", label: "Gebruiker 1", loginCode: "USR00002" },
 ];
+
+function genLoginCode() { return "USR" + String(Math.floor(Math.random() * 99999) + 10000); }
 
 const store = {
   get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
@@ -222,6 +224,10 @@ function availQty(item, bons) { return item.stock - unavailableQty(bons, item.id
 function bonIsOverdue(b) { return b.status !== "completed" && b.endDate && new Date(b.endDate) < new Date(); }
 function bonRemaining(b) { return b.items.filter(i => (i.qty - (i.returned || 0)) > 0); }
 function bonComplete(b) { return b.items.every(i => (i.returned || 0) >= i.qty); }
+function genItemBarcode(n) { return "MAT" + String(n).padStart(5, "0"); }
+let _barcodeCounter = 200;
+function nextBarcode() { _barcodeCounter++; return genItemBarcode(_barcodeCounter); }
+
 function genBonNr() { const d = new Date(); return `BON-${d.getFullYear().toString().slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}-${String(Math.floor(Math.random()*9000)+1000)}`; }
 
 // --- Image helper ---
@@ -254,16 +260,47 @@ function ItemPhoto({ photo, size }) {
   return null;
 }
 
-// --- Barcode ---
-function generateBarcode(id) {
-  const str = String(id).padStart(8, '0');
-  let bars = "11010010000";
-  for (const ch of str) { const p = ["11011001100","11001101100","11001100110","10010011000","10010001100","10001001100","10011001000","10011000100","10001100100","11001001000"]; bars += p[parseInt(ch)] || p[0]; }
-  bars += "1100011101011"; return bars;
+// --- Barcode: Code 128B (proper, scannable) ---
+const C128B = ["11011001100","11001101100","11001100110","10010011000","10010001100","10001001100","10011001000","10011000100","10001100100","11001001000","11001000100","11000100100","10110011100","10011011100","10011001110","10111001100","10011101100","10011100110","11001110010","11001011100","11001001110","11011100100","11001110100","11101101110","11101001100","11100101100","11100100110","11101100100","11100110100","11100110010","11011011000","11011000110","11000110110","10100011000","10001011000","10001000110","10110001000","10001101000","10001100010","11010001000","11000101000","11000100010","10110111000","10110001110","10001101110","10111011000","10111000110","10001110110","11101110110","11010001110","11000101110","11011101000","11011100010","11011101110","11101011000","11101000110","11100010110","11101101000","11101100010","11100011010","11101111010","11001000010","11110001010","10100110000","10100001100","10010110000","10010000110","10000101100","10000100110","10110010000","10110000100","10011010000","10011000010","10000110100","10000110010","11000010010","11001010000","11110111010","11000010100","10001111010","10100111100","10010111100","10010011110","10111100100","10011110100","10011110010","11110100100","11110010100","11110010010","11011011110","11011110110","11110110110","10101111000","10100011110","10001011110","10111101000","10111100010","11110101000","11110100010","10111011110","10111101110","11101011110","11110101110","11010000100","11010010000","11010011100","1100011101011"];
+
+function encodeCode128B(text) {
+  const str = String(text);
+  const values = [104];
+  for (let i = 0; i < str.length; i++) {
+    const v = str.charCodeAt(i) - 32;
+    if (v >= 0 && v < 95) values.push(v);
+  }
+  let sum = values[0];
+  for (let i = 1; i < values.length; i++) sum += values[i] * i;
+  values.push(sum % 103);
+  values.push(106);
+  let modules = "";
+  for (const v of values) modules += C128B[v] || "";
+  return modules;
 }
-function BarcodeSVG({ id, name, small }) {
-  const bars = generateBarcode(id); const w = small ? 160 : 280, h = small ? 50 : 80, bw = w / bars.length;
-  return <svg viewBox={`0 0 ${w} ${h+(small?18:30)}`} width={w} height={h+(small?18:30)} className="bg-white">{bars.split('').map((b,i)=>b==='1'?<rect key={i} x={i*bw} y={2} width={bw} height={h} fill="black"/>:null)}<text x={w/2} y={h+(small?12:18)} textAnchor="middle" fontSize={small?9:12} fontFamily="monospace">{String(id).padStart(8,'0')}</text>{!small&&<text x={w/2} y={h+28} textAnchor="middle" fontSize={9} fontFamily="sans-serif" fill="#666">{name}</text>}</svg>;
+
+function BarcodeSVG({ code, name, small }) {
+  if (!code) return null;
+  const modules = encodeCode128B(code);
+  if (!modules) return null;
+  const moduleW = small ? 1.5 : 2.2;
+  const qz = 15;
+  const w = modules.length * moduleW + qz * 2;
+  const h = small ? 45 : 70;
+  const rects = [];
+  let x = qz;
+  for (let i = 0; i < modules.length; i++) {
+    if (modules[i] === '1') rects.push(<rect key={i} x={x} y={4} width={moduleW} height={h} fill="black"/>);
+    x += moduleW;
+  }
+  return (
+    <svg viewBox={`0 0 ${w} ${h + (small ? 20 : 32)}`} width={w} height={h + (small ? 20 : 32)} style={{background:"white"}}>
+      <rect width={w} height={h + (small ? 20 : 32)} fill="white"/>
+      {rects}
+      <text x={w/2} y={h + (small ? 15 : 20)} textAnchor="middle" fontSize={small ? 11 : 14} fontFamily="monospace" fontWeight="bold">{code}</text>
+      {!small && name && <text x={w/2} y={h + 31} textAnchor="middle" fontSize={9} fontFamily="sans-serif" fill="#666">{name.length > 35 ? name.slice(0,32) + "..." : name}</text>}
+    </svg>
+  );
 }
 
 // --- UI ---
@@ -324,21 +361,85 @@ function AppHeader({ branding, role, onLogout, children, onAdd }) {
 
 // ============ LOGIN ============
 function LoginScreen({ onLogin, branding, users }) {
+  const [mode, setMode] = useState("scan"); // "scan" or "manual"
   const [user, setUser] = useState(""); const [pass, setPass] = useState(""); const [error, setError] = useState("");
+  const [scanBuffer, setScanBuffer] = useState("");
+  const scanInputRef = useRef(null);
   const go = () => { const f = users.find(u=>u.username===user&&u.password===pass); if(f) onLogin(f); else setError("Onjuiste inloggegevens"); };
+
+  const handleScanInput = (val) => {
+    setScanBuffer(val);
+  };
+
+  const handleScanSubmit = () => {
+    const code = scanBuffer.trim();
+    if (!code) return;
+    const found = users.find(u => u.loginCode === code || u.loginCode === code.replace(/^0+/, ''));
+    if (found) { onLogin(found); }
+    else { setError("Badge niet herkend"); setScanBuffer(""); }
+  };
+
+  // Auto-focus scan input
+  useEffect(() => {
+    if (mode === "scan" && scanInputRef.current) {
+      scanInputRef.current.focus();
+      const interval = setInterval(() => { if (scanInputRef.current && document.activeElement !== scanInputRef.current) scanInputRef.current.focus(); }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [mode]);
+
+  // Prevent browser search on scan page
+  useEffect(() => {
+    const handler = (e) => {
+      if (mode !== "scan") return;
+      if (e.key === "F3" || (e.ctrlKey && e.key === "f") || e.key === "/") e.preventDefault();
+      if (scanInputRef.current && document.activeElement !== scanInputRef.current) scanInputRef.current.focus();
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, [mode]);
+
   return <div className="min-h-screen flex items-center justify-center p-4" style={{background: branding.loginBg ? `url(${branding.loginBg}) center/cover` : `linear-gradient(135deg, ${branding.color}15, #f8fafc, ${branding.color}10)`}}>
     <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8">
-      <div className="text-center mb-8">
+      <div className="text-center mb-6">
         {branding.logo ? <img src={branding.logo} className="rounded-2xl object-contain mx-auto mb-4" style={{width:branding.loginLogoSize||64,height:branding.loginLogoSize||64}} alt=""/> : <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-4" style={{backgroundColor:branding.color}}>{"\ud83c\udfc5"}</div>}
         <h1 className="text-2xl font-bold text-gray-900">{branding.title}</h1>
         <p className="text-sm text-gray-500 mt-1">{branding.subtitle}</p>
       </div>
-      {error&&<div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700">{error}</div>}
-      <div className="space-y-4">
-        <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Gebruikersnaam</label><input className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={user} onChange={e=>{setUser(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()}/></div>
-        <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Wachtwoord</label><input type="password" className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={pass} onChange={e=>{setPass(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()}/></div>
-        <button onClick={go} className="w-full py-3 rounded-xl text-white font-semibold hover:opacity-90" style={{backgroundColor:branding.color}}>Inloggen</button>
+
+      {/* Mode toggle */}
+      <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+        <button onClick={()=>{setMode("scan");setError("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="scan"?"bg-white shadow-sm text-gray-900":"text-gray-500"}`}>{"\ud83d\udcf7"} Scan badge</button>
+        <button onClick={()=>{setMode("manual");setError("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="manual"?"bg-white shadow-sm text-gray-900":"text-gray-500"}`}>{"\ud83d\udd11"} Inloggen</button>
       </div>
+
+      {error&&<div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700">{error}</div>}
+
+      {mode === "scan" ? (
+        <div className="space-y-4 text-center">
+          <div className="py-6">
+            <div className="text-5xl mb-3">{"\ud83d\udcf3"}</div>
+            <p className="text-gray-700 font-medium">Scan je persoonlijke badge</p>
+            <p className="text-gray-400 text-sm mt-1">Richt de scanner op je barcode</p>
+          </div>
+          <input
+            ref={scanInputRef}
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Wacht op scan..."
+            value={scanBuffer}
+            onChange={e => handleScanInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleScanSubmit()}
+            autoFocus
+          />
+          <p className="text-xs text-gray-400">Of typ je badge-code en druk Enter</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Gebruikersnaam</label><input className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={user} onChange={e=>{setUser(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()}/></div>
+          <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Wachtwoord</label><input type="password" className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={pass} onChange={e=>{setPass(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()}/></div>
+          <button onClick={go} className="w-full py-3 rounded-xl text-white font-semibold hover:opacity-90" style={{backgroundColor:branding.color}}>Inloggen</button>
+        </div>
+      )}
     </div>
   </div>;
 }
@@ -382,6 +483,9 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
   const [logFilter, setLogFilter] = useState(""); const [bonFilter, setBonFilter] = useState("active");
   const [newUser, setNewUser] = useState({username:"",password:"",label:"",role:"user"});
   const [editUser, setEditUser] = useState(null);
+  const [adminScan, setAdminScan] = useState("");
+  const [adminScanMsg, setAdminScanMsg] = useState(null);
+  const adminScanRef = useRef(null);
 
   const totalStock = useMemo(()=>eq.reduce((s,e)=>s+e.stock,0),[eq]);
   const totalUnavail = useMemo(()=>eq.reduce((s,e)=>s+unavailableQty(bons,e.id)+(e.maintenance||0),0),[eq,bons]);
@@ -396,14 +500,53 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
   const filtLogs = logFilter?recentLogs.filter(l=>l.detail.toLowerCase().includes(logFilter.toLowerCase())):recentLogs;
   const filt = eq.filter(i=>i.name.toLowerCase().includes(q.toLowerCase())&&(cat==="Alle"||i.category===cat));
 
-  const add=(i)=>{setEq(p=>[...p,{...i,id:Date.now(),maintenance:i.maintenance||0}]);addLog("edit",`${i.name} toegevoegd`);setAddOpen(false)};
+  const add=(i)=>{setEq(p=>[...p,{...i,id:Date.now(),barcode:nextBarcode(),maintenance:i.maintenance||0}]);addLog("edit",`${i.name} toegevoegd`);setAddOpen(false)};
   const save=(i)=>{setEq(p=>p.map(e=>e.id===edit.id?{...e,...i}:e));addLog("edit",`${i.name} bewerkt`);setEdit(null)};
   const del=(id)=>{const it=eq.find(e=>e.id===id);if(!confirm(`"${it?.name}" verwijderen?`))return;setEq(p=>p.filter(e=>e.id!==id));addLog("edit",`${it.name} verwijderd`);setDetail(null)};
   const forceComplete=(bonId)=>{setBons(p=>p.map(b=>b.id===bonId?{...b,status:"completed",completedDate:isoNow(),items:b.items.map(i=>({...i,returned:i.qty}))}:b));const bon=bons.find(b=>b.id===bonId);if(bon)addLog("return",`${bon.number} geforceerd afgerond`);setBonDetail(null)};
 
-  const handlePrint=(items)=>{const w=window.open('','_blank');const svgs=items.map(i=>{const bars=generateBarcode(i.id);const bw=280/bars.length;const rects=bars.split('').map((b,idx)=>b==='1'?`<rect x="${idx*bw}" y="2" width="${bw}" height="80" fill="black"/>`:'').join('');return`<div style="display:inline-block;margin:10px;padding:10px;border:1px solid #ccc;text-align:center"><svg viewBox="0 0 280 110" width="280" height="110">${rects}<text x="140" y="98" text-anchor="middle" font-size="12" font-family="monospace">${String(i.id).padStart(8,'0')}</text><text x="140" y="108" text-anchor="middle" font-size="9" font-family="sans-serif" fill="#666">${i.name}</text></svg></div>`;}).join('');w.document.write(`<html><head><title>Barcodes</title></head><body>${svgs}<script>setTimeout(()=>window.print(),500)<\/script></body></html>`)};
+  const handlePrint=(items)=>{const pw=window.open('','_blank');const svgs=items.map(i=>{
+    const bc=i.barcode||"NOCODE";const modules=encodeCode128B(bc);const mw=2.5;const bw=modules.length*mw+40;const bh=90;
+    const rects=[];let x=20;
+    for(let j=0;j<modules.length;j++){if(modules[j]==='1')rects.push(`<rect x="${x}" y="10" width="${mw}" height="${bh}" fill="black"/>`);x+=mw;}
+    return`<div style="display:inline-block;margin:12px;padding:15px;border:1px solid #ccc;text-align:center;break-inside:avoid"><svg viewBox="0 0 ${bw} ${bh+40}" width="${bw}" height="${bh+40}" style="background:white"><rect width="${bw}" height="${bh+40}" fill="white"/>${rects.join('')}<text x="${bw/2}" y="${bh+24}" text-anchor="middle" font-size="16" font-family="monospace" font-weight="bold">${bc}</text><text x="${bw/2}" y="${bh+36}" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#666">${i.name.length>35?i.name.slice(0,35)+'...':i.name}</text></svg></div>`;
+    }).join('');pw.document.write(`<html><head><title>Barcodes</title><style>body{font-family:sans-serif}@media print{body{margin:0}}</style></head><body>${svgs}<script>setTimeout(()=>window.print(),500)<\/script></body></html>`)};
 
   const getItemStats=(itemId)=>{const year=bons.filter(b=>b.startDate>=oneYearAgo);let count=0;const borrowers={};year.forEach(b=>b.items.forEach(bi=>{if(bi.itemId===itemId){count+=bi.qty;borrowers[b.user]=(borrowers[b.user]||0)+bi.qty}}));return{count,borrowers}};
+
+  const handleAdminScan = () => {
+    const code = adminScan.trim();
+    if (!code) return;
+    const numId = parseInt(code, 10);
+    let item = eq.find(i => i.barcode === code || i.barcode === code.toUpperCase());
+    if (!item) { const numId = parseInt(code, 10); item = eq.find(i => i.id === numId); }
+    if (!item) item = eq.find(i => i.name.toLowerCase().includes(code.toLowerCase()));
+    if (item) {
+      setDetail(item);
+      setAdminScanMsg(null);
+    } else {
+      setAdminScanMsg({ ok: false, text: "\u274c Artikel niet gevonden" });
+      setTimeout(() => setAdminScanMsg(null), 2500);
+    }
+    setAdminScan("");
+  };
+
+  // Keep focus on admin scan field when items tab is active
+  useEffect(() => {
+    if (tab !== "items" || !adminScanRef.current) return;
+    const handler = (e) => {
+      if (e.key === "F3" || (e.ctrlKey && e.key === "f") || e.key === "/") e.preventDefault();
+      if (adminScanRef.current && adminScanRef.current.offsetParent !== null &&
+          document.activeElement !== adminScanRef.current &&
+          document.activeElement?.tagName !== "INPUT" &&
+          document.activeElement?.tagName !== "SELECT" &&
+          document.activeElement?.tagName !== "TEXTAREA") {
+        adminScanRef.current.focus();
+      }
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, [tab]);
 
   const tabs=[["dashboard","Dashboard"],["bons","Bonnen"],["items","Materiaal"],["insights","Inzichten"],["log","Logboek"],["barcodes","Barcodes"],["users","Gebruikers"],["settings","Instellingen"]];
 
@@ -437,8 +580,21 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
 
       {/* MATERIAAL */}
       {tab==="items"&&<div className="space-y-4">
+        {/* Scan bar */}
+        <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400">{"\ud83d\udcf3"}</span>
+              <input ref={adminScanRef} className="w-full pl-11 pr-4 py-3 rounded-xl border border-blue-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Scan barcode om artikel te openen..." value={adminScan} onChange={e=>setAdminScan(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleAdminScan()} autoFocus/>
+            </div>
+            <button onClick={handleAdminScan} className="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Zoek</button>
+          </div>
+          {adminScanMsg && <div className={`mt-2 rounded-xl px-4 py-2.5 text-sm font-medium ${adminScanMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{adminScanMsg.text}</div>}
+        </div>
+
+        {/* Filter bar */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"><div className="flex flex-col md:flex-row gap-3">
-          <div className="flex-1 relative"><svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Zoek..." value={q} onChange={e=>setQ(e.target.value)}/></div>
+          <div className="flex-1 relative"><svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Filter op naam..." value={q} onChange={e=>setQ(e.target.value)}/></div>
           <div className="flex gap-1.5 overflow-x-auto">{CATS.map(c=><button key={c} onClick={()=>setCat(c)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap ${cat===c?"bg-blue-600 text-white":"bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{c}</button>)}</div>
         </div></div>
         <div className="space-y-2">{filt.map(i=>{const av=availQty(i,bons);const lo=loanedQty(bons,i.id);const res=bons.filter(b=>b.status==="reserved").reduce((s,b)=>{let t=0;b.items.forEach(bi=>{if(bi.itemId===i.id)t+=bi.qty});return s+t},0);
@@ -653,7 +809,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
           <button onClick={()=>setPrintItems([])} className="px-3 py-2 rounded-xl bg-gray-100 text-xs font-medium hover:bg-gray-200">Niets</button>
           {printItems.length>0&&<button onClick={()=>handlePrint(printItems)} className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">Print ({printItems.length})</button>}
         </div></div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{eq.map(i=>{const sel=printItems.some(p=>p.id===i.id);return <div key={i.id} onClick={()=>setPrintItems(p=>sel?p.filter(x=>x.id!==i.id):[...p,i])} className={`bg-white rounded-xl p-3 border-2 cursor-pointer ${sel?"border-blue-500 shadow-md":"border-gray-100 hover:border-gray-200"}`}><div className="flex justify-center mb-2"><BarcodeSVG id={i.id} name={i.name} small/></div><p className="text-xs font-medium text-gray-900 text-center truncate">{i.name}</p></div>})}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{eq.map(i=>{const sel=printItems.some(p=>p.id===i.id);return <div key={i.id} onClick={()=>setPrintItems(p=>sel?p.filter(x=>x.id!==i.id):[...p,i])} className={`bg-white rounded-xl p-3 border-2 cursor-pointer ${sel?"border-blue-500 shadow-md":"border-gray-100 hover:border-gray-200"}`}><div className="flex justify-center mb-2"><BarcodeSVG code={i.barcode||""} name={i.name} small/></div><p className="text-xs font-medium text-gray-900 text-center truncate">{i.name}</p></div>})}</div>
       </div>}
 
       {/* GEBRUIKERS */}
@@ -664,7 +820,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
         const addUser = () => {
           if(!newUser.username.trim()||!newUser.password.trim()||!newUser.label.trim()) return;
           if(users.some(u=>u.username===newUser.username.trim())) { alert("Gebruikersnaam bestaat al"); return; }
-          const u = {...newUser, username:newUser.username.trim(), label:newUser.label.trim()};
+          const u = {...newUser, username:newUser.username.trim(), label:newUser.label.trim(), loginCode: genLoginCode()};
           setUsers(p=>[...p,u]);
           addLog("edit",`Gebruiker "${u.label}" (${u.username}) aangemaakt`);
           setNewUser({username:"",password:"",label:"",role:"user"});
@@ -685,8 +841,62 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
           setEditUser(null);
         };
 
+        const printBadge = (u) => {
+          const w = window.open('','_blank');
+          const code = u.loginCode || "NOCODE";
+          const modules = encodeCode128B(code.replace(/\D/g,'')) || 0);
+          const mw = 2.5; const bw = modules.length * mw + 40; const bh = 80;
+          const rects = []; let x = 20;
+          for (let j = 0; j < modules.length; j++) { if (modules[j] === '1') rects.push(`<rect x="${x}" y="10" width="${mw}" height="${bh}" fill="black"/>`); x += mw; }
+          w.document.write(`<html><head><title>Badge - ${u.label}</title><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
+            .badge{border:2px solid #ccc;border-radius:16px;padding:30px;text-align:center;width:350px}
+            .name{font-size:24px;font-weight:bold;margin-bottom:4px}
+            .role{font-size:14px;color:#666;margin-bottom:20px}
+            .code{font-family:monospace;font-size:16px;font-weight:bold;margin-top:8px;letter-spacing:2px}
+            .hint{font-size:11px;color:#999;margin-top:12px}
+            @media print{body{min-height:auto}.badge{border:2px solid #000}}</style></head>
+            <body><div class="badge">
+              <div class="name">${u.label}</div>
+              <div class="role">${u.role === "admin" ? "Beheerder" : "Gebruiker"}</div>
+              <svg viewBox="0 0 ${bw} ${bh + 30}" width="${bw}" height="${bh + 30}" style="background:white">
+                ${rects.join('')}
+                <text x="${bw/2}" y="${bh + 22}" text-anchor="middle" font-size="14" font-family="monospace" font-weight="bold">${code}</text>
+              </svg>
+              <div class="hint">Scan deze badge om in te loggen</div>
+            </div>
+            <script>setTimeout(()=>window.print(),500)<\/script></body></html>`);
+        };
+
+        const printAllBadges = () => {
+          const w = window.open('','_blank');
+          const badges = users.map(u => {
+            const code = u.loginCode || "NOCODE";
+            const modules = encodeCode128B(code.replace(/\D/g,'')) || 0);
+            const mw = 2; const bw = modules.length * mw + 30; const bh = 60;
+            const rects = []; let x = 15;
+            for (let j = 0; j < modules.length; j++) { if (modules[j] === '1') rects.push(`<rect x="${x}" y="8" width="${mw}" height="${bh}" fill="black"/>`); x += mw; }
+            return `<div class="badge">
+              <div class="name">${u.label}</div>
+              <div class="role">${u.role === "admin" ? "Beheerder" : "Gebruiker"}</div>
+              <svg viewBox="0 0 ${bw} ${bh + 24}" width="${bw}" height="${bh + 24}" style="background:white">
+                ${rects.join('')}
+                <text x="${bw/2}" y="${bh + 18}" text-anchor="middle" font-size="12" font-family="monospace" font-weight="bold">${code}</text>
+              </svg>
+            </div>`;
+          }).join('');
+          w.document.write(`<html><head><title>Badges</title><style>body{font-family:sans-serif;display:flex;flex-wrap:wrap;gap:20px;padding:20px;justify-content:center}
+            .badge{border:2px solid #ccc;border-radius:12px;padding:20px;text-align:center;width:280px;break-inside:avoid}
+            .name{font-size:18px;font-weight:bold;margin-bottom:2px}
+            .role{font-size:12px;color:#666;margin-bottom:12px}
+            @media print{.badge{border:2px solid #000}}</style></head>
+            <body>${badges}<script>setTimeout(()=>window.print(),500)<\/script></body></html>`);
+        };
+
         return <div className="space-y-6 max-w-2xl">
-          <h3 className="text-lg font-bold text-gray-900">Gebruikers ({users.length})</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Gebruikers ({users.length})</h3>
+            <button onClick={printAllBadges} className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">{"\ud83d\udda8"} Print alle badges</button>
+          </div>
 
           {/* User list */}
           <div className="space-y-2">
@@ -696,10 +906,11 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm ${u.role==="admin"?"bg-blue-600":"bg-gray-500"}`}>{u.label.charAt(0).toUpperCase()}</div>
                   <div>
                     <p className="font-semibold text-gray-900">{u.label}</p>
-                    <p className="text-xs text-gray-500">@{u.username} {"\u00b7"} {u.role==="admin"?"Beheerder":"Gebruiker"}</p>
+                    <p className="text-xs text-gray-500">@{u.username} {"\u00b7"} {u.role==="admin"?"Beheerder":"Gebruiker"} {"\u00b7"} <span className="font-mono">{u.loginCode||"geen code"}</span></p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button onClick={()=>printBadge(u)} className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200">{"\ud83d\udda8"}</button>
                   <button onClick={()=>setEditUser({...u})} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100">Bewerken</button>
                   {u.username!=="admin"&&<button onClick={()=>deleteUser(u.username)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100">Verwijder</button>}
                 </div>
@@ -718,6 +929,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
               <div><label className={lc}>Wachtwoord</label><input className={ic} value={newUser.password} onChange={e=>setNewUser(p=>({...p,password:e.target.value}))} placeholder="Kies een wachtwoord"/></div>
               <div><label className={lc}>Rol</label><select className={ic} value={newUser.role} onChange={e=>setNewUser(p=>({...p,role:e.target.value}))}><option value="user">Gebruiker</option><option value="admin">Beheerder</option></select></div>
             </div>
+            <p className="text-xs text-gray-400">Er wordt automatisch een unieke badge-code aangemaakt</p>
             <button onClick={addUser} disabled={!newUser.username.trim()||!newUser.password.trim()||!newUser.label.trim()} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Gebruiker toevoegen</button>
           </div>
 
@@ -727,6 +939,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
               <div><label className={lc}>Naam</label><input className={ic} value={editUser.label} onChange={e=>setEditUser(p=>({...p,label:e.target.value}))}/></div>
               <div><label className={lc}>Gebruikersnaam</label><input value={editUser.username} disabled className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500"/></div>
               <div><label className={lc}>Wachtwoord</label><input className={ic} value={editUser.password} onChange={e=>setEditUser(p=>({...p,password:e.target.value}))}/></div>
+              <div><label className={lc}>Badge-code</label><div className="flex gap-2"><input value={editUser.loginCode||""} disabled className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 font-mono"/><button onClick={()=>setEditUser(p=>({...p,loginCode:genLoginCode()}))} className="px-3 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200">Nieuwe code</button></div></div>
               <div><label className={lc}>Rol</label><select className={ic} value={editUser.role} onChange={e=>setEditUser(p=>({...p,role:e.target.value}))} disabled={editUser.username==="admin"}><option value="user">Gebruiker</option><option value="admin">Beheerder</option></select></div>
               <div className="flex gap-3 pt-2">
                 <button onClick={saveUser} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Opslaan</button>
@@ -770,7 +983,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
           <h4 className="font-semibold text-gray-800">Data</h4>
-          <button onClick={()=>{if(confirm("Alles resetten?")){store.set("mhok-eq5",INIT);store.set("mhok-bons4",[]);store.set("mhok-logs4",[]);store.set("mhok-brand4",DEFAULT_BRANDING);window.location.reload()}}} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-medium border border-red-200 hover:bg-red-100">Reset alle data</button>
+          <button onClick={()=>{if(confirm("Alles resetten?")){store.set("mhok-eq",INIT);store.set("mhok-bons",[]);store.set("mhok-logs",[]);store.set("mhok-brand",DEFAULT_BRANDING);window.location.reload()}}} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-medium border border-red-200 hover:bg-red-100">Reset alle data</button>
         </div>
       </div>}
     </div>
@@ -784,9 +997,10 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
           <div className="flex items-center gap-3">
             {detail.photo?<img src={detail.photo} className="w-16 h-16 rounded-xl object-cover" alt=""/>:<div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-2xl">{getIcon(detail.category)}</div>}
             <div className="flex-1"><h3 className="font-bold text-gray-900">{detail.name}</h3><p className="text-sm text-gray-500">{detail.category} {"\u00b7"} {detail.stock} {detail.unit}</p></div>
-            <BarcodeSVG id={detail.id} name={detail.name} small/>
+            <BarcodeSVG code={detail.barcode||""} name={detail.name} small/>
           </div>
           <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">Barcode</span><span className="font-mono font-medium text-gray-900">{detail.barcode||"geen"}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Beschikbaar</span><span className="font-medium text-emerald-600">{av}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Uitgeleend</span><span className="font-medium text-amber-600">{loanedQty(bons,detail.id)}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Onderhoud</span><span className="font-medium">{detail.maintenance||0}</span></div>
@@ -797,6 +1011,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
           {itemBons.length>0&&<div><p className="text-xs font-semibold text-gray-500 uppercase mb-2">Bonnen met dit item</p>{itemBons.map(b=><BonCard key={b.id} bon={b} onClick={()=>{setDetail(null);setBonDetail(b)}} showUser/>)}</div>}
           <div className="flex gap-2 pt-2">
             <button onClick={()=>{setEdit(detail);setDetail(null)}} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Bewerken</button>
+            <button onClick={()=>{const nb=nextBarcode();setEq(p=>p.map(e=>e.id===detail.id?{...e,barcode:nb}:e));setDetail(prev=>({...prev,barcode:nb}));addLog("edit",`Barcode ${detail.name} vernieuwd: ${nb}`)}} className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-200" title="Nieuwe barcode">{"\ud83d\udd04"}</button>
             <button onClick={()=>handlePrint([detail])} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm">{"\ud83d\udda8"}</button>
             <button onClick={()=>del(detail.id)} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm border border-red-200">Verwijder</button>
           </div>
@@ -828,6 +1043,24 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
 // ============ USER ============
 function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
   const [mode, setMode] = useState(null);
+  const scanRef = useRef(null);
+
+  // Global key capture: redirect all keyboard input to active scan field, prevent browser search
+  useEffect(() => {
+    const handler = (e) => {
+      const activeRef = loanScanRef.current || scanRef.current;
+      if (!activeRef) return;
+      if (e.key === "F3" || (e.ctrlKey && e.key === "f") || (e.ctrlKey && e.key === "g") || e.key === "/") {
+        e.preventDefault();
+      }
+      // Only redirect focus if the active ref is visible in the DOM
+      if (activeRef.offsetParent !== null && document.activeElement !== activeRef && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "SELECT" && document.activeElement?.tagName !== "TEXTAREA") {
+        activeRef.focus();
+      }
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, []);
   const [cart, setCart] = useState([]); const [endDate, setEndDate] = useState(""); const [startDate, setStartDate] = useState(today());
   const [isReservation, setIsReservation] = useState(false);
   const [q, setQ] = useState(""); const [cat, setCat] = useState("Alle");
@@ -835,6 +1068,9 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
   const [scanInput, setScanInput] = useState(""); const [scanMsg, setScanMsg] = useState(null);
   const [done, setDone] = useState(null);
   const [loanStep, setLoanStep] = useState(1);
+  const [loanScanInput, setLoanScanInput] = useState("");
+  const [loanScanMsg, setLoanScanMsg] = useState(null);
+  const loanScanRef = useRef(null);
   const totalCartQty = cart.reduce((s, c) => s + c.qty, 0);
 
   const myBons = bons.filter(b=>b.user===user.label&&b.status!=="completed");
@@ -844,8 +1080,32 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
     return av>0&&i.name.toLowerCase().includes(q.toLowerCase())&&(cat==="Alle"||i.category===cat);
   });
 
-  const addToCart=(item)=>{const av=availQty(item,bons);const inC=cart.find(c=>c.itemId===item.id)?.qty||0;if(inC>=av)return;if(cart.find(c=>c.itemId===item.id))setCart(p=>p.map(c=>c.itemId===item.id?{...c,qty:c.qty+1}:c));else setCart(p=>[...p,{itemId:item.id,itemName:item.name,unit:item.unit,qty:1,returned:0}])};
+  const addToCart=(item)=>{const av=availQty(item,bons);const inC=cart.find(c=>c.itemId===item.id)?.qty||0;if(inC>=av)return;if(cart.find(c=>c.itemId===item.id))setCart(p=>p.map(c=>c.itemId===item.id?{...c,qty:c.qty+1}:c));else setCart(p=>[...p,{itemId:item.id,itemName:item.name,barcode:item.barcode,unit:item.unit,qty:1,returned:0}])};
   const removeFromCart=(id)=>{setCart(p=>{const ex=p.find(c=>c.itemId===id);if(!ex)return p;if(ex.qty<=1)return p.filter(c=>c.itemId!==id);return p.map(c=>c.itemId===id?{...c,qty:c.qty-1}:c)})};
+
+  const handleLoanScan = () => {
+    const code = loanScanInput.trim();
+    if (!code) return;
+    const numId = parseInt(code, 10);
+    // Find item by ID (barcode) or by name
+    let item = eq.find(i => i.barcode === code || i.barcode === code.toUpperCase());
+    if (!item) { const numId = parseInt(code, 10); item = eq.find(i => i.id === numId); }
+    if (!item) item = eq.find(i => i.name.toLowerCase().includes(code.toLowerCase()));
+    if (item) {
+      const av = getAvailForItem(item);
+      const inC = cart.find(c => c.itemId === item.id)?.qty || 0;
+      if (av > 0 && inC < av) {
+        addToCart(item);
+        setLoanScanMsg({ ok: true, text: `\u2705 ${item.name} toegevoegd (${inC + 1}x)` });
+      } else {
+        setLoanScanMsg({ ok: false, text: `\u26a0\ufe0f ${item.name} — niet meer beschikbaar` });
+      }
+    } else {
+      setLoanScanMsg({ ok: false, text: "\u274c Niet gevonden" });
+    }
+    setLoanScanInput("");
+    setTimeout(() => setLoanScanMsg(null), 2500);
+  };
 
   const submitBon=()=>{
     if(cart.length===0||!endDate)return;
@@ -861,8 +1121,10 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
 
   const handleScan=()=>{
     if(!returnBon||!scanInput.trim())return;
-    const code=scanInput.trim();const numId=parseInt(code,10);
-    let bonItem=returnBon.items.find(bi=>bi.itemId===numId&&(bi.qty-(bi.returned||0))>0);
+    const code=scanInput.trim();
+    const matchItem=eq.find(i=>i.barcode===code||i.barcode===code.toUpperCase());
+    let bonItem=matchItem?returnBon.items.find(bi=>bi.itemId===matchItem.id&&(bi.qty-(bi.returned||0))>0):null;
+    if(!bonItem){const numId=parseInt(code,10);bonItem=returnBon.items.find(bi=>bi.itemId===numId&&(bi.qty-(bi.returned||0))>0);}
     if(!bonItem)bonItem=returnBon.items.find(bi=>bi.itemName.toLowerCase().includes(code.toLowerCase())&&(bi.qty-(bi.returned||0))>0);
     if(bonItem){
       const nr=(bonItem.returned||0)+1;
@@ -876,8 +1138,10 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
 
   const pickupScan=()=>{
     if(!returnBon||!scanInput.trim())return;
-    const code=scanInput.trim();const numId=parseInt(code,10);
-    let bonItem=returnBon.items.find(bi=>bi.itemId===numId&&(bi.pickedUp||0)<bi.qty);
+    const code=scanInput.trim();
+    const matchItem=eq.find(i=>i.barcode===code||i.barcode===code.toUpperCase());
+    let bonItem=matchItem?returnBon.items.find(bi=>bi.itemId===matchItem.id&&(bi.pickedUp||0)<bi.qty):null;
+    if(!bonItem){const numId=parseInt(code,10);bonItem=returnBon.items.find(bi=>bi.itemId===numId&&(bi.pickedUp||0)<bi.qty);}
     if(!bonItem)bonItem=returnBon.items.find(bi=>bi.itemName.toLowerCase().includes(code.toLowerCase())&&(bi.pickedUp||0)<bi.qty);
     if(bonItem){
       const nr=(bonItem.pickedUp||0)+1;
@@ -995,9 +1259,25 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
         {"\ud83d\udcc5"} {fmtDate(startDate)} t/m {fmtDate(endDate)} {"\u2014"} beschikbaarheid voor deze periode
       </div>}
 
+      {/* Scan to add */}
+      <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
+        <label className="block text-sm font-medium text-blue-800 mb-2">{"\ud83d\udcf3"} Scan materiaal om toe te voegen</label>
+        <div className="flex gap-2">
+          <input ref={loanScanRef} className="flex-1 px-4 py-3 rounded-xl border border-blue-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Scan barcode..." value={loanScanInput} onChange={e=>setLoanScanInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLoanScan()} autoFocus/>
+          <button onClick={handleLoanScan} className="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">+</button>
+        </div>
+        {loanScanMsg && <div className={`mt-2 rounded-xl px-4 py-2.5 text-sm font-medium ${loanScanMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{loanScanMsg.text}</div>}
+      </div>
+
+      <div className="relative flex items-center gap-3">
+        <div className="flex-1 h-px bg-gray-200"/>
+        <span className="text-xs text-gray-400">of zoek handmatig</span>
+        <div className="flex-1 h-px bg-gray-200"/>
+      </div>
+
       <div className="relative">
         <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-gray-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="Zoek materiaal..." value={q} onChange={e=>setQ(e.target.value)} autoFocus/>
+        <input className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-gray-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="Zoek materiaal..." value={q} onChange={e=>setQ(e.target.value)}/>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -1099,7 +1379,7 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
         <div className={`rounded-2xl p-5 shadow-sm border ${isPickup?"bg-purple-50 border-purple-200":"bg-white border-gray-100"}`}>
           <label className="block text-sm font-medium text-gray-700 mb-2">{isPickup?"Scan materiaal om op te halen":"Scan materiaal om te retourneren"}</label>
           <div className="flex gap-2">
-            <input className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Scan of typ code..." value={scanInput} onChange={e=>setScanInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(isPickup?pickupScan():handleScan())} autoFocus/>
+            <input ref={scanRef} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Scan of typ code..." value={scanInput} onChange={e=>setScanInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(isPickup?pickupScan():handleScan())} autoFocus/>
             <button onClick={isPickup?pickupScan:handleScan} className={`px-5 py-3 rounded-xl text-white font-semibold text-sm ${isPickup?"bg-purple-500 hover:bg-purple-600":"bg-emerald-500 hover:bg-emerald-600"}`}>{isPickup?"\ud83d\udce4":"\ud83d\udce5"}</button>
           </div>
           {scanMsg&&<div className={`mt-3 rounded-xl px-4 py-3 text-sm font-medium ${scanMsg.ok?"bg-emerald-50 text-emerald-800":"bg-red-50 text-red-800"}`}>{scanMsg.text}</div>}
@@ -1128,16 +1408,23 @@ export default function App() {
   const [branding, setBranding] = useState(DEFAULT_BRANDING);
   const [ok, setOk] = useState(false);
 
-  useEffect(()=>{setEq(store.get("mhok-eq5")||INIT);setBons(store.get("mhok-bons4")||[]);setLogs(store.get("mhok-logs4")||[]);setBranding(store.get("mhok-brand4")||DEFAULT_BRANDING);setUsers(store.get("mhok-users4")||DEFAULT_USERS);const u=store.get("mhok-user4");if(u)setUser(u);setOk(true)},[]);
-  useEffect(()=>{if(ok)store.set("mhok-eq5",eq)},[eq,ok]);
-  useEffect(()=>{if(ok)store.set("mhok-bons4",bons)},[bons,ok]);
-  useEffect(()=>{if(ok)store.set("mhok-logs4",logs)},[logs,ok]);
-  useEffect(()=>{if(ok)store.set("mhok-brand4",branding)},[branding,ok]);
-  useEffect(()=>{if(ok)store.set("mhok-users4",users)},[users,ok]);
+  useEffect(()=>{(async()=>{(()=>{
+        const saved = await store.get("mhok-eq");
+        const data = saved || INIT;
+        let counter = 0;
+        data.forEach(i => { counter++; if (!i.barcode) i.barcode = genItemBarcode(counter); });
+        _barcodeCounter = Math.max(_barcodeCounter, counter);
+        setEq(data);
+      })();setBons(await store.get("mhok-bons")||[]);setLogs(await store.get("mhok-logs")||[]);setBranding(await store.get("mhok-brand")||DEFAULT_BRANDING);setUsers(await store.get("mhok-users")||DEFAULT_USERS);const u=await store.get("mhok-user");if(u)setUser(u);setOk(true)})()},[]);
+  useEffect(()=>{if(ok)store.set("mhok-eq",eq)},[eq,ok]);
+  useEffect(()=>{if(ok)store.set("mhok-bons",bons)},[bons,ok]);
+  useEffect(()=>{if(ok)store.set("mhok-logs",logs)},[logs,ok]);
+  useEffect(()=>{if(ok)store.set("mhok-brand",branding)},[branding,ok]);
+  useEffect(()=>{if(ok)store.set("mhok-users",users)},[users,ok]);
 
   const addLog=useCallback((action,detail)=>setLogs(p=>[{id:Date.now(),date:isoNow(),action,detail},...p]),[]);
-  const handleLogin=(u)=>{setUser(u);store.set("mhok-user4",u)};
-  const handleLogout=()=>{setUser(null);store.set("mhok-user4",null)};
+  const handleLogin=(u)=>{setUser(u);store.set("mhok-user",u)};
+  const handleLogout=()=>{setUser(null);store.set("mhok-user",null)};
 
   if(!ok)return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Laden...</p></div>;
   if(!user)return <LoginScreen onLogin={handleLogin} branding={branding} users={users}/>;
