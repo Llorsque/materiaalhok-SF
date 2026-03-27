@@ -4,178 +4,176 @@ const INIT = [
   { id: 1, name: "Medicinbal 2kg", stock: 16, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.51, loans: [] },
   { id: 2, name: "Medicinbal 1,5kg", stock: 2, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.51, loans: [] },
   { id: 3, name: "Medicinbal 1kg", stock: 2, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.51, loans: [] },
-  { id: 4, name: "UniHockey sticks + balletjes (20sticks)", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 120.94, loans: [] },
-  { id: 5, name: "Fhuttle", stock: 23, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.2, loans: [] },
-  { id: 6, name: "Stopwatch", stock: 5, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 13.25, loans: [] },
-  { id: 7, name: "Horden hoog", stock: 9, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 18.09, loans: [] },
-  { id: 8, name: "Streethockey sticks incl. puck (11sticks)", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 365.0, loans: [] },
-  { id: 9, name: "Pylon klein (rood)", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 10, name: "Autoband", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 11, name: "Horden laag", stock: 18, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.22, loans: [] },
-  { id: 12, name: "Knotshockey sticks incl. bal (12sticks)", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 131.83, loans: [] },
-  { id: 13, name: "Pylon klein (oranje)", stock: 25, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.71, loans: [] },
-  { id: 14, name: "Paaltje met vlag", stock: 16, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 15, name: "Estafettestokje", stock: 13, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 2.84, loans: [] },
-  { id: 16, name: "Golfset incl. ballen", stock: 50, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.0, loans: [] },
-  { id: 17, name: "pylon groot", stock: 25, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.4, loans: [] },
-  { id: 18, name: "Blauwe prikkers", stock: 40, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.0, loans: [] },
-  { id: 19, name: "Kogel 3 kilo", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 16.25, loans: [] },
-  { id: 20, name: "Freeplayer", stock: 4, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 2147.75, loans: [] },
-  { id: 21, name: "Markeerpylon (dopjes) (set)", stock: 8, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 35.7, loans: [] },
-  { id: 22, name: "Matjes (ikea)", stock: 8, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.0, loans: [] },
-  { id: 23, name: "Kogel 2 kilo", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 15.13, loans: [] },
-  { id: 24, name: "Korfbal", stock: 2, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 25, name: "Basketbal (multi-net set)", stock: 2, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 26, name: "Multi-net", stock: 2, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 27, name: "hoepels kleind", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 28, name: "Blikgooiset", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 34.85, loans: [] },
-  { id: 29, name: "kogel kunststof", stock: 12, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 30, name: "schietschijf boogschieten", stock: 13, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 32.99, loans: [] },
-  { id: 31, name: "Hoepels", stock: 25, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 4.17, loans: [] },
-  { id: 32, name: "Parachute klein", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 49.61, loans: [] },
-  { id: 33, name: "Speer 500gram", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 65.95, loans: [] },
-  { id: 34, name: "Schietschijf boogschieten fun", stock: 3, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.99, loans: [] },
-  { id: 35, name: "Trapeze stok", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 158.27, loans: [] },
-  { id: 36, name: "Parachute groot", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 102.55, loans: [] },
-  { id: 37, name: "Speer 400gram", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 62.01, loans: [] },
-  { id: 38, name: "boog boogschieten", stock: 14, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 27.99, loans: [] },
-  { id: 39, name: "Hesjes", stock: 47, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 4.78, loans: [] },
-  { id: 40, name: "Unihockey doeltje", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 30.0, loans: [] },
-  { id: 41, name: "Meetlint", stock: 7, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.01, loans: [] },
-  { id: 42, name: "easy boogschieten", stock: 3, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.99, loans: [] },
-  { id: 43, name: "Lintje rood", stock: 27, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
-  { id: 44, name: "Stoeprand set", stock: 7, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 175.45, loans: [] },
-  { id: 45, name: "meetlint stof", stock: 1, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 46, name: "pijlen boogschieten (20 totaal)", stock: 10, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.99, loans: [] },
-  { id: 47, name: "Lintje marineblauw", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
-  { id: 48, name: "Beweegfishes", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.51, loans: [] },
-  { id: 49, name: "Krijtbordje", stock: 11, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 5.0, loans: [] },
-  { id: 50, name: "archerytag set (2 doelen, 12 bogen, 30 pijlen, 12 maskers)", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 650.0, loans: [] },
-  { id: 51, name: "Lintje donkerblauw", stock: 10, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
-  { id: 52, name: "Ballauncher", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 53, name: "Loopladder", stock: 1, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.81, loans: [] },
-  { id: 54, name: "Flagball set", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 49.61, loans: [] },
-  { id: 55, name: "Lintje lichtblauw", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
-  { id: 56, name: "zandlopers", stock: 5, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.81, loans: [] },
-  { id: 57, name: "Startklapper", stock: 3, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 54.39, loans: [] },
-  { id: 58, name: "Rampshot set", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 116.77, loans: [] },
-  { id: 59, name: "Lintje Geel", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
-  { id: 60, name: "knijpfluit", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.62, loans: [] },
-  { id: 61, name: "discus", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 62, name: "Kanjam (brievenbussen)", stock: 17, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 42.29, loans: [] },
-  { id: 63, name: "Lintje oranje", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
-  { id: 64, name: "muziekbox", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 450.0, loans: [] },
-  { id: 65, name: "Spike ball set", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 108.3, loans: [] },
-  { id: 66, name: "schijven met cijfers", stock: 2, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 67, name: "gewichten", stock: 12, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 11.07, loans: [] },
-  { id: 68, name: "ultimate frisbeeset", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 69, name: "Ringen", stock: 20, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 4.54, loans: [] },
-  { id: 70, name: "haspel", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 100.0, loans: [] },
-  { id: 71, name: "Chinese bordjes", stock: 6, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 72, name: "Swingball", stock: 4, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 72.54, loans: [] },
-  { id: 73, name: "Slagbal plank", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 10.41, loans: [] },
-  { id: 74, name: "ballenpomp elektrisch", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 200.0, loans: [] },
-  { id: 75, name: "stokken chinese bordjes", stock: 2, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 76, name: "frisbeedoelen", stock: 4, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 54.15, loans: [] },
-  { id: 77, name: "slagbalknuppels", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.72, loans: [] },
-  { id: 78, name: "stokpaardjes", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 35.0, loans: [] },
-  { id: 79, name: "Jongleerdoekjes", stock: 11, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 80, name: "lacrosse set", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 81, name: "slagstatief", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 37.33, loans: [] },
-  { id: 82, name: "watertonnen", stock: 3, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 90.0, loans: [] },
-  { id: 83, name: "Stokje met sierlint", stock: 5, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 84, name: "honkenset", stock: 2, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.48, loans: [] },
-  { id: 85, name: "vouwfiets", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 229.99, loans: [] },
-  { id: 86, name: "Pedalo", stock: 1, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 156.7, loans: [] },
-  { id: 87, name: "honkbalhandschoen links", stock: 17, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 48.34, loans: [] },
-  { id: 88, name: "partytent", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 100.0, loans: [] },
-  { id: 89, name: "Jongleerballen", stock: 14, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 90, name: "KUBB spel", stock: 3, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 42.96, loans: [] },
-  { id: 91, name: "honkbalhandschoen rechts", stock: 5, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 48.34, loans: [] },
-  { id: 92, name: "EHBOset", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 60.0, loans: [] },
-  { id: 93, name: "Jongleerstokken set van 3", stock: 1, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 94, name: "skateboards", stock: 7, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 45.07, loans: [] },
-  { id: 95, name: "Frisbee soft klein", stock: 10, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.04, loans: [] },
-  { id: 96, name: "tafelrandverhoger", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 3.57, loans: [] },
-  { id: 97, name: "Jongleerringen", stock: 5, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 98, name: "pennyboards", stock: 10, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 44.17, loans: [] },
-  { id: 99, name: "Frisbee plastic groot", stock: 13, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 18.09, loans: [] },
-  { id: 100, name: "movecube", stock: 3, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 30.0, loans: [] },
-  { id: 101, name: "Marionette sets", stock: 3, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 102, name: "Scoop set", stock: 19, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 6.0, loans: [] },
-  { id: 103, name: "fribee kanjam", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 11.19, loans: [] },
-  { id: 104, name: "dobbelsteen", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.4, loans: [] },
-  { id: 105, name: "Diabolo set", stock: 9, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 16.52, loans: [] },
-  { id: 106, name: "Schaakbord", stock: 44, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 17.0, loans: [] },
-  { id: 107, name: "Frisbee prut", stock: 8, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 16.76, loans: [] },
-  { id: 108, name: "schuif jeu de boules", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 23.6, loans: [] },
-  { id: 109, name: "Diabolo stokken", stock: 2, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 4.48, loans: [] },
-  { id: 110, name: "Schaakset", stock: 44, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 111, name: "Loopklos set", stock: 7, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 5.99, loans: [] },
-  { id: 112, name: "pilonhoezen set", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.5, loans: [] },
-  { id: 113, name: "circussetprijs", stock: 1, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 393.25, loans: [] },
-  { id: 114, name: "Croquetspel", stock: 2, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 27.0, loans: [] },
-  { id: 115, name: "Steppingstones set", stock: 1, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 60.44, loans: [] },
-  { id: 116, name: "schietschijf", stock: 3, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.99, loans: [] },
-  { id: 117, name: "Jongeleerset Master", stock: 1, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 273.46, loans: [] },
-  { id: 118, name: "bowlingset", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 37.69, loans: [] },
+  { id: 4, name: "Horden hoog", stock: 9, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 18.09, loans: [] },
+  { id: 5, name: "Horden laag", stock: 18, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.22, loans: [] },
+  { id: 6, name: "Estafettestokje", stock: 13, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 2.84, loans: [] },
+  { id: 7, name: "Kogel 3 kilo", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 16.25, loans: [] },
+  { id: 8, name: "Kogel 2 kilo", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 15.13, loans: [] },
+  { id: 9, name: "Kogel kunststof", stock: 12, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 10, name: "Speer 500gram", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 65.95, loans: [] },
+  { id: 11, name: "Speer 400gram", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 62.01, loans: [] },
+  { id: 12, name: "Meetlint", stock: 7, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.01, loans: [] },
+  { id: 13, name: "Meetlint stof", stock: 1, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 14, name: "Krijtbordje", stock: 11, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 5.0, loans: [] },
+  { id: 15, name: "Loopladder", stock: 1, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.81, loans: [] },
+  { id: 16, name: "Startklapper", stock: 3, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 54.39, loans: [] },
+  { id: 17, name: "Discus", stock: 6, unit: "stuk", category: "Atletiek", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 18, name: "Chinese bordjes", stock: 6, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 19, name: "Stokken chinese bordjes", stock: 2, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 20, name: "Jongleerdoekjes", stock: 11, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 21, name: "Stokje met sierlint", stock: 5, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 22, name: "Pedalo", stock: 1, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 156.7, loans: [] },
+  { id: 23, name: "Jongleerballen", stock: 14, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 24, name: "Jongleerstokken set van 3", stock: 1, unit: "set", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 25, name: "Jongleerringen", stock: 5, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 26, name: "Marionette sets", stock: 3, unit: "set", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 27, name: "Diabolo set", stock: 9, unit: "set", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 16.52, loans: [] },
+  { id: 28, name: "Diabolo stokken", stock: 2, unit: "stuk", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 4.48, loans: [] },
+  { id: 29, name: "Circusset", stock: 1, unit: "set", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 393.25, loans: [] },
+  { id: 30, name: "Jongleerset Master", stock: 1, unit: "set", category: "Circus", status: "available", location: "Opslag", notes: "", pricePerUnit: 273.46, loans: [] },
+  { id: 31, name: "Badmintonrackets groot", stock: 19, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.04, loans: [] },
+  { id: 32, name: "Badmintonrackets klein", stock: 7, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 11.5, loans: [] },
+  { id: 33, name: "Tennisrackets groot", stock: 2, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.14, loans: [] },
+  { id: 34, name: "Tennisrackets klein", stock: 4, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.72, loans: [] },
+  { id: 35, name: "Tennisrackets plastic", stock: 21, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.04, loans: [] },
+  { id: 36, name: "Pingpong batje", stock: 15, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 7.09, loans: [] },
+  { id: 37, name: "UniHockey sticks + balletjes (20sticks)", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 120.94, loans: [] },
+  { id: 38, name: "Streethockey sticks incl. puck (11sticks)", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 365.0, loans: [] },
+  { id: 39, name: "Knotshockey sticks incl. bal (12sticks)", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 131.83, loans: [] },
+  { id: 40, name: "Golfset incl. ballen", stock: 50, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.0, loans: [] },
+  { id: 41, name: "Freeplayer", stock: 4, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 2147.75, loans: [] },
+  { id: 42, name: "Korfbal 2x, Basketbal 2x, Multi-net 2x", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 1086.58, loans: [] },
+  { id: 43, name: "Schietschijf boogschieten", stock: 13, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 32.99, loans: [] },
+  { id: 44, name: "Schietschijf boogschieten fun", stock: 3, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.99, loans: [] },
+  { id: 45, name: "Boog boogschieten", stock: 14, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 27.99, loans: [] },
+  { id: 46, name: "Easy boogschieten", stock: 3, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.99, loans: [] },
+  { id: 47, name: "Pijlen boogschieten (20 totaal)", stock: 10, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.99, loans: [] },
+  { id: 48, name: "Archerytag set", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 650.0, loans: [] },
+  { id: 49, name: "Flagball set", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 49.61, loans: [] },
+  { id: 50, name: "Rampshot set", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 116.77, loans: [] },
+  { id: 51, name: "Kanjam", stock: 17, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 42.29, loans: [] },
+  { id: 52, name: "Spike ball set", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 108.3, loans: [] },
+  { id: 53, name: "Ultimate frisbeeset", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 54, name: "Swingball", stock: 4, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 72.54, loans: [] },
+  { id: 55, name: "Frisbeedoelen", stock: 4, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 54.15, loans: [] },
+  { id: 56, name: "Lacrosse set", stock: 1, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 57, name: "KUBB spel", stock: 3, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 42.96, loans: [] },
+  { id: 58, name: "Skateboards", stock: 7, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 45.07, loans: [] },
+  { id: 59, name: "Pennyboards", stock: 10, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 44.17, loans: [] },
+  { id: 60, name: "Scoop set", stock: 19, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 6.0, loans: [] },
+  { id: 61, name: "Schaakbord", stock: 44, unit: "stuk", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 17.0, loans: [] },
+  { id: 62, name: "Schaakset", stock: 44, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 63, name: "Croquetspel", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 27.0, loans: [] },
+  { id: 64, name: "Bowlingset", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 37.69, loans: [] },
+  { id: 65, name: "Bowlingset origineel", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 150.0, loans: [] },
+  { id: 66, name: "Basketbal", stock: 20, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 18.45, loans: [] },
+  { id: 67, name: "Straatvoetbal", stock: 5, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 18.09, loans: [] },
+  { id: 68, name: "Freestyle voetbal", stock: 1, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 69, name: "Korfbal", stock: 11, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 30.1, loans: [] },
+  { id: 70, name: "Foambal groot", stock: 14, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.51, loans: [] },
+  { id: 71, name: "Foambal klein", stock: 5, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 10.83, loans: [] },
+  { id: 72, name: "Gele ballen", stock: 6, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 73, name: "Oranje ballen", stock: 3, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 74, name: "Bal ondefinieerbaar", stock: 3, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 75, name: "Spot kleuren set (per stuk)", stock: 13, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 76, name: "Lapjesbal", stock: 2, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.14, loans: [] },
+  { id: 77, name: "Berebal", stock: 3, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 5.0, loans: [] },
+  { id: 78, name: "Volleybal", stock: 10, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 30.86, loans: [] },
+  { id: 79, name: "Roze ballen", stock: 5, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 22.93, loans: [] },
+  { id: 80, name: "Rugbyballen", stock: 5, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.72, loans: [] },
+  { id: 81, name: "Blauwe ballen (james bonsspel)", stock: 11, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 22.93, loans: [] },
+  { id: 82, name: "Honkballen groot", stock: 10, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 5.99, loans: [] },
+  { id: 83, name: "Honkballen klein", stock: 16, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 6.17, loans: [] },
+  { id: 84, name: "Tennisballen (60)", stock: 1, unit: "set", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 103.46, loans: [] },
+  { id: 85, name: "Softtennisbal", stock: 12, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 2.66, loans: [] },
+  { id: 86, name: "Shuttles (set van 6)", stock: 5, unit: "set", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.46, loans: [] },
+  { id: 87, name: "Pingpong balletjes (set van 100)", stock: 1, unit: "set", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 62.32, loans: [] },
+  { id: 88, name: "Kaatsballen (set van 4)", stock: 3, unit: "set", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.62, loans: [] },
+  { id: 89, name: "Kleine ballen (set van 12)", stock: 5, unit: "set", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.04, loans: [] },
+  { id: 90, name: "Fhuttle", stock: 23, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.2, loans: [] },
+  { id: 91, name: "Pylon klein (rood)", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 92, name: "Pylon klein (oranje)", stock: 25, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.71, loans: [] },
+  { id: 93, name: "Pylon groot", stock: 25, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.4, loans: [] },
+  { id: 94, name: "Markeerpylon (dopjes) (set)", stock: 8, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 35.7, loans: [] },
+  { id: 95, name: "Hoepels klein", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 96, name: "Hoepels", stock: 25, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 4.17, loans: [] },
+  { id: 97, name: "Trapeze stok", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 158.27, loans: [] },
+  { id: 98, name: "Hesjes", stock: 47, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 4.78, loans: [] },
+  { id: 99, name: "Lintje rood", stock: 27, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
+  { id: 100, name: "Lintje marineblauw", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
+  { id: 101, name: "Lintje donkerblauw", stock: 10, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
+  { id: 102, name: "Lintje lichtblauw", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
+  { id: 103, name: "Lintje geel", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
+  { id: 104, name: "Lintje oranje", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.11, loans: [] },
+  { id: 105, name: "Schijven met cijfers", stock: 2, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 106, name: "Ringen", stock: 20, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 4.54, loans: [] },
+  { id: 107, name: "Slagbal plank", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 10.41, loans: [] },
+  { id: 108, name: "Slagbalknuppels", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.72, loans: [] },
+  { id: 109, name: "Slagstatief", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 37.33, loans: [] },
+  { id: 110, name: "Honkenset", stock: 2, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.48, loans: [] },
+  { id: 111, name: "Honkbalhandschoen links", stock: 17, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 48.34, loans: [] },
+  { id: 112, name: "Honkbalhandschoen rechts", stock: 5, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 48.34, loans: [] },
+  { id: 113, name: "Frisbee soft klein", stock: 10, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.04, loans: [] },
+  { id: 114, name: "Frisbee plastic groot", stock: 13, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 18.09, loans: [] },
+  { id: 115, name: "Frisbee kanjam", stock: 4, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 11.19, loans: [] },
+  { id: 116, name: "Frisbee prut", stock: 8, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 16.76, loans: [] },
+  { id: 117, name: "Loopklos set", stock: 7, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 5.99, loans: [] },
+  { id: 118, name: "Steppingstones set", stock: 1, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 60.44, loans: [] },
   { id: 119, name: "Kruiptunnel", stock: 7, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.99, loans: [] },
-  { id: 120, name: "kruisboog", stock: 3, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.99, loans: [] },
-  { id: 121, name: "bowlingset origineel", stock: 2, unit: "set", category: "Sport sets", status: "available", location: "Opslag", notes: "", pricePerUnit: 150.0, loans: [] },
-  { id: 122, name: "Touwtrektouw", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 82.89, loans: [] },
-  { id: 123, name: "smartclips", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 2395.8, loans: [] },
-  { id: 124, name: "Toverkoord", stock: 5, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 10.83, loans: [] },
-  { id: 125, name: "Fitness band licht", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 32.99, loans: [] },
-  { id: 126, name: "Badmintonrackets groot", stock: 19, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.04, loans: [] },
-  { id: 127, name: "Grootspringtouw", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.62, loans: [] },
-  { id: 128, name: "Fitness band medium", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 39.99, loans: [] },
-  { id: 129, name: "Badmintonrackets klein", stock: 7, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 11.5, loans: [] },
-  { id: 130, name: "Basketbal", stock: 20, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 18.45, loans: [] },
-  { id: 131, name: "Springtouw", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 3.21, loans: [] },
-  { id: 132, name: "Tennisrackets groot", stock: 2, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.14, loans: [] },
-  { id: 133, name: "Straatvoetbal", stock: 5, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 18.09, loans: [] },
-  { id: 134, name: "Pittenzakje", stock: 43, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.98, loans: [] },
-  { id: 135, name: "Tennisrackets klein", stock: 4, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.72, loans: [] },
-  { id: 136, name: "freestyle voetbal", stock: 1, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 137, name: "Gymbal", stock: 5, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 25.95, loans: [] },
-  { id: 138, name: "Tennisrackets plastic", stock: 21, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.04, loans: [] },
-  { id: 139, name: "korfbal", stock: 11, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 30.1, loans: [] },
-  { id: 140, name: "Kunststof gymstok", stock: 10, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 3.57, loans: [] },
-  { id: 141, name: "Pingpong batje", stock: 15, unit: "stuk", category: "Racketsport", status: "available", location: "Opslag", notes: "", pricePerUnit: 7.09, loans: [] },
-  { id: 142, name: "Foambal groot", stock: 14, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.51, loans: [] },
-  { id: 143, name: "Volwassen bokshandschoen", stock: 2, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 48.34, loans: [] },
-  { id: 144, name: "Foambal klein", stock: 5, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 10.83, loans: [] },
-  { id: 145, name: "Kinder bokshandschoenen", stock: 24, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 31.37, loans: [] },
-  { id: 146, name: "gele ballen", stock: 6, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 147, name: "Stootkussens", stock: 10, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 59.9, loans: [] },
-  { id: 148, name: "oranje ballen", stock: 3, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 149, name: "Vortex", stock: 16, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 22.93, loans: [] },
-  { id: 150, name: "bal ondefinieerbaar", stock: 3, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 151, name: "Tikhesje", stock: 8, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.18, loans: [] },
-  { id: 152, name: "spot kleuren set (per stuk)", stock: 13, unit: "set", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 153, name: "Mikschijven klittenband", stock: 8, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 27.77, loans: [] },
-  { id: 154, name: "lapjesbal", stock: 2, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.14, loans: [] },
-  { id: 155, name: "klittenbandhandschoen", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 156, name: "Berebal", stock: 3, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 5.0, loans: [] },
-  { id: 157, name: "cornhole set", stock: 2, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 158, name: "Volleybal", stock: 10, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 30.86, loans: [] },
-  { id: 159, name: "draaitol", stock: 2, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 160, name: "roze ballen", stock: 5, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 22.93, loans: [] },
-  { id: 161, name: "ringwerpen set", stock: 1, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 162, name: "rugbyballen", stock: 5, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.72, loans: [] },
-  { id: 163, name: "tafelcurling", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 164, name: "blauwe ballen (james bonsspel)", stock: 11, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 22.93, loans: [] },
-  { id: 165, name: "werpspel (stof)", stock: 2, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 166, name: "honkballen groot", stock: 10, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 5.99, loans: [] },
-  { id: 167, name: "netjes", stock: 2, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 168, name: "honkballen klein", stock: 16, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 6.17, loans: [] },
-  { id: 169, name: "tafel jeu de boules", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0.0, loans: [] },
-  { id: 170, name: "Tennisballen (60)", stock: 1, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 103.46, loans: [] },
-  { id: 171, name: "Softtennisbal", stock: 12, unit: "stuk", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 2.66, loans: [] },
-  { id: 172, name: "Shuttles (set van 6)", stock: 5, unit: "set (6 st)", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.46, loans: [] },
-  { id: 173, name: "Pingpong balletjes (set van 100)", stock: 1, unit: "set (100 st)", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 62.32, loans: [] },
-  { id: 174, name: "kaatsballen (set van 4)", stock: 3, unit: "set (4 st)", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.62, loans: [] },
-  { id: 175, name: "kleine ballen (set van 12)", stock: 5, unit: "set (12 st)", category: "Ballen", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.04, loans: [] }
+  { id: 120, name: "Touwtrektouw", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 82.89, loans: [] },
+  { id: 121, name: "Toverkoord", stock: 5, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 10.83, loans: [] },
+  { id: 122, name: "Grootspringtouw", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.62, loans: [] },
+  { id: 123, name: "Springtouw", stock: 12, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 3.21, loans: [] },
+  { id: 124, name: "Pittenzakje", stock: 43, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.98, loans: [] },
+  { id: 125, name: "Gymbal", stock: 5, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 25.95, loans: [] },
+  { id: 126, name: "Kunststof gymstok", stock: 10, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 3.57, loans: [] },
+  { id: 127, name: "Volwassen bokshandschoen", stock: 2, unit: "paar", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 48.34, loans: [] },
+  { id: 128, name: "Kinder bokshandschoenen", stock: 24, unit: "paar", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 31.37, loans: [] },
+  { id: 129, name: "Stootkussens", stock: 10, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 59.9, loans: [] },
+  { id: 130, name: "Vortex", stock: 16, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 22.93, loans: [] },
+  { id: 131, name: "Tikhesje", stock: 8, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 21.18, loans: [] },
+  { id: 132, name: "Mikschijven klittenband", stock: 8, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 27.77, loans: [] },
+  { id: 133, name: "Klittenbandhandschoen", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 134, name: "Cornhole set", stock: 2, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 135, name: "Draaitol", stock: 2, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 136, name: "Ringwerpen set", stock: 1, unit: "set", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 137, name: "Tafelcurling", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 138, name: "Werpspel (stof)", stock: 2, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 139, name: "Netjes", stock: 2, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 140, name: "Tafel jeu de boules", stock: 1, unit: "stuk", category: "Gymmateriaal", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 141, name: "Stopwatch", stock: 5, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 13.25, loans: [] },
+  { id: 142, name: "Autoband", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 143, name: "Paaltje met vlag", stock: 16, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 144, name: "Blauwe prikkers", stock: 40, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.0, loans: [] },
+  { id: 145, name: "Matjes (ikea)", stock: 8, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 1.0, loans: [] },
+  { id: 146, name: "Blikgooiset", stock: 1, unit: "set", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 34.85, loans: [] },
+  { id: 147, name: "Parachute klein", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 49.61, loans: [] },
+  { id: 148, name: "Parachute groot", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 102.55, loans: [] },
+  { id: 149, name: "Unihockey doeltje", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 30.0, loans: [] },
+  { id: 150, name: "Stoeprand set", stock: 7, unit: "set", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 175.45, loans: [] },
+  { id: 151, name: "Beweegfishes", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 20.51, loans: [] },
+  { id: 152, name: "Ballauncher", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 0, loans: [] },
+  { id: 153, name: "Zandlopers", stock: 5, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 24.81, loans: [] },
+  { id: 154, name: "Knijpfluit", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.62, loans: [] },
+  { id: 155, name: "Muziekbox", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 450.0, loans: [] },
+  { id: 156, name: "Gewichten", stock: 12, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 11.07, loans: [] },
+  { id: 157, name: "Haspel", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 100.0, loans: [] },
+  { id: 158, name: "Ballenpomp elektrisch", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 200.0, loans: [] },
+  { id: 159, name: "Stokpaardjes", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 35.0, loans: [] },
+  { id: 160, name: "Watertonnen", stock: 3, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 90.0, loans: [] },
+  { id: 161, name: "Vouwfiets", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 229.99, loans: [] },
+  { id: 162, name: "Partytent", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 100.0, loans: [] },
+  { id: 163, name: "EHBOset", stock: 2, unit: "set", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 60.0, loans: [] },
+  { id: 164, name: "Tafelrandverhoger", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 3.57, loans: [] },
+  { id: 165, name: "Movecube", stock: 3, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 30.0, loans: [] },
+  { id: 166, name: "Dobbelsteen", stock: 4, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 12.4, loans: [] },
+  { id: 167, name: "Schuif jeu de boules", stock: 2, unit: "set", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 23.6, loans: [] },
+  { id: 168, name: "Pilonhoezen set", stock: 1, unit: "set", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.5, loans: [] },
+  { id: 169, name: "Schietschijf", stock: 3, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 14.99, loans: [] },
+  { id: 170, name: "Kruisboog", stock: 3, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 9.99, loans: [] },
+  { id: 171, name: "Smartclips", stock: 2, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 2395.8, loans: [] },
+  { id: 172, name: "Fitness band licht", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 32.99, loans: [] },
+  { id: 173, name: "Fitness band medium", stock: 1, unit: "stuk", category: "Extra", status: "available", location: "Opslag", notes: "", pricePerUnit: 39.99, loans: [] }
 ];
 
 const CATS = ["Alle", "Atletiek", "Ballen", "Circus", "Racketsport", "Sport sets", "Gymmateriaal", "Extra"];
@@ -361,43 +359,103 @@ function AppHeader({ branding, role, onLogout, children, onAdd }) {
 
 // ============ LOGIN ============
 function LoginScreen({ onLogin, branding, users }) {
-  const [mode, setMode] = useState("scan"); // "scan" or "manual"
+  const [mode, setMode] = useState("scan");
   const [user, setUser] = useState(""); const [pass, setPass] = useState(""); const [error, setError] = useState("");
   const [scanBuffer, setScanBuffer] = useState("");
+  const [welcome, setWelcome] = useState(null);
   const scanInputRef = useRef(null);
-  const go = () => { const f = users.find(u=>u.username===user&&u.password===pass); if(f) onLogin(f); else setError("Onjuiste inloggegevens"); };
+  const scanTimerRef = useRef(null);
+  const go = () => { const f = users.find(u=>u.username===user&&u.password===pass); if(f) { setWelcome(f); setTimeout(()=>onLogin(f), 3000); } else setError("Onjuiste inloggegevens"); };
 
-  const handleScanInput = (val) => {
-    setScanBuffer(val);
-  };
-
-  const handleScanSubmit = () => {
-    const code = scanBuffer.trim();
-    if (!code) return;
-    const found = users.find(u => u.loginCode === code || u.loginCode === code.replace(/^0+/, ''));
-    if (found) { onLogin(found); }
-    else { setError("Badge niet herkend"); setScanBuffer(""); }
-  };
-
-  // Auto-focus scan input
-  useEffect(() => {
-    if (mode === "scan" && scanInputRef.current) {
-      scanInputRef.current.focus();
-      const interval = setInterval(() => { if (scanInputRef.current && document.activeElement !== scanInputRef.current) scanInputRef.current.focus(); }, 500);
-      return () => clearInterval(interval);
+  const tryScanLogin = (val) => {
+    const code = val.trim();
+    if (!code || code.length < 3) return;
+    const found = users.find(u => u.loginCode === code || u.loginCode === code.toUpperCase() || u.loginCode === code.replace(/^0+/, ''));
+    if (found) {
+      setWelcome(found);
+      setTimeout(() => onLogin(found), 3000);
+    } else {
+      setError("Badge niet herkend");
+      setScanBuffer("");
     }
-  }, [mode]);
+  };
 
-  // Prevent browser search on scan page
+  const handleScanChange = (val) => {
+    setScanBuffer(val);
+    // Clear any pending timer
+    if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+    // Auto-submit 150ms after last character (scanner sends chars fast, then stops)
+    if (val.trim().length >= 3) {
+      scanTimerRef.current = setTimeout(() => tryScanLogin(val), 150);
+    }
+  };
+
+  const handleScanKeyDown = (e) => {
+    // If Enter comes (some scanners send it), submit immediately
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+      tryScanLogin(scanBuffer);
+    }
+    // Block browser shortcuts
+    if (e.key === "F3" || (e.ctrlKey && e.key === "f") || (e.ctrlKey && e.key === "g")) {
+      e.preventDefault();
+    }
+  };
+
+  // Aggressive focus: capture ALL keystrokes and redirect to scan input
   useEffect(() => {
+    if (mode !== "scan" || welcome) return;
     const handler = (e) => {
-      if (mode !== "scan") return;
-      if (e.key === "F3" || (e.ctrlKey && e.key === "f") || e.key === "/") e.preventDefault();
-      if (scanInputRef.current && document.activeElement !== scanInputRef.current) scanInputRef.current.focus();
+      // Block browser search/address bar shortcuts
+      if (e.key === "F3" || e.key === "F5" || e.key === "F6" ||
+          (e.ctrlKey && (e.key === "f" || e.key === "g" || e.key === "l" || e.key === "d")) ||
+          e.key === "/" || (e.altKey && e.key === "d")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      // Force focus to scan input
+      if (scanInputRef.current && document.activeElement !== scanInputRef.current) {
+        scanInputRef.current.focus();
+        // If it's a printable character, don't lose it
+        if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          e.preventDefault();
+          setScanBuffer(prev => prev + e.key);
+          // Trigger auto-submit timer
+          if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
+          scanTimerRef.current = setTimeout(() => {
+            setScanBuffer(cur => { tryScanLogin(cur); return cur; });
+          }, 150);
+        }
+      }
     };
     window.addEventListener("keydown", handler, true);
-    return () => window.removeEventListener("keydown", handler, true);
-  }, [mode]);
+    // Also block focus leaving via click
+    const clickHandler = () => {
+      setTimeout(() => {
+        if (scanInputRef.current && document.activeElement !== scanInputRef.current) scanInputRef.current.focus();
+      }, 10);
+    };
+    window.addEventListener("click", clickHandler, true);
+    // Initial focus
+    if (scanInputRef.current) scanInputRef.current.focus();
+    const interval = setInterval(() => { if (scanInputRef.current) scanInputRef.current.focus(); }, 300);
+    return () => { window.removeEventListener("keydown", handler, true); window.removeEventListener("click", clickHandler, true); clearInterval(interval); };
+  }, [mode, welcome, users]);
+
+  // Welcome screen
+  if (welcome) return <div className="min-h-screen flex items-center justify-center p-4" style={{background: `linear-gradient(135deg, ${branding.color}20, #f8fafc, ${branding.color}15)`}}>
+    <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-10 text-center">
+      <div className="text-6xl mb-4">{"\ud83d\udc4b"}</div>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Welkom</h1>
+      <p className="text-xl font-semibold" style={{color:branding.color}}>{welcome.label}</p>
+      <p className="text-sm text-gray-400 mt-4">Even geduld...</p>
+      <div className="mt-6 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-full rounded-full animate-pulse" style={{backgroundColor:branding.color, width:"100%", animation:"shrink 3s linear forwards"}}/>
+      </div>
+      <style>{`@keyframes shrink { from { width: 100%; } to { width: 0%; } }`}</style>
+    </div>
+  </div>;
 
   return <div className="min-h-screen flex items-center justify-center p-4" style={{background: branding.loginBg ? `url(${branding.loginBg}) center/cover` : `linear-gradient(135deg, ${branding.color}15, #f8fafc, ${branding.color}10)`}}>
     <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8">
@@ -407,9 +465,8 @@ function LoginScreen({ onLogin, branding, users }) {
         <p className="text-sm text-gray-500 mt-1">{branding.subtitle}</p>
       </div>
 
-      {/* Mode toggle */}
       <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-        <button onClick={()=>{setMode("scan");setError("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="scan"?"bg-white shadow-sm text-gray-900":"text-gray-500"}`}>{"\ud83d\udcf7"} Scan badge</button>
+        <button onClick={()=>{setMode("scan");setError("");setScanBuffer("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="scan"?"bg-white shadow-sm text-gray-900":"text-gray-500"}`}>{"\ud83d\udcf7"} Scan badge</button>
         <button onClick={()=>{setMode("manual");setError("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="manual"?"bg-white shadow-sm text-gray-900":"text-gray-500"}`}>{"\ud83d\udd11"} Inloggen</button>
       </div>
 
@@ -427,11 +484,13 @@ function LoginScreen({ onLogin, branding, users }) {
             className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Wacht op scan..."
             value={scanBuffer}
-            onChange={e => handleScanInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleScanSubmit()}
+            onChange={e => handleScanChange(e.target.value)}
+            onKeyDown={handleScanKeyDown}
             autoFocus
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
           />
-          <p className="text-xs text-gray-400">Of typ je badge-code en druk Enter</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -983,7 +1042,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
           <h4 className="font-semibold text-gray-800">Data</h4>
-          <button onClick={()=>{if(confirm("Alles resetten?")){store.set("mhok-eq",INIT);store.set("mhok-bons",[]);store.set("mhok-logs",[]);store.set("mhok-brand",DEFAULT_BRANDING);window.location.reload()}}} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-medium border border-red-200 hover:bg-red-100">Reset alle data</button>
+          <button onClick={()=>{if(confirm("Alles resetten?")){store.set("mhok-eq6",INIT);store.set("mhok-bons",[]);store.set("mhok-logs",[]);store.set("mhok-brand",DEFAULT_BRANDING);window.location.reload()}}} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-medium border border-red-200 hover:bg-red-100">Reset alle data</button>
         </div>
       </div>}
     </div>
@@ -1409,7 +1468,7 @@ export default function App() {
   const [ok, setOk] = useState(false);
 
   useEffect(()=>{
-    const saved = store.get("mhok-eq");
+    const saved = store.get("mhok-eq6");
     const data = saved || INIT;
     let counter = 0;
     data.forEach(i => { counter++; if (!i.barcode) i.barcode = genItemBarcode(counter); });
@@ -1423,7 +1482,7 @@ export default function App() {
     if(u)setUser(u);
     setOk(true);
   },[]);
-  useEffect(()=>{if(ok)store.set("mhok-eq",eq)},[eq,ok]);
+  useEffect(()=>{if(ok)store.set("mhok-eq6",eq)},[eq,ok]);
   useEffect(()=>{if(ok)store.set("mhok-bons",bons)},[bons,ok]);
   useEffect(()=>{if(ok)store.set("mhok-logs",logs)},[logs,ok]);
   useEffect(()=>{if(ok)store.set("mhok-brand",branding)},[branding,ok]);
