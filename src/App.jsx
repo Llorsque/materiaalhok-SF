@@ -844,7 +844,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
         const printBadge = (u) => {
           const w = window.open('','_blank');
           const code = u.loginCode || "NOCODE";
-          const modules = encodeCode128B(code.replace(/\D/g,'')) || 0);
+          const modules = encodeCode128B(code);
           const mw = 2.5; const bw = modules.length * mw + 40; const bh = 80;
           const rects = []; let x = 20;
           for (let j = 0; j < modules.length; j++) { if (modules[j] === '1') rects.push(`<rect x="${x}" y="10" width="${mw}" height="${bh}" fill="black"/>`); x += mw; }
@@ -871,7 +871,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
           const w = window.open('','_blank');
           const badges = users.map(u => {
             const code = u.loginCode || "NOCODE";
-            const modules = encodeCode128B(code.replace(/\D/g,'')) || 0);
+            const modules = encodeCode128B(code);
             const mw = 2; const bw = modules.length * mw + 30; const bh = 60;
             const rects = []; let x = 15;
             for (let j = 0; j < modules.length; j++) { if (modules[j] === '1') rects.push(`<rect x="${x}" y="8" width="${mw}" height="${bh}" fill="black"/>`); x += mw; }
