@@ -1408,14 +1408,21 @@ export default function App() {
   const [branding, setBranding] = useState(DEFAULT_BRANDING);
   const [ok, setOk] = useState(false);
 
-  useEffect(()=>{(async()=>{(()=>{
-        const saved = await store.get("mhok-eq");
-        const data = saved || INIT;
-        let counter = 0;
-        data.forEach(i => { counter++; if (!i.barcode) i.barcode = genItemBarcode(counter); });
-        _barcodeCounter = Math.max(_barcodeCounter, counter);
-        setEq(data);
-      })();setBons(await store.get("mhok-bons")||[]);setLogs(await store.get("mhok-logs")||[]);setBranding(await store.get("mhok-brand")||DEFAULT_BRANDING);setUsers(await store.get("mhok-users")||DEFAULT_USERS);const u=await store.get("mhok-user");if(u)setUser(u);setOk(true)})()},[]);
+  useEffect(()=>{
+    const saved = store.get("mhok-eq");
+    const data = saved || INIT;
+    let counter = 0;
+    data.forEach(i => { counter++; if (!i.barcode) i.barcode = genItemBarcode(counter); });
+    _barcodeCounter = Math.max(_barcodeCounter, counter);
+    setEq(data);
+    setBons(store.get("mhok-bons")||[]);
+    setLogs(store.get("mhok-logs")||[]);
+    setBranding(store.get("mhok-brand")||DEFAULT_BRANDING);
+    setUsers(store.get("mhok-users")||DEFAULT_USERS);
+    const u=store.get("mhok-user");
+    if(u)setUser(u);
+    setOk(true);
+  },[]);
   useEffect(()=>{if(ok)store.set("mhok-eq",eq)},[eq,ok]);
   useEffect(()=>{if(ok)store.set("mhok-bons",bons)},[bons,ok]);
   useEffect(()=>{if(ok)store.set("mhok-logs",logs)},[logs,ok]);
