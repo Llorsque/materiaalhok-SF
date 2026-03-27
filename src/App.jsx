@@ -1127,6 +1127,8 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
   const [q, setQ] = useState(""); const [cat, setCat] = useState("Alle");
   const [returnBon, setReturnBon] = useState(null);
   const [scanInput, setScanInput] = useState(""); const [scanMsg, setScanMsg] = useState(null);
+  const scanTimer = useRef(null);
+  const scanValue = useRef("");
   const [done, setDone] = useState(null);
   const [loanStep, setLoanStep] = useState(1);
   const [loanScanInput, setLoanScanInput] = useState("");
@@ -1181,8 +1183,8 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
   };
 
   const handleScan=()=>{
-    if(!returnBon||!scanInput.trim())return;
-    const code=scanInput.trim();
+    if(!returnBon||!scanValue.current.trim())return;
+    const code=scanValue.current.trim();
     const matchItem=eq.find(i=>i.barcode===code||i.barcode===code.toUpperCase());
     let bonItem=matchItem?returnBon.items.find(bi=>bi.itemId===matchItem.id&&(bi.qty-(bi.returned||0))>0):null;
     if(!bonItem){const numId=parseInt(code,10);bonItem=returnBon.items.find(bi=>bi.itemId===numId&&(bi.qty-(bi.returned||0))>0);}
@@ -1194,12 +1196,12 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
       setScanMsg({ok:true,text:`\u2705 ${bonItem.itemName} (${nr}/${bonItem.qty})`});
       addLog("return",`${returnBon.number}: 1x ${bonItem.itemName} retour`);
     } else setScanMsg({ok:false,text:"\u274c Niet gevonden op deze bon"});
-    setScanInput("");setTimeout(()=>setScanMsg(null),3000);
+    setScanInput("");scanValue.current="";setTimeout(()=>setScanMsg(null),3000);
   };
 
   const pickupScan=()=>{
-    if(!returnBon||!scanInput.trim())return;
-    const code=scanInput.trim();
+    if(!returnBon||!scanValue.current.trim())return;
+    const code=scanValue.current.trim();
     const matchItem=eq.find(i=>i.barcode===code||i.barcode===code.toUpperCase());
     let bonItem=matchItem?returnBon.items.find(bi=>bi.itemId===matchItem.id&&(bi.pickedUp||0)<bi.qty):null;
     if(!bonItem){const numId=parseInt(code,10);bonItem=returnBon.items.find(bi=>bi.itemId===numId&&(bi.pickedUp||0)<bi.qty);}
@@ -1211,7 +1213,7 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
       setScanMsg({ok:true,text:`\u2705 ${bonItem.itemName} opgehaald (${nr}/${bonItem.qty})`});
       addLog("loan",`${returnBon.number}: 1x ${bonItem.itemName} opgehaald`);
     } else setScanMsg({ok:false,text:"\u274c Niet gevonden op deze bon"});
-    setScanInput("");setTimeout(()=>setScanMsg(null),3000);
+    setScanInput("");scanValue.current="";setTimeout(()=>setScanMsg(null),3000);
   };
 
   const finishPickup=()=>{
@@ -1284,28 +1286,28 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
         <button onClick={onLogout} className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm hover:bg-gray-200">Uitloggen</button>
       </div>
     </Modal>
-    {done&&<div className="max-w-xl mx-auto mt-4 px-5"><div className={`rounded-2xl px-5 py-4 text-center font-semibold border text-base ${done.action==="loan"?"bg-blue-50 text-blue-800 border-blue-200":done.action==="return"?"bg-emerald-50 text-emerald-800 border-emerald-200":done.action==="reservation"?"bg-purple-50 text-purple-800 border-purple-200":"bg-amber-50 text-amber-800 border-amber-200"}`}>{done.text}</div></div>}
-    <div className="flex-1 flex items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-4">
-        <button onClick={()=>setMode("loan")} className="w-full py-10 rounded-3xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udce4"}</span><span className="text-xl">Materiaal lenen</span>
+    {done&&<div className="max-w-4xl mx-auto mt-4 px-5"><div className={`rounded-2xl px-5 py-4 text-center font-semibold border text-base ${done.action==="loan"?"bg-blue-50 text-blue-800 border-blue-200":done.action==="return"?"bg-emerald-50 text-emerald-800 border-emerald-200":done.action==="reservation"?"bg-purple-50 text-purple-800 border-purple-200":"bg-amber-50 text-amber-800 border-amber-200"}`}>{done.text}</div></div>}
+    <div className="max-w-4xl mx-auto w-full px-5 py-8 space-y-6">
+      <div className="grid grid-cols-3 gap-4">
+        <button onClick={()=>setMode("loan")} className="py-10 rounded-3xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udce4"}</span><span className="text-lg">Materiaal lenen</span>
         </button>
-        <button onClick={()=>{setMode("loan");setIsReservation(true)}} className="w-full py-10 rounded-3xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udcc5"}</span><span className="text-xl">Reserveren</span>
+        <button onClick={()=>{setMode("loan");setIsReservation(true)}} className="py-10 rounded-3xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udcc5"}</span><span className="text-lg">Reserveren</span>
         </button>
-        <button onClick={()=>setMode("return")} className="w-full py-10 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udce5"}</span><span className="text-xl">Retourneren / Ophalen</span>
+        <button onClick={()=>setMode("return")} className="py-10 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udce5"}</span><span className="text-lg">Retour / Ophalen</span>
         </button>
-
-        {myBons.length>0&&<div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mt-6">
-          <p className="text-sm font-semibold text-gray-500 uppercase mb-3">Actieve bonnen ({myBons.length})</p>
-          <div className="space-y-3">{myBons.map(b=><div key={b.id} className={`rounded-xl p-4 border ${bonIsOverdue(b)?"border-red-200 bg-red-50":"border-gray-100 bg-gray-50"}`}>
-            <div className="flex items-center justify-between"><span className="font-mono text-sm font-bold text-blue-600">{b.number}</span><BonBadge bon={b}/></div>
-            <p className="text-sm text-gray-500 mt-2">{fmtDate(b.startDate)} {"\u2192"} {fmtDate(b.endDate)}</p>
-            <p className="text-xs text-gray-400 mt-1">{b.items.map(i=>i.itemName).join(", ")}</p>
-          </div>)}</div>
-        </div>}
       </div>
+
+      {myBons.length>0&&<div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p className="text-sm font-semibold text-gray-500 uppercase mb-3">Actieve bonnen ({myBons.length})</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{myBons.map(b=><div key={b.id} className={`rounded-xl p-4 border ${bonIsOverdue(b)?"border-red-200 bg-red-50":"border-gray-100 bg-gray-50"}`}>
+          <div className="flex items-center justify-between"><span className="font-mono text-sm font-bold text-blue-600">{b.number}</span><BonBadge bon={b}/></div>
+          <p className="text-sm text-gray-500 mt-2">{fmtDate(b.startDate)} {"\u2192"} {fmtDate(b.endDate)}</p>
+          <p className="text-xs text-gray-400 mt-1 truncate">{b.items.map(i=>`${i.qty}x ${i.itemName}`).join(", ")}</p>
+        </div>)}</div>
+      </div>}
     </div>
   </div>;
 
@@ -1495,7 +1497,7 @@ function UserView({ eq, bons, setBons, addLog, branding, onLogout, user }) {
         <div className={`rounded-2xl p-5 shadow-sm border ${isPickup?"bg-purple-50 border-purple-200":"bg-white border-gray-100"}`}>
           <label className="block text-sm font-medium text-gray-700 mb-2">{isPickup?"Scan materiaal om op te halen":"Scan materiaal om te retourneren"}</label>
           <div className="flex gap-2">
-            <input ref={scanRef} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Scan of typ code..." value={scanInput} onChange={e=>setScanInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(isPickup?pickupScan():handleScan())} autoFocus/>
+            <input ref={scanRef} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Scan materiaal..." value={scanInput} onChange={e=>{const v=e.target.value;setScanInput(v);scanValue.current=v;if(scanTimer.current)clearTimeout(scanTimer.current);if(v.trim().length>=3)scanTimer.current=setTimeout(()=>{isPickup?pickupScan():handleScan()},150)}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();if(scanTimer.current)clearTimeout(scanTimer.current);isPickup?pickupScan():handleScan()}}} autoFocus autoComplete="off"/>
             <button onClick={isPickup?pickupScan:handleScan} className={`px-5 py-3 rounded-xl text-white font-semibold text-sm ${isPickup?"bg-purple-500 hover:bg-purple-600":"bg-emerald-500 hover:bg-emerald-600"}`}>{isPickup?"\ud83d\udce4":"\ud83d\udce5"}</button>
           </div>
           {scanMsg&&<div className={`mt-3 rounded-xl px-4 py-3 text-sm font-medium ${scanMsg.ok?"bg-emerald-50 text-emerald-800":"bg-red-50 text-red-800"}`}>{scanMsg.text}</div>}
