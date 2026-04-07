@@ -185,8 +185,8 @@ const today = () => new Date().toISOString().split("T")[0];
 const isoNow = () => new Date().toISOString();
 
 const DEFAULT_USERS = [
-  { username: "admin", password: "admin123", role: "admin", label: "Beheerder", loginCode: "USR00001" },
-  { username: "gebruiker1", password: "welkom123", role: "user", label: "Gebruiker 1", loginCode: "USR00002" },
+  { username: "admin", password: "admin123", role: "admin", label: "Beheerder", loginCode: "USR00001", email: "" },
+  { username: "gebruiker1", password: "welkom123", role: "user", label: "Gebruiker 1", loginCode: "USR00002", email: "" },
 ];
 
 function genLoginCode() { return "USR" + String(Math.floor(Math.random() * 99999) + 10000); }
@@ -541,7 +541,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
   const [detail, setDetail] = useState(null); const [bonDetail, setBonDetail] = useState(null);
   const [printItems, setPrintItems] = useState([]);
   const [logFilter, setLogFilter] = useState(""); const [bonFilter, setBonFilter] = useState("active");
-  const [newUser, setNewUser] = useState({username:"",password:"",label:"",role:"user"});
+  const [newUser, setNewUser] = useState({username:"",password:"",label:"",role:"user",email:""});
   const [editUser, setEditUser] = useState(null);
   const [adminScan, setAdminScan] = useState("");
   const [adminScanMsg, setAdminScanMsg] = useState(null);
@@ -967,6 +967,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
                   <div>
                     <p className="font-semibold text-gray-900">{u.label}</p>
                     <p className="text-xs text-gray-500">@{u.username} {"\u00b7"} {u.role==="admin"?"Beheerder":"Gebruiker"} {"\u00b7"} <span className="font-mono">{u.loginCode||"geen code"}</span></p>
+                    {u.email && <p className="text-xs text-gray-400">{u.email}</p>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -989,6 +990,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
               <div><label className={lc}>Wachtwoord</label><input className={ic} value={newUser.password} onChange={e=>setNewUser(p=>({...p,password:e.target.value}))} placeholder="Kies een wachtwoord"/></div>
               <div><label className={lc}>Rol</label><select className={ic} value={newUser.role} onChange={e=>setNewUser(p=>({...p,role:e.target.value}))}><option value="user">Gebruiker</option><option value="admin">Beheerder</option></select></div>
             </div>
+            <div><label className={lc}>E-mailadres</label><input type="email" className={ic} value={newUser.email||""} onChange={e=>setNewUser(p=>({...p,email:e.target.value}))} placeholder="bijv. jan@voorbeeld.nl"/></div>
             <p className="text-xs text-gray-400">Er wordt automatisch een unieke badge-code aangemaakt</p>
             <button onClick={addUser} disabled={!newUser.username.trim()||!newUser.password.trim()||!newUser.label.trim()} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Gebruiker toevoegen</button>
           </div>
@@ -999,6 +1001,7 @@ function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBrandi
               <div><label className={lc}>Naam</label><input className={ic} value={editUser.label} onChange={e=>setEditUser(p=>({...p,label:e.target.value}))}/></div>
               <div><label className={lc}>Gebruikersnaam</label><input value={editUser.username} disabled className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500"/></div>
               <div><label className={lc}>Wachtwoord</label><input className={ic} value={editUser.password} onChange={e=>setEditUser(p=>({...p,password:e.target.value}))}/></div>
+              <div><label className={lc}>E-mailadres</label><input type="email" className={ic} value={editUser.email||""} onChange={e=>setEditUser(p=>({...p,email:e.target.value}))}/></div>
               <div><label className={lc}>Badge-code</label><div className="flex gap-2"><input value={editUser.loginCode||""} disabled className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 font-mono"/><button onClick={()=>setEditUser(p=>({...p,loginCode:genLoginCode()}))} className="px-3 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200">Nieuwe code</button></div></div>
               <div><label className={lc}>Rol</label><select className={ic} value={editUser.role} onChange={e=>setEditUser(p=>({...p,role:e.target.value}))} disabled={editUser.username==="admin"}><option value="user">Gebruiker</option><option value="admin">Beheerder</option></select></div>
               <div className="flex gap-3 pt-2">
@@ -1550,6 +1553,16 @@ export default function App() {
   const addLog=useCallback((action,detail)=>setLogs(p=>[{id:Date.now(),date:isoNow(),action,detail},...p]),[]);
   const handleLogin=(u)=>{setUser(u);store.set("mhok-user",u)};
   const handleLogout=()=>{setUser(null);store.set("mhok-user",null)};
+
+  // Auto-logout after 5 minutes of inactivity
+  useEffect(() => {
+    if (!user) return;
+    let timer = setTimeout(() => handleLogout(), 5 * 60 * 1000);
+    const reset = () => { clearTimeout(timer); timer = setTimeout(() => handleLogout(), 5 * 60 * 1000); };
+    const events = ["mousemove", "keydown", "click", "touchstart", "scroll"];
+    events.forEach(e => window.addEventListener(e, reset, true));
+    return () => { clearTimeout(timer); events.forEach(e => window.removeEventListener(e, reset, true)); };
+  }, [user]);
 
   if(!ok)return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Laden...</p></div>;
   if(!user)return <LoginScreen onLogin={handleLogin} branding={branding} users={users}/>;
