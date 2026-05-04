@@ -1,0 +1,21 @@
+# Node
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Env files (voor later, als we secrets gaan gebruiken)
+.env
+.env.local
+.env.*.local
