@@ -1,0 +1,17 @@
+{
+  "name": "materiaalhok-sf-server",
+  "version": "1.0.0",
+  "description": "Backend voor materiaalhok-SF",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
