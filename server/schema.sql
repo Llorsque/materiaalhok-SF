@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS materials (
   location      TEXT,
   notes         TEXT,
   purchase_link TEXT,
-  barcode       TEXT,
+  barcode       TEXT    UNIQUE,
   created_at    TEXT    NOT NULL,
   updated_at    TEXT    NOT NULL
 );
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS sets (
   location      TEXT,
   notes         TEXT,
   purchase_link TEXT,
-  barcode       TEXT,
+  barcode       TEXT    UNIQUE,
   created_at    TEXT    NOT NULL,
   updated_at    TEXT    NOT NULL
 );

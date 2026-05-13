@@ -20,3 +20,9 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+
+# Lokale SQLite-database
+server/database.db
+server/database.db-journal
+server/database.db-wal
+server/database.db-shm
