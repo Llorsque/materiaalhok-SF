@@ -7,7 +7,7 @@ export function AppHeader({ branding, role, onLogout, children, onAdd, user, onP
       </div>
       <div className="flex items-center gap-2">
         {onAdd && <button onClick={onAdd} className="px-4 py-2 rounded-xl text-white text-sm font-semibold hover:opacity-90" style={{backgroundColor:branding.color}}>+ Nieuw</button>}
-        {user && <button onClick={onProfileClick} className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{backgroundColor:branding.color}} title={user.label}>{user.label.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}</button>}
+        {user && <button onClick={onProfileClick} className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{backgroundColor:branding.color}} title={user.name}>{user.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}</button>}
         {!user && <button onClick={onLogout} className="px-3 py-2 rounded-xl text-xs font-medium text-gray-500 hover:bg-gray-100">Uitloggen</button>}
       </div>
     </div>

@@ -2,19 +2,20 @@ import { Stat } from "../../components/Stat";
 import { getIcon } from "../../utils/format";
 
 export function InsightsTab({ eq, bons, oneYearAgo }) {
-  // Compute usage stats from bons
+  // Compute usage stats from bons (backend-shape)
   const itemUsage = {};
   eq.forEach(i => { itemUsage[i.id] = { name: i.name, category: i.category, stock: i.stock, unit: i.unit, totalLoaned: 0, bonCount: 0, borrowers: {}, months: {} }; });
-  const yearBons = bons.filter(b => b.startDate >= oneYearAgo);
+  const yearBons = bons.filter(b => (b.start_date || "") >= oneYearAgo);
   yearBons.forEach(b => {
-    const month = b.startDate?.slice(0, 7) || "";
-    b.items.forEach(bi => {
-      if (itemUsage[bi.itemId]) {
-        const u = itemUsage[bi.itemId];
-        u.totalLoaned += bi.qty;
+    const month = b.start_date?.slice(0, 7) || "";
+    (b.items || []).forEach(bi => {
+      if (bi.material_id != null && itemUsage[bi.material_id]) {
+        const u = itemUsage[bi.material_id];
+        u.totalLoaned += bi.quantity;
         u.bonCount += 1;
-        u.borrowers[b.user] = (u.borrowers[b.user] || 0) + bi.qty;
-        if (month) u.months[month] = (u.months[month] || 0) + bi.qty;
+        const who = b.user_name || "-";
+        u.borrowers[who] = (u.borrowers[who] || 0) + bi.quantity;
+        if (month) u.months[month] = (u.months[month] || 0) + bi.quantity;
       }
     });
   });
@@ -36,7 +37,7 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
   // Monthly totals
   const monthTotals = {};
   yearBons.forEach(b => {
-    const m = b.startDate?.slice(0, 7) || "";
+    const m = b.start_date?.slice(0, 7) || "";
     if (m) { monthTotals[m] = (monthTotals[m] || 0) + 1; }
   });
   const months = Object.entries(monthTotals).sort((a, b) => a[0].localeCompare(b[0]));
@@ -45,9 +46,10 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
   // User stats
   const userStats = {};
   yearBons.forEach(b => {
-    if (!userStats[b.user]) userStats[b.user] = { bons: 0, items: 0 };
-    userStats[b.user].bons += 1;
-    userStats[b.user].items += b.items.reduce((s, i) => s + i.qty, 0);
+    const who = b.user_name || "-";
+    if (!userStats[who]) userStats[who] = { bons: 0, items: 0 };
+    userStats[who].bons += 1;
+    userStats[who].items += (b.items || []).reduce((s, i) => s + i.quantity, 0);
   });
 
   const barW = (v, max) => `${Math.max(2, (v / Math.max(1, max)) * 100)}%`;

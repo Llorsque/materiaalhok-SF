@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { CATS } from "../../data/defaults";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { getIcon } from "../../utils/format";
-import { fmtDate, today, isoNow } from "../../utils/date";
-import { genBonNr } from "../../utils/bons";
+import { fmtDate, today } from "../../utils/date";
+import { createBon } from "../../api/client";
 
-export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterials, bons, setBons, addLog, user, isReservation, onCancel, onDone }) {
+export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterials, bons, refreshBons, setBonsError, user, isReservation, onCancel, onDone }) {
   const [cart, setCart] = useState([]);
   const [endDate, setEndDate] = useState("");
   const [startDate, setStartDate] = useState(today());
@@ -13,12 +13,13 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
   const [loanStep, setLoanStep] = useState(1);
   const [loanScanInput, setLoanScanInput] = useState("");
   const [loanScanMsg, setLoanScanMsg] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null); // {message, conflicts?: [...]}
   const loanScanRef = useRef(null);
   const loanScanTimer = useRef(null);
   const loanScanValue = useRef("");
   const totalCartQty = cart.reduce((s, c) => s + c.qty, 0);
 
-  // Global key capture: redirect all keyboard input to scan field, prevent browser search
   useEffect(() => {
     const handler = (e) => {
       const activeRef = loanScanRef.current;
@@ -34,18 +35,26 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     return () => window.removeEventListener("keydown", handler, true);
   }, []);
 
+  // Simpele frontend-beschikbaarheid: trek lopende (active, niet retour) en
+  // gereserveerde quantities af van de voorraad. Geen periode-overlap — de
+  // backend doet die check definitief bij POST en geeft 409 met details.
   const getAvailForItem = (item) => {
-    let av = item.stock - (item.maintenance || 0);
-    bons.forEach(b => { if (b.status === "active") b.items.forEach(bi => { if (bi.itemId === item.id) av -= (bi.qty - (bi.returned || 0)); }); });
-    if (isReservation && startDate && endDate) {
-      bons.forEach(b => { if (b.status === "reserved" && !(b.endDate < startDate || b.startDate > endDate)) b.items.forEach(bi => { if (bi.itemId === item.id) av -= bi.qty; }); });
-    } else {
-      bons.forEach(b => { if (b.status === "reserved") b.items.forEach(bi => { if (bi.itemId === item.id) av -= bi.qty; }); });
-    }
+    let av = item.stock || 0;
+    bons.forEach((b) => {
+      if (b.status === "active") {
+        (b.items || []).forEach((bi) => {
+          if (bi.material_id === item.id && !bi.returned) av -= bi.quantity;
+        });
+      } else if (b.status === "reserved") {
+        (b.items || []).forEach((bi) => {
+          if (bi.material_id === item.id) av -= bi.quantity;
+        });
+      }
+    });
     return Math.max(0, av);
   };
 
-  const addToCart=(item)=>{const av=getAvailForItem(item);const inC=cart.find(c=>c.itemId===item.id)?.qty||0;if(inC>=av)return;if(cart.find(c=>c.itemId===item.id))setCart(p=>p.map(c=>c.itemId===item.id?{...c,qty:c.qty+1}:c));else setCart(p=>[...p,{itemId:item.id,itemName:item.name,barcode:item.barcode,unit:item.unit,qty:1,returned:0}])};
+  const addToCart=(item)=>{const av=getAvailForItem(item);const inC=cart.find(c=>c.itemId===item.id)?.qty||0;if(inC>=av)return;if(cart.find(c=>c.itemId===item.id))setCart(p=>p.map(c=>c.itemId===item.id?{...c,qty:c.qty+1}:c));else setCart(p=>[...p,{itemId:item.id,itemName:item.name,barcode:item.barcode,unit:item.unit,qty:1}])};
   const removeFromCart=(id)=>{setCart(p=>{const ex=p.find(c=>c.itemId===id);if(!ex)return p;if(ex.qty<=1)return p.filter(c=>c.itemId!==id);return p.map(c=>c.itemId===id?{...c,qty:c.qty-1}:c)})};
 
   const handleLoanScan = () => {
@@ -70,14 +79,32 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     setTimeout(() => setLoanScanMsg(null), 2500);
   };
 
-  const submitBon=()=>{
-    if(cart.length===0||!endDate)return;
-    const status = isReservation ? "reserved" : "active";
-    const bon={id:Date.now(),number:genBonNr(),user:user.label,startDate,endDate,items:cart,status,createdAt:isoNow()};
-    setBons(p=>[bon,...p]);
-    const desc=cart.map(c=>`${c.qty}x ${c.itemName}`).join(", ");
-    addLog(isReservation?"reservation":"loan",`${bon.number}: ${desc} ${isReservation?"gereserveerd":"uitgeleend"} door ${user.label} (${fmtDate(startDate)} - ${fmtDate(endDate)})`);
-    onDone({action:isReservation?"reservation":"loan",text:`${bon.number} ${isReservation?"gereserveerd":"aangemaakt"}!`});
+  const submitBon = async () => {
+    if (cart.length === 0 || !endDate || submitting) return;
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      const created = await createBon({
+        user_id: user.id,
+        start_date: startDate,
+        return_date: endDate,
+        items: cart.map((c) => ({ material_id: c.itemId, quantity: c.qty })),
+      });
+      await refreshBons();
+      onDone({
+        action: isReservation ? "reservation" : "loan",
+        text: `${created.bon_number} ${isReservation ? "gereserveerd" : "aangemaakt"}!`,
+      });
+    } catch (err) {
+      if (err.status === 409 && Array.isArray(err.details)) {
+        setSubmitError({ message: "Onvoldoende voorraad voor deze periode", conflicts: err.details });
+      } else {
+        setSubmitError({ message: err.message || "Aanmaken mislukt" });
+        setBonsError(err.message || "Aanmaken mislukt");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resSteps = isReservation ? ["Periode","Materiaal","Bevestig"] : ["Materiaal","Bevestig"];
@@ -212,8 +239,17 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         <p className="mt-1">Ophalen: {fmtDate(startDate)} {"\u2014"} Retour: {fmtDate(endDate)}</p>
       </div>}
 
-      <button onClick={submitBon} disabled={cart.length === 0 || !endDate} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-amber-500 hover:bg-amber-600"}`}>
-        {isReservation ? "\ud83d\udcc5 Reservering bevestigen" : "\ud83d\udce4 Bon aanmaken"} ({totalCartQty} items)
+      {submitError && <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4">
+        <p className="text-sm font-semibold text-red-800">{submitError.message}</p>
+        {submitError.conflicts && <ul className="mt-2 space-y-1 text-sm text-red-700">
+          {submitError.conflicts.map((c, idx) => <li key={idx}>
+            {"\u2022"} {c.material_name || c.set_name || "item"}: gevraagd {c.gevraagd}, beschikbaar {c.beschikbaar}
+          </li>)}
+        </ul>}
+      </div>}
+
+      <button onClick={submitBon} disabled={cart.length === 0 || !endDate || submitting} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-amber-500 hover:bg-amber-600"}`}>
+        {submitting ? "Bezig..." : (isReservation ? "\ud83d\udcc5 Reservering bevestigen" : "\ud83d\udce4 Bon aanmaken")} ({totalCartQty} items)
       </button>
     </div>}
 

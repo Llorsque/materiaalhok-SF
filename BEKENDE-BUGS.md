@@ -51,6 +51,9 @@ aan het relevante onderdeel werken.
   avatar rechtsboven. Voor de user-flow waar mensen snel materiaal lenen en
   daarna uitloggen is een directere uitlog-knop wenselijk. Op te lossen in
   iteratie 5 of 6.
+- **In admin → Bonnen-tab moet "Alle" de standaard filter zijn** bij openen
+  van het tabblad, niet "Afgerond" of een ander filter. Wordt opgelost in
+  iteratie 5 of 6 bij de UX-opschoning.
 
 ## Bekende geaccepteerde keuzes
 

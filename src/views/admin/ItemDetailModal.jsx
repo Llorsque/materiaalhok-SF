@@ -6,7 +6,7 @@ import { availQty, loanedQty } from "../../utils/bons";
 
 export function ItemDetailModal({ detail, setDetail, bons, eq, addLog, getItemStats, onPrint, onEdit, onDelete, onOpenBon, onRegenBarcode }) {
   return <Modal open={!!detail} onClose={()=>setDetail(null)} title="Materiaal" wide>
-    {detail&&(()=>{const av=availQty(detail,bons);const stats=getItemStats(detail.id);const itemBons=bons.filter(b=>b.status!=="completed"&&b.items.some(bi=>bi.itemId===detail.id));
+    {detail&&(()=>{const av=availQty(detail,bons);const stats=getItemStats(detail.id);const itemBons=bons.filter(b=>b.status!=="completed"&&(b.items||[]).some(bi=>bi.material_id===detail.id));
       return <div className="space-y-4">
         <div className="flex items-center gap-3">
           {detail.photo?<img src={detail.photo} className="w-16 h-16 rounded-xl object-cover" alt=""/>:<div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-2xl">{getIcon(detail.category)}</div>}

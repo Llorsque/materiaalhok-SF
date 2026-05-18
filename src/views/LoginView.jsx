@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { ConnectionBanner } from "../components/ConnectionBanner";
 
-// Bouw het user-object dat door de rest van de app gebruikt wordt. Naast de
-// pure backend-velden voegen we `label` en `loginCode` toe als alias zodat
-// bestaande code (bons referenceren `user.label`) blijft werken zonder dat we
-// die meteen overal hoeven aan te passen.
+// Pure backend-user als sessie-object. De aliases label/loginCode die in
+// sub-stap C werden toegevoegd zijn weg — bons gebruiken nu user_id/user_name.
 function buildUserObject(backendUser) {
-  return { ...backendUser, label: backendUser.name, loginCode: backendUser.login_barcode };
+  return { ...backendUser };
 }
 
 export function LoginView({ onLogin, branding, users, usersLoading, usersError, refreshUsers }) {
@@ -109,7 +107,7 @@ export function LoginView({ onLogin, branding, users, usersLoading, usersError, 
     <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-10 text-center">
       <div className="text-6xl mb-4">{"\ud83d\udc4b"}</div>
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Welkom</h1>
-      <p className="text-xl font-semibold" style={{color:branding.color}}>{welcome.label}</p>
+      <p className="text-xl font-semibold" style={{color:branding.color}}>{welcome.name}</p>
       <p className="text-sm text-gray-400 mt-4">Even geduld...</p>
       <div className="mt-6 h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div className="h-full rounded-full animate-pulse" style={{backgroundColor:branding.color, width:"100%", animation:"shrink 3s linear forwards"}}/>
