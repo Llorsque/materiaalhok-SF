@@ -80,6 +80,7 @@ function checkStock(items, period, excludeBonId = null) {
       FROM bon_items bi
       JOIN bons b ON b.id = bi.bon_id
       WHERE bi.${idCol} = ?
+        AND bi.returned = 0
         AND b.status IN ('active', 'reserved')
         AND b.start_date <= ?
         AND b.return_date >= ?
@@ -315,6 +316,77 @@ router.delete('/:id', (req, res) => {
   const info = db.prepare('DELETE FROM bons WHERE id = ?').run(req.params.id);
   if (info.changes === 0) return res.status(404).json({ error: 'bon niet gevonden' });
   res.json({ deleted: true });
+});
+
+router.post('/:id/pickup', (req, res) => {
+  const bon = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
+  if (!bon) return res.status(404).json({ error: 'bon niet gevonden' });
+  if (bon.status !== 'reserved') {
+    return res.status(409).json({
+      error: `pickup alleen toegestaan op een gereserveerde bon (huidige status: ${bon.status})`,
+    });
+  }
+
+  const tx = db.transaction(() => {
+    db.prepare('UPDATE bons SET status = ? WHERE id = ?').run('active', bon.id);
+    db.prepare('UPDATE bon_items SET picked_up = 1 WHERE bon_id = ?').run(bon.id);
+  });
+  tx();
+
+  res.json(loadBonWithItems(bon.id));
+});
+
+router.post('/:id/return', (req, res) => {
+  const bon = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
+  if (!bon) return res.status(404).json({ error: 'bon niet gevonden' });
+  if (bon.status !== 'active') {
+    return res.status(409).json({
+      error: `return alleen toegestaan op een actieve bon (huidige status: ${bon.status})`,
+    });
+  }
+
+  const allItemIds = new Set(
+    db.prepare('SELECT id FROM bon_items WHERE bon_id = ?').all(bon.id).map((r) => r.id),
+  );
+
+  const body = req.body || {};
+  let idsToMark;
+  if (!Array.isArray(body.items) || body.items.length === 0) {
+    idsToMark = [...allItemIds];
+  } else {
+    idsToMark = [];
+    for (const [idx, item] of body.items.entries()) {
+      if (!item || !Number.isInteger(item.id)) {
+        return res.status(400).json({ error: `items[${idx}]: 'id' moet een integer zijn` });
+      }
+      if (!allItemIds.has(item.id)) {
+        return res.status(400).json({
+          error: `items[${idx}]: id ${item.id} hoort niet bij bon ${bon.id}`,
+        });
+      }
+      // returned: false expliciet → item overslaan; alle andere waarden (true, undefined) → markeren
+      if (item.returned === false) continue;
+      idsToMark.push(item.id);
+    }
+  }
+
+  const now = nowDutchISO();
+  const tx = db.transaction(() => {
+    if (idsToMark.length > 0) {
+      const placeholders = idsToMark.map(() => '?').join(',');
+      db.prepare(`UPDATE bon_items SET returned = 1 WHERE id IN (${placeholders})`).run(...idsToMark);
+    }
+    const { c: openCount } = db.prepare(
+      'SELECT COUNT(*) AS c FROM bon_items WHERE bon_id = ? AND returned = 0',
+    ).get(bon.id);
+    if (openCount === 0) {
+      db.prepare('UPDATE bons SET status = ?, completed_at = ? WHERE id = ?')
+        .run('completed', now, bon.id);
+    }
+  });
+  tx();
+
+  res.json(loadBonWithItems(bon.id));
 });
 
 module.exports = router;
