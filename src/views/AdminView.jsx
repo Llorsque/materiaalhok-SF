@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
 import { AppHeader } from "../components/AppHeader";
 import { Modal } from "../components/Modal";
+import { MaterialsBanner } from "../components/MaterialsBanner";
 import { isoNow } from "../utils/date";
 import { unavailableQty, bonIsOverdue } from "../utils/bons";
 import { encodeCode128B, nextBarcode } from "../utils/barcode";
+import { createMaterial, updateMaterial, deleteMaterial } from "../api/client";
 import { AdminForm } from "./admin/AdminForm";
 import { DashboardTab } from "./admin/DashboardTab";
 import { BonsTab } from "./admin/BonsTab";
@@ -16,7 +18,7 @@ import { SettingsTab } from "./admin/SettingsTab";
 import { ItemDetailModal } from "./admin/ItemDetailModal";
 import { BonDetailModal } from "./admin/BonDetailModal";
 
-export function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, setBranding, users, setUsers, onLogout }) {
+export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, bons, setBons, logs, addLog, branding, setBranding, users, setUsers, onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [q, setQ] = useState(""); const [cat, setCat] = useState("Alle");
   const [addOpen, setAddOpen] = useState(false); const [edit, setEdit] = useState(null);
@@ -38,9 +40,54 @@ export function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, se
   const oneYearAgo = useMemo(()=>{const d=new Date();d.setFullYear(d.getFullYear()-1);return d.toISOString();},[]);
   const recentLogs = useMemo(()=>logs.filter(l=>l.date>=oneYearAgo),[logs,oneYearAgo]);
 
-  const add=(i)=>{setEq(p=>[...p,{...i,id:Date.now(),barcode:nextBarcode(),maintenance:i.maintenance||0}]);addLog("edit",`${i.name} toegevoegd`);setAddOpen(false)};
-  const save=(i)=>{setEq(p=>p.map(e=>e.id===edit.id?{...e,...i}:e));addLog("edit",`${i.name} bewerkt`);setEdit(null)};
-  const del=(id)=>{const it=eq.find(e=>e.id===id);if(!confirm(`"${it?.name}" verwijderen?`))return;setEq(p=>p.filter(e=>e.id!==id));addLog("edit",`${it.name} verwijderd`);setDetail(null)};
+  const add = async (i) => {
+    try {
+      await createMaterial({ ...i, barcode: nextBarcode() });
+      await refreshMaterials();
+      addLog("edit", `${i.name} toegevoegd`);
+      setAddOpen(false);
+    } catch (err) {
+      setMaterialsError(err.message || "Toevoegen mislukt");
+    }
+  };
+
+  const save = async (i) => {
+    try {
+      await updateMaterial(edit.id, i);
+      await refreshMaterials();
+      addLog("edit", `${i.name} bewerkt`);
+      setEdit(null);
+    } catch (err) {
+      setMaterialsError(err.message || "Opslaan mislukt");
+    }
+  };
+
+  const del = async (id) => {
+    const it = eq.find(e => e.id === id);
+    if (!confirm(`"${it?.name}" verwijderen?`)) return;
+    try {
+      await deleteMaterial(id);
+      await refreshMaterials();
+      addLog("edit", `${it.name} verwijderd`);
+      setDetail(null);
+    } catch (err) {
+      setMaterialsError(err.message || "Verwijderen mislukt");
+    }
+  };
+
+  const regenBarcode = async (id) => {
+    const nb = nextBarcode();
+    const item = eq.find(e => e.id === id);
+    try {
+      const updated = await updateMaterial(id, { barcode: nb });
+      await refreshMaterials();
+      setDetail(prev => prev && prev.id === id ? { ...prev, ...updated } : prev);
+      if (item) addLog("edit", `Barcode ${item.name} vernieuwd: ${nb}`);
+    } catch (err) {
+      setMaterialsError(err.message || "Barcode vernieuwen mislukt");
+    }
+  };
+
   const forceComplete=(bonId)=>{setBons(p=>p.map(b=>b.id===bonId?{...b,status:"completed",completedDate:isoNow(),items:b.items.map(i=>({...i,returned:i.qty}))}:b));const bon=bons.find(b=>b.id===bonId);if(bon)addLog("return",`${bon.number} geforceerd afgerond`);setBonDetail(null)};
 
   const handlePrint=(items)=>{const pw=window.open('','_blank');const svgs=items.map(i=>{
@@ -62,6 +109,7 @@ export function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, se
     </AppHeader>
 
     <div className="max-w-6xl mx-auto px-4 py-6">
+      <MaterialsBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials}/>
       {tab==="dashboard"&&<DashboardTab bons={bons} totalStock={totalStock} totalUnavail={totalUnavail} totalValue={totalValue} activeBons={activeBons} overdueBons={overdueBons} reservedBons={reservedBons} recentLogs={recentLogs} onBonClick={setBonDetail}/>}
       {tab==="bons"&&<BonsTab bons={bons} reservedBons={reservedBons} overdueBons={overdueBons} bonFilter={bonFilter} setBonFilter={setBonFilter} onBonClick={setBonDetail}/>}
       {tab==="items"&&<ItemsTab eq={eq} bons={bons} q={q} setQ={setQ} cat={cat} setCat={setCat} onItemClick={setDetail} adminScan={adminScan} setAdminScan={setAdminScan} adminScanMsg={adminScanMsg} setAdminScanMsg={setAdminScanMsg}/>}
@@ -75,7 +123,7 @@ export function AdminView({ eq, setEq, bons, setBons, logs, addLog, branding, se
     <Modal open={addOpen} onClose={()=>setAddOpen(false)} title="Nieuw materiaal"><AdminForm onSave={add} onCancel={()=>setAddOpen(false)}/></Modal>
     <Modal open={!!edit} onClose={()=>setEdit(null)} title="Bewerken">{edit&&<AdminForm item={edit} onSave={save} onCancel={()=>setEdit(null)}/>}</Modal>
 
-    <ItemDetailModal detail={detail} setDetail={setDetail} bons={bons} eq={eq} setEq={setEq} addLog={addLog} getItemStats={getItemStats} onPrint={handlePrint} onEdit={setEdit} onDelete={del} onOpenBon={setBonDetail}/>
+    <ItemDetailModal detail={detail} setDetail={setDetail} bons={bons} eq={eq} addLog={addLog} getItemStats={getItemStats} onPrint={handlePrint} onEdit={setEdit} onDelete={del} onOpenBon={setBonDetail} onRegenBarcode={regenBarcode}/>
     <BonDetailModal bonDetail={bonDetail} setBonDetail={setBonDetail} setBons={setBons} addLog={addLog} onForceComplete={forceComplete}/>
   </div>;
 }

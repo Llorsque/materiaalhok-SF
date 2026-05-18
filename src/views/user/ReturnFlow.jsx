@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { BonBadge } from "../../components/BonBadge";
+import { MaterialsBanner } from "../../components/MaterialsBanner";
 import { isoNow } from "../../utils/date";
 import { bonComplete, bonRemaining } from "../../utils/bons";
 
-export function ReturnFlow({ eq, bons, setBons, addLog, user, onCancel, onDone }) {
+export function ReturnFlow({ eq, materialsLoading, materialsError, refreshMaterials, bons, setBons, addLog, user, onCancel, onDone }) {
   const [returnBon, setReturnBon] = useState(null);
   const [scanInput, setScanInput] = useState(""); const [scanMsg, setScanMsg] = useState(null);
   const scanRef = useRef(null);
@@ -81,6 +82,7 @@ export function ReturnFlow({ eq, bons, setBons, addLog, user, onCancel, onDone }
       <h2 className="text-lg font-bold text-gray-900">Kies een bon</h2><div className="w-16"/>
     </div></div>
     <div className="max-w-lg mx-auto px-4 py-6 space-y-3">
+      <MaterialsBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials}/>
       {myBons.length===0?<div className="text-center py-12"><p className="text-4xl mb-3">{"\ud83d\udce6"}</p><p className="text-gray-500">Geen actieve bonnen</p></div>
       :myBons.map(b=><div key={b.id} onClick={()=>setReturnBon(b)} className={`bg-white rounded-2xl px-5 py-4 shadow-sm border cursor-pointer hover:shadow-md ${b.status==="reserved"?"border-purple-200 hover:border-purple-300":"border-gray-100 hover:border-gray-200"}`}>
         <div className="flex items-center justify-between"><div><div className="flex items-center gap-2"><span className="font-mono text-sm font-bold text-blue-600">{b.number}</span><BonBadge bon={b}/></div><p className="text-xs text-gray-500 mt-1">{b.items.map(i=>i.itemName).join(", ")}</p></div>
@@ -97,6 +99,7 @@ export function ReturnFlow({ eq, bons, setBons, addLog, user, onCancel, onDone }
       <h2 className="text-lg font-bold text-gray-900">{isPickup?"Ophalen":"Retour"} {returnBon.number}</h2><div className="w-16"/>
     </div></div>
     <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+      <MaterialsBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials}/>
       <div className={`rounded-2xl p-5 shadow-sm border ${isPickup?"bg-purple-50 border-purple-200":"bg-white border-gray-100"}`}>
         <label className="block text-sm font-medium text-gray-700 mb-2">{isPickup?"Scan materiaal om op te halen":"Scan materiaal om te retourneren"}</label>
         <div className="flex gap-2">

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { CATS } from "../../data/defaults";
+import { MaterialsBanner } from "../../components/MaterialsBanner";
 import { getIcon } from "../../utils/format";
 import { fmtDate, today, isoNow } from "../../utils/date";
 import { genBonNr } from "../../utils/bons";
 
-export function LoanFlow({ eq, bons, setBons, addLog, user, isReservation, onCancel, onDone }) {
+export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterials, bons, setBons, addLog, user, isReservation, onCancel, onDone }) {
   const [cart, setCart] = useState([]);
   const [endDate, setEndDate] = useState("");
   const [startDate, setStartDate] = useState(today());
@@ -102,6 +103,10 @@ export function LoanFlow({ eq, bons, setBons, addLog, user, isReservation, onCan
           {s<totalSteps&&<div className={`flex-1 h-0.5 rounded ${loanStep>s?isReservation?"bg-purple-600":"bg-blue-600":"bg-gray-200"}`}/>}
         </div>;})}
       </div>
+    </div>
+
+    <div className="max-w-xl mx-auto px-5 pt-4">
+      <MaterialsBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials}/>
     </div>
 
     {/* RESERVATION STEP 1: Pick dates first */}

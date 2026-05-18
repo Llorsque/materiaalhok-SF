@@ -3,9 +3,8 @@ import { BarcodeSVG } from "../../components/BarcodeSVG";
 import { BonCard } from "../../components/BonCard";
 import { fmt, getIcon } from "../../utils/format";
 import { availQty, loanedQty } from "../../utils/bons";
-import { nextBarcode } from "../../utils/barcode";
 
-export function ItemDetailModal({ detail, setDetail, bons, eq, setEq, addLog, getItemStats, onPrint, onEdit, onDelete, onOpenBon }) {
+export function ItemDetailModal({ detail, setDetail, bons, eq, addLog, getItemStats, onPrint, onEdit, onDelete, onOpenBon, onRegenBarcode }) {
   return <Modal open={!!detail} onClose={()=>setDetail(null)} title="Materiaal" wide>
     {detail&&(()=>{const av=availQty(detail,bons);const stats=getItemStats(detail.id);const itemBons=bons.filter(b=>b.status!=="completed"&&b.items.some(bi=>bi.itemId===detail.id));
       return <div className="space-y-4">
@@ -26,7 +25,7 @@ export function ItemDetailModal({ detail, setDetail, bons, eq, setEq, addLog, ge
         {itemBons.length>0&&<div><p className="text-xs font-semibold text-gray-500 uppercase mb-2">Bonnen met dit item</p>{itemBons.map(b=><BonCard key={b.id} bon={b} onClick={()=>{setDetail(null);onOpenBon(b)}} showUser/>)}</div>}
         <div className="flex gap-2 pt-2">
           <button onClick={()=>{onEdit(detail);setDetail(null)}} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Bewerken</button>
-          <button onClick={()=>{const nb=nextBarcode();setEq(p=>p.map(e=>e.id===detail.id?{...e,barcode:nb}:e));setDetail(prev=>({...prev,barcode:nb}));addLog("edit",`Barcode ${detail.name} vernieuwd: ${nb}`)}} className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-200" title="Nieuwe barcode">{"\ud83d\udd04"}</button>
+          <button onClick={()=>onRegenBarcode(detail.id)} className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-200" title="Nieuwe barcode">{"\ud83d\udd04"}</button>
           <button onClick={()=>onPrint([detail])} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm">{"\ud83d\udda8"}</button>
           <button onClick={()=>onDelete(detail.id)} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm border border-red-200">Verwijder</button>
         </div>
