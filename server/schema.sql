@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS bons (
   start_date    TEXT,
   return_date   TEXT,
   status        TEXT    NOT NULL CHECK (status IN ('active', 'reserved', 'completed')),
+  notes         TEXT,
   created_at    TEXT    NOT NULL,
   completed_at  TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

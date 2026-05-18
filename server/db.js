@@ -48,4 +48,10 @@ db.pragma('foreign_keys = ON');
 const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
 db.exec(schema);
 
+// Lichte kolom-migratie: voeg ontbrekende kolommen toe voor bestaande DBs.
+const bonsCols = db.pragma('table_info(bons)').map((c) => c.name);
+if (bonsCols.length > 0 && !bonsCols.includes('notes')) {
+  db.exec('ALTER TABLE bons ADD COLUMN notes TEXT');
+}
+
 module.exports = db;
