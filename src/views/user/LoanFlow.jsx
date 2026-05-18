@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { CATS } from "../../data/defaults";
-import { MaterialsBanner } from "../../components/MaterialsBanner";
+import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { getIcon } from "../../utils/format";
 import { fmtDate, today, isoNow } from "../../utils/date";
 import { genBonNr } from "../../utils/bons";
@@ -106,7 +106,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     </div>
 
     <div className="max-w-xl mx-auto px-5 pt-4">
-      <MaterialsBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials}/>
+      <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
     </div>
 
     {/* RESERVATION STEP 1: Pick dates first */}

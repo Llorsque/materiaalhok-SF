@@ -9,6 +9,11 @@ aan het relevante onderdeel werken.
 - **Badge-scan login submit na 3 karakters in plaats van na volledige code of Enter.**
   Pre-existing, bestond al voor de herstructurering. Niet acuut, te fixen wanneer
   we de loginflow opnieuw bekijken (iteratie 4 — authenticatie).
+- **Pseudo-login zonder wachtwoord-validatie.** Bestaande gebruikers in de
+  backend kunnen inloggen door alleen hun e-mailadres in te vullen; het
+  wachtwoord wordt niet gecontroleerd. Tijdelijke maatregel tot iteratie 5
+  waar echte authenticatie via bcrypt-validatie wordt gebouwd. Tool mag
+  absoluut niet op afstand bereikbaar zijn tot iteratie 5 is afgerond.
 
 ## UI
 
@@ -31,6 +36,21 @@ aan het relevante onderdeel werken.
   worden gewist.** Alleen door het hele veld te selecteren en te overschrijven
   werkt het. Waarschijnlijk een minimum-validatie die het veld terugzet zodra
   het leeg dreigt te worden. Wordt opgeruimd in iteratie 6.
+
+## Foutafhandeling UI
+
+- **ConnectionBanner toont validatiefouten van de backend** (zoals "email bestaat
+  al") samen met de algemene verbinding-foutmelding "Geen verbinding met de
+  server". Dit is misleidend — server-validatiefouten zouden een eigen, kortere
+  foutweergave moeten krijgen. Op te lossen in iteratie 5 wanneer auth-flow
+  opnieuw wordt bekeken.
+
+## UX verbeterpunten
+
+- **De uitloggen-knop is voor users moeilijk vindbaar** — zit verstopt achter de
+  avatar rechtsboven. Voor de user-flow waar mensen snel materiaal lenen en
+  daarna uitloggen is een directere uitlog-knop wenselijk. Op te lossen in
+  iteratie 5 of 6.
 
 ## Bekende geaccepteerde keuzes
 

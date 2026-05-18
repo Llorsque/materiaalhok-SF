@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { DEFAULT_USERS, DEFAULT_BRANDING } from "./data/defaults";
+import { DEFAULT_BRANDING } from "./data/defaults";
 import { store } from "./utils/storage";
 import { isoNow } from "./utils/date";
 import { genItemBarcode, syncBarcodeCounter } from "./utils/barcode";
-import { getMaterials } from "./api/client";
+import { getMaterials, getUsers, getSets } from "./api/client";
 import { LoginView } from "./views/LoginView";
 import { AdminView } from "./views/AdminView";
 import { UserView } from "./views/UserView";
@@ -13,21 +13,24 @@ export default function App() {
   const [eq, setEq] = useState([]);
   const [materialsLoading, setMaterialsLoading] = useState(false);
   const [materialsError, setMaterialsError] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState(null);
+  const [sets, setSets] = useState([]);
+  const [setsLoading, setSetsLoading] = useState(false);
+  const [setsError, setSetsError] = useState(null);
   const [bons, setBons] = useState([]);
   const [logs, setLogs] = useState([]);
-  const [users, setUsers] = useState(DEFAULT_USERS);
   const [branding, setBranding] = useState(DEFAULT_BRANDING);
   const [ok, setOk] = useState(false);
 
-  // 200ms-throttle: setMaterialsLoading(true) gebeurt pas als de fetch langer
-  // duurt dan dat, zodat snelle responses geen flikkering veroorzaken.
+  // 200ms-throttle: zet loading pas op true als de fetch langer duurt,
+  // zodat snelle responses geen flikkering geven.
   const refreshMaterials = useCallback(async () => {
     setMaterialsError(null);
     const t = setTimeout(() => setMaterialsLoading(true), 200);
     try {
       const data = await getMaterials();
-      // Frontend-only barcode-counter blijft in gebruik voor nieuwe items
-      // zonder barcode (cf. iteratie-6 notitie).
       let counter = 0;
       data.forEach((i) => { counter++; if (!i.barcode) i.barcode = genItemBarcode(counter); });
       syncBarcodeCounter(counter);
@@ -40,28 +43,55 @@ export default function App() {
     }
   }, []);
 
-  // localStorage blijft (voorlopig) bron voor bons/logs/branding/users/user.
-  // mhok-eq6 wordt bewust NIET meer ingelezen — backend is bron van waarheid.
+  const refreshUsers = useCallback(async () => {
+    setUsersError(null);
+    const t = setTimeout(() => setUsersLoading(true), 200);
+    try {
+      setUsers(await getUsers());
+    } catch (err) {
+      setUsersError(err.message || "Onbekende fout");
+    } finally {
+      clearTimeout(t);
+      setUsersLoading(false);
+    }
+  }, []);
+
+  const refreshSets = useCallback(async () => {
+    setSetsError(null);
+    const t = setTimeout(() => setSetsLoading(true), 200);
+    try {
+      setSets(await getSets());
+    } catch (err) {
+      setSetsError(err.message || "Onbekende fout");
+    } finally {
+      clearTimeout(t);
+      setSetsLoading(false);
+    }
+  }, []);
+
+  // localStorage blijft bron voor bons/logs/branding/user.
+  // mhok-eq6 en mhok-users worden bewust NIET meer ingelezen.
   useEffect(() => {
     setBons(store.get("mhok-bons") || []);
     setLogs(store.get("mhok-logs") || []);
     setBranding(store.get("mhok-brand") || DEFAULT_BRANDING);
-    setUsers(store.get("mhok-users") || DEFAULT_USERS);
     const u = store.get("mhok-user");
     if (u) setUser(u);
     setOk(true);
   }, []);
 
-  // Eerste materials-fetch zodra de app klaar is met initialiseren.
+  // Eerste backend-fetch zodra de app klaar is met initialiseren.
   useEffect(() => {
-    if (ok) refreshMaterials();
-  }, [ok, refreshMaterials]);
+    if (!ok) return;
+    refreshMaterials();
+    refreshUsers();
+    refreshSets();
+  }, [ok, refreshMaterials, refreshUsers, refreshSets]);
 
-  // mhok-eq6 wordt bewust niet meer naar localStorage geschreven.
+  // mhok-eq6 en mhok-users worden bewust niet meer naar localStorage geschreven.
   useEffect(() => { if (ok) store.set("mhok-bons", bons); }, [bons, ok]);
   useEffect(() => { if (ok) store.set("mhok-logs", logs); }, [logs, ok]);
   useEffect(() => { if (ok) store.set("mhok-brand", branding); }, [branding, ok]);
-  useEffect(() => { if (ok) store.set("mhok-users", users); }, [users, ok]);
 
   const addLog = useCallback((action, detail) => setLogs(p => [{ id: Date.now(), date: isoNow(), action, detail }, ...p]), []);
   const handleLogin = (u) => { setUser(u); store.set("mhok-user", u); };
@@ -78,7 +108,7 @@ export default function App() {
   }, [user]);
 
   if (!ok) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Laden...</p></div>;
-  if (!user) return <LoginView onLogin={handleLogin} branding={branding} users={users}/>;
-  if (user.role === "admin") return <AdminView eq={eq} setEq={setEq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} bons={bons} setBons={setBons} logs={logs} addLog={addLog} branding={branding} setBranding={setBranding} users={users} setUsers={setUsers} onLogout={handleLogout}/>;
-  return <UserView eq={eq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} bons={bons} setBons={setBons} addLog={addLog} branding={branding} onLogout={handleLogout} user={user}/>;
+  if (!user) return <LoginView onLogin={handleLogin} branding={branding} users={users} usersLoading={usersLoading} usersError={usersError} refreshUsers={refreshUsers}/>;
+  if (user.role === "admin") return <AdminView eq={eq} setEq={setEq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} users={users} setUsers={setUsers} usersLoading={usersLoading} usersError={usersError} setUsersError={setUsersError} refreshUsers={refreshUsers} sets={sets} bons={bons} setBons={setBons} logs={logs} addLog={addLog} branding={branding} setBranding={setBranding} onLogout={handleLogout}/>;
+  return <UserView eq={eq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} sets={sets} bons={bons} setBons={setBons} addLog={addLog} branding={branding} onLogout={handleLogout} user={user}/>;
 }

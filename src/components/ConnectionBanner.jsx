@@ -1,8 +1,9 @@
-// Toont een laad- of foutbalk bovenaan een scherm dat materialen gebruikt.
-// Wordt door MaterialsBanner consumers binnen AdminView, LoanFlow en
-// ReturnFlow gerenderd; ze geven de centrale loading/error-state mee.
+// Toont een laad- of foutbalk bovenaan een scherm dat backend-data gebruikt.
+// `resource` bepaalt het label in de loading-indicator ("Materialen laden...",
+// "Gebruikers laden...", etc.). De foutboodschap is generiek omdat de oorzaak
+// (server bereikbaar of niet) los staat van de resource.
 
-export function MaterialsBanner({ loading, error, onRetry }) {
+export function ConnectionBanner({ loading, error, onRetry, resource = "Materialen" }) {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-4">
@@ -28,7 +29,7 @@ export function MaterialsBanner({ loading, error, onRetry }) {
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-3 mb-4 text-sm text-blue-700 flex items-center gap-3">
         <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
-        Materialen laden...
+        {resource} laden...
       </div>
     );
   }

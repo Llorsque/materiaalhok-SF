@@ -1,21 +1,50 @@
 import { useState, useEffect, useRef } from "react";
+import { ConnectionBanner } from "../components/ConnectionBanner";
 
-export function LoginView({ onLogin, branding, users }) {
+// Bouw het user-object dat door de rest van de app gebruikt wordt. Naast de
+// pure backend-velden voegen we `label` en `loginCode` toe als alias zodat
+// bestaande code (bons referenceren `user.label`) blijft werken zonder dat we
+// die meteen overal hoeven aan te passen.
+function buildUserObject(backendUser) {
+  return { ...backendUser, label: backendUser.name, loginCode: backendUser.login_barcode };
+}
+
+export function LoginView({ onLogin, branding, users, usersLoading, usersError, refreshUsers }) {
   const [mode, setMode] = useState("scan");
-  const [user, setUser] = useState(""); const [pass, setPass] = useState(""); const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const [pass, setPass] = useState("");
+  const [error, setError] = useState("");
   const [scanBuffer, setScanBuffer] = useState("");
   const [welcome, setWelcome] = useState(null);
   const scanInputRef = useRef(null);
   const scanTimerRef = useRef(null);
-  const go = () => { const f = users.find(u=>u.username===user&&u.password===pass); if(f) { setWelcome(f); setTimeout(()=>onLogin(f), 3000); } else setError("Onjuiste inloggegevens"); };
+
+  // PSEUDO-LOGIN: alleen e-mailadres wordt gecontroleerd, wachtwoord nog niet.
+  // Echte bcrypt-validatie volgt in iteratie 5.
+  const go = () => {
+    const trimmed = email.trim().toLowerCase();
+    const found = users.find(u => u.email && u.email.toLowerCase() === trimmed);
+    if (found) {
+      const u = buildUserObject(found);
+      setWelcome(u);
+      setTimeout(() => onLogin(u), 3000);
+    } else {
+      setError("Onbekend e-mailadres");
+    }
+  };
 
   const tryScanLogin = (val) => {
     const code = val.trim();
     if (!code || code.length < 3) return;
-    const found = users.find(u => u.loginCode === code || u.loginCode === code.toUpperCase() || u.loginCode === code.replace(/^0+/, ''));
+    const found = users.find(u =>
+      u.login_barcode === code ||
+      u.login_barcode === code.toUpperCase() ||
+      u.login_barcode === code.replace(/^0+/, '')
+    );
     if (found) {
-      setWelcome(found);
-      setTimeout(() => onLogin(found), 3000);
+      const u = buildUserObject(found);
+      setWelcome(u);
+      setTimeout(() => onLogin(u), 3000);
     } else {
       setError("Badge niet herkend");
       setScanBuffer("");
@@ -24,22 +53,18 @@ export function LoginView({ onLogin, branding, users }) {
 
   const handleScanChange = (val) => {
     setScanBuffer(val);
-    // Clear any pending timer
     if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-    // Auto-submit 150ms after last character (scanner sends chars fast, then stops)
     if (val.trim().length >= 3) {
       scanTimerRef.current = setTimeout(() => tryScanLogin(val), 150);
     }
   };
 
   const handleScanKeyDown = (e) => {
-    // If Enter comes (some scanners send it), submit immediately
     if (e.key === "Enter") {
       e.preventDefault();
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
       tryScanLogin(scanBuffer);
     }
-    // Block browser shortcuts
     if (e.key === "F3" || (e.ctrlKey && e.key === "f") || (e.ctrlKey && e.key === "g")) {
       e.preventDefault();
     }
@@ -49,21 +74,17 @@ export function LoginView({ onLogin, branding, users }) {
   useEffect(() => {
     if (mode !== "scan" || welcome) return;
     const handler = (e) => {
-      // Block browser search/address bar shortcuts
       if (e.key === "F3" || e.key === "F5" || e.key === "F6" ||
           (e.ctrlKey && (e.key === "f" || e.key === "g" || e.key === "l" || e.key === "d")) ||
           e.key === "/" || (e.altKey && e.key === "d")) {
         e.preventDefault();
         e.stopPropagation();
       }
-      // Force focus to scan input
       if (scanInputRef.current && document.activeElement !== scanInputRef.current) {
         scanInputRef.current.focus();
-        // If it's a printable character, don't lose it
         if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
           e.preventDefault();
           setScanBuffer(prev => prev + e.key);
-          // Trigger auto-submit timer
           if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
           scanTimerRef.current = setTimeout(() => {
             setScanBuffer(cur => { tryScanLogin(cur); return cur; });
@@ -72,14 +93,12 @@ export function LoginView({ onLogin, branding, users }) {
       }
     };
     window.addEventListener("keydown", handler, true);
-    // Also block focus leaving via click
     const clickHandler = () => {
       setTimeout(() => {
         if (scanInputRef.current && document.activeElement !== scanInputRef.current) scanInputRef.current.focus();
       }, 10);
     };
     window.addEventListener("click", clickHandler, true);
-    // Initial focus
     if (scanInputRef.current) scanInputRef.current.focus();
     const interval = setInterval(() => { if (scanInputRef.current) scanInputRef.current.focus(); }, 300);
     return () => { window.removeEventListener("keydown", handler, true); window.removeEventListener("click", clickHandler, true); clearInterval(interval); };
@@ -106,6 +125,8 @@ export function LoginView({ onLogin, branding, users }) {
         <h1 className="text-2xl font-bold text-gray-900">{branding.title}</h1>
         <p className="text-sm text-gray-500 mt-1">{branding.subtitle}</p>
       </div>
+
+      <ConnectionBanner loading={usersLoading} error={usersError} onRetry={refreshUsers} resource="Gebruikers"/>
 
       <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
         <button onClick={()=>{setMode("scan");setError("");setScanBuffer("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="scan"?"bg-white shadow-sm text-gray-900":"text-gray-500"}`}>{"\ud83d\udcf7"} Scan badge</button>
@@ -136,8 +157,8 @@ export function LoginView({ onLogin, branding, users }) {
         </div>
       ) : (
         <div className="space-y-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Gebruikersnaam</label><input className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={user} onChange={e=>{setUser(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()}/></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Wachtwoord</label><input type="password" className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={pass} onChange={e=>{setPass(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()}/></div>
+          <div><label className="block text-sm font-medium text-gray-700 mb-1.5">E-mailadres</label><input type="email" className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={email} onChange={e=>{setEmail(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()} autoComplete="email"/></div>
+          <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Wachtwoord</label><input type="password" className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={pass} onChange={e=>{setPass(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()} autoComplete="current-password"/></div>
           <button onClick={go} className="w-full py-3 rounded-xl text-white font-semibold hover:opacity-90" style={{backgroundColor:branding.color}}>Inloggen</button>
         </div>
       )}

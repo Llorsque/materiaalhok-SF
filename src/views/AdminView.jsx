@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { AppHeader } from "../components/AppHeader";
 import { Modal } from "../components/Modal";
-import { MaterialsBanner } from "../components/MaterialsBanner";
+import { ConnectionBanner } from "../components/ConnectionBanner";
 import { isoNow } from "../utils/date";
 import { unavailableQty, bonIsOverdue } from "../utils/bons";
 import { encodeCode128B, nextBarcode } from "../utils/barcode";
@@ -18,14 +18,14 @@ import { SettingsTab } from "./admin/SettingsTab";
 import { ItemDetailModal } from "./admin/ItemDetailModal";
 import { BonDetailModal } from "./admin/BonDetailModal";
 
-export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, bons, setBons, logs, addLog, branding, setBranding, users, setUsers, onLogout }) {
+export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, users, setUsers, usersLoading, usersError, setUsersError, refreshUsers, sets, bons, setBons, logs, addLog, branding, setBranding, onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [q, setQ] = useState(""); const [cat, setCat] = useState("Alle");
   const [addOpen, setAddOpen] = useState(false); const [edit, setEdit] = useState(null);
   const [detail, setDetail] = useState(null); const [bonDetail, setBonDetail] = useState(null);
   const [printItems, setPrintItems] = useState([]);
   const [logFilter, setLogFilter] = useState(""); const [bonFilter, setBonFilter] = useState("active");
-  const [newUser, setNewUser] = useState({username:"",password:"",label:"",role:"user",email:""});
+  const [newUser, setNewUser] = useState({name:"",email:"",password:"",role:"user"});
   const [editUser, setEditUser] = useState(null);
   const [adminScan, setAdminScan] = useState("");
   const [adminScanMsg, setAdminScanMsg] = useState(null);
@@ -109,15 +109,20 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     </AppHeader>
 
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <MaterialsBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials}/>
+      <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
       {tab==="dashboard"&&<DashboardTab bons={bons} totalStock={totalStock} totalUnavail={totalUnavail} totalValue={totalValue} activeBons={activeBons} overdueBons={overdueBons} reservedBons={reservedBons} recentLogs={recentLogs} onBonClick={setBonDetail}/>}
       {tab==="bons"&&<BonsTab bons={bons} reservedBons={reservedBons} overdueBons={overdueBons} bonFilter={bonFilter} setBonFilter={setBonFilter} onBonClick={setBonDetail}/>}
       {tab==="items"&&<ItemsTab eq={eq} bons={bons} q={q} setQ={setQ} cat={cat} setCat={setCat} onItemClick={setDetail} adminScan={adminScan} setAdminScan={setAdminScan} adminScanMsg={adminScanMsg} setAdminScanMsg={setAdminScanMsg}/>}
       {tab==="insights"&&<InsightsTab eq={eq} bons={bons} oneYearAgo={oneYearAgo}/>}
       {tab==="log"&&<LogTab recentLogs={recentLogs} logFilter={logFilter} setLogFilter={setLogFilter}/>}
       {tab==="barcodes"&&<BarcodesTab eq={eq} printItems={printItems} setPrintItems={setPrintItems} onPrint={handlePrint}/>}
-      {tab==="users"&&<UsersTab users={users} setUsers={setUsers} addLog={addLog} newUser={newUser} setNewUser={setNewUser} editUser={editUser} setEditUser={setEditUser}/>}
+      {tab==="users"&&<UsersTab users={users} usersLoading={usersLoading} usersError={usersError} setUsersError={setUsersError} refreshUsers={refreshUsers} addLog={addLog} newUser={newUser} setNewUser={setNewUser} editUser={editUser} setEditUser={setEditUser}/>}
       {tab==="settings"&&<SettingsTab branding={branding} setBranding={setBranding}/>}
+    </div>
+
+    {/* Tijdelijke waarschuwing tot iteratie 5 — echte bcrypt-validatie volgt daar. */}
+    <div className="bg-amber-50 border-t border-amber-200 text-xs text-amber-800 text-center py-2 px-4">
+      {"\u26a0\ufe0f"} Test-modus actief — wachtwoorden worden nog niet gevalideerd (wordt opgelost in iteratie 5)
     </div>
 
     <Modal open={addOpen} onClose={()=>setAddOpen(false)} title="Nieuw materiaal"><AdminForm onSave={add} onCancel={()=>setAddOpen(false)}/></Modal>
