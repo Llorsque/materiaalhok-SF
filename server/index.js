@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 require('./db');
 const materialsRouter = require('./routes/materials');
 const setsRouter = require('./routes/sets');
@@ -8,6 +9,8 @@ const bonsRouter = require('./routes/bons');
 const app = express();
 const PORT = 3001;
 
+// Sta alleen de Vite dev-server expliciet toe — niet '*', dat is te open.
+app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
 app.get('/', (req, res) => {
