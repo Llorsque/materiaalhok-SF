@@ -5,7 +5,7 @@ const { nowDutchISO, handleUniqueError } = require('../utils');
 const router = express.Router();
 
 const OPTIONAL_STRING_FIELDS = [
-  'category', 'unit', 'location', 'notes', 'purchase_link', 'barcode',
+  'category', 'composition', 'location', 'notes', 'purchase_link', 'barcode',
 ];
 
 function validateInput(input, existing) {
@@ -34,17 +34,6 @@ function validateInput(input, existing) {
     out.stock = existing.stock;
   }
 
-  if (input.type !== undefined) {
-    if (input.type !== 'uniek' && input.type !== 'bulk') {
-      return { error: "veld 'type' moet 'uniek' of 'bulk' zijn" };
-    }
-    out.type = input.type;
-  } else if (isCreate) {
-    out.type = 'bulk';
-  } else {
-    out.type = existing.type;
-  }
-
   for (const field of OPTIONAL_STRING_FIELDS) {
     if (input[field] !== undefined) {
       if (input[field] !== null && typeof input[field] !== 'string') {
@@ -62,13 +51,13 @@ function validateInput(input, existing) {
 }
 
 router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT * FROM materials ORDER BY id').all();
+  const rows = db.prepare('SELECT * FROM sets ORDER BY id').all();
   res.json(rows);
 });
 
 router.get('/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM materials WHERE id = ?').get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'materiaal niet gevonden' });
+  const row = db.prepare('SELECT * FROM sets WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'set niet gevonden' });
   res.json(row);
 });
 
@@ -80,25 +69,24 @@ router.post('/', (req, res) => {
   let info;
   try {
     info = db.prepare(`
-      INSERT INTO materials
-        (name, category, stock, unit, type, location, notes, purchase_link, barcode, created_at, updated_at)
+      INSERT INTO sets
+        (name, category, stock, composition, location, notes, purchase_link, barcode, created_at, updated_at)
       VALUES
-        (@name, @category, @stock, @unit, @type, @location, @notes, @purchase_link, @barcode, @created_at, @updated_at)
+        (@name, @category, @stock, @composition, @location, @notes, @purchase_link, @barcode, @created_at, @updated_at)
     `).run({ ...value, created_at: now, updated_at: now });
   } catch (err) {
     if (handleUniqueError(err, res)) return;
     throw err;
   }
 
-  const created = db.prepare('SELECT * FROM materials WHERE id = ?').get(info.lastInsertRowid);
+  const created = db.prepare('SELECT * FROM sets WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(created);
 });
 
 router.put('/:id', (req, res) => {
-  const existing = db.prepare('SELECT * FROM materials WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'materiaal niet gevonden' });
+  const existing = db.prepare('SELECT * FROM sets WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'set niet gevonden' });
 
-  // Beschermde velden: id en created_at zijn niet aanpasbaar via PUT.
   const { id: _ignoreId, created_at: _ignoreCreatedAt, ...body } = req.body || {};
 
   const { error, value } = validateInput(body, existing);
@@ -107,10 +95,10 @@ router.put('/:id', (req, res) => {
   const now = nowDutchISO();
   try {
     db.prepare(`
-      UPDATE materials SET
-        name = @name, category = @category, stock = @stock, unit = @unit,
-        type = @type, location = @location, notes = @notes,
-        purchase_link = @purchase_link, barcode = @barcode, updated_at = @updated_at
+      UPDATE sets SET
+        name = @name, category = @category, stock = @stock, composition = @composition,
+        location = @location, notes = @notes, purchase_link = @purchase_link,
+        barcode = @barcode, updated_at = @updated_at
       WHERE id = @id
     `).run({ ...value, updated_at: now, id: existing.id });
   } catch (err) {
@@ -118,18 +106,18 @@ router.put('/:id', (req, res) => {
     throw err;
   }
 
-  const updated = db.prepare('SELECT * FROM materials WHERE id = ?').get(existing.id);
+  const updated = db.prepare('SELECT * FROM sets WHERE id = ?').get(existing.id);
   res.json(updated);
 });
 
 router.delete('/:id', (req, res) => {
   try {
-    const info = db.prepare('DELETE FROM materials WHERE id = ?').run(req.params.id);
-    if (info.changes === 0) return res.status(404).json({ error: 'materiaal niet gevonden' });
+    const info = db.prepare('DELETE FROM sets WHERE id = ?').run(req.params.id);
+    if (info.changes === 0) return res.status(404).json({ error: 'set niet gevonden' });
     res.json({ deleted: true });
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
-      return res.status(409).json({ error: 'materiaal is in gebruik op een bon en kan niet verwijderd worden' });
+      return res.status(409).json({ error: 'set is in gebruik op een bon en kan niet verwijderd worden' });
     }
     throw err;
   }

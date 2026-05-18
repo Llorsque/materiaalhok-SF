@@ -1,6 +1,8 @@
 const express = require('express');
 require('./db');
 const materialsRouter = require('./routes/materials');
+const setsRouter = require('./routes/sets');
+const usersRouter = require('./routes/users');
 
 const app = express();
 const PORT = 3001;
@@ -16,6 +18,8 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/materials', materialsRouter);
+app.use('/api/sets', setsRouter);
+app.use('/api/users', usersRouter);
 
 app.listen(PORT, () => {
   console.log(`Server luistert op http://localhost:${PORT}`);
