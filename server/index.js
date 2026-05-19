@@ -6,6 +6,7 @@ const setsRouter = require('./routes/sets');
 const usersRouter = require('./routes/users');
 const bonsRouter = require('./routes/bons');
 const authRouter = require('./routes/auth');
+const importRouter = require('./routes/import');
 
 const app = express();
 const PORT = 3001;
@@ -27,6 +28,7 @@ app.use('/api/sets', setsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/bons', bonsRouter);
 app.use('/api', authRouter);
+app.use('/api/import', importRouter);
 
 app.listen(PORT, () => {
   console.log(`Server luistert op http://localhost:${PORT}`);

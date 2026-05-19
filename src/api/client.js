@@ -60,6 +60,26 @@ export const deleteUser = (id)       => request('DELETE', `/api/users/${id}`);
 export const login          = (email, password) => request('POST', '/api/login', { email, password });
 export const loginByBarcode = (login_barcode)   => request('POST', '/api/login/scan', { login_barcode });
 
+// --- Import ----------------------------------------------------------------
+// Excel-upload gaat via multipart/form-data, dus omzeilt het JSON-pad.
+async function uploadFile(path, file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch(`${BASE_URL}${path}`, { method: 'POST', body: fd });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const message = (data && data.error) || `HTTP ${res.status}`;
+    const err = new Error(message);
+    err.status = res.status;
+    err.details = data;
+    throw err;
+  }
+  return data;
+}
+export const importPreview = (file) => uploadFile('/api/import/preview', file);
+export const importExecute = (file) => uploadFile('/api/import/execute', file);
+
 // --- Bons ------------------------------------------------------------------
 export const getBons    = ()         => request('GET',    '/api/bons');
 export const getBon     = (id)       => request('GET',    `/api/bons/${id}`);

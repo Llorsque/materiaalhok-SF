@@ -55,6 +55,30 @@ veertien dagen historie.
 7. **Backups en admin-onderhoudsfuncties afronden** — geplande backups,
    herstelknop, leesbare foutafhandeling.
 
+## Iteratie 6 — import-strategie
+
+- **Excel-bestand direct uploaden (.xlsx).** Drie tabbladen verwacht: "Losse
+  materialen", "Sets", "Nog op te lossen". Tabblad 3 wordt door de import-tool
+  genegeerd.
+- **Eén knop importeert tabblad 1 en 2 tegelijk.** Geen aparte upload per
+  tabblad.
+- **Preview vóór import met expliciete bevestiging.** Gebruiker ziet wat er
+  toegevoegd en bijgewerkt gaat worden, en moet daarna bevestigen.
+- **Geen WIS-modus.** Import werkt slim: rij met bestaande barcode in de
+  barcode-kolom → update bestaand materiaal. Geen barcode of onbekende barcode
+  → nieuw materiaal. Items in de database die niet in Excel staan: blijven met
+  rust.
+- **Iteratie 6-minimum is alleen de eerste import-richting (Excel → database).**
+  Export-functie en re-import met barcode-matching komen in een latere iteratie.
+- **Barcode-format: Code 128.** Structuur `M-XXXX` voor materialen, `S-XXXX`
+  voor sets. Automatisch oplopend. Generator controleert altijd op uniciteit en
+  telt door bij botsing.
+- **Alleen admins kunnen importeren.** Knop in admin-Instellingen of een
+  vergelijkbare admin-sectie.
+- **Validatie streng op structuur, tolerant op rijen.** Tabbladen en
+  kolomnamen moeten kloppen, anders stopt de import. Foute rijen worden
+  overgeslagen en gerapporteerd in de preview.
+
 ## Wat we expliciet niet doen (nu)
 
 - Eigen desktop-app op de scan-laptop (browser in kioskmodus volstaat).

@@ -14,10 +14,11 @@ import { LogTab } from "./admin/LogTab";
 import { BarcodesTab } from "./admin/BarcodesTab";
 import { UsersTab } from "./admin/UsersTab";
 import { SettingsTab } from "./admin/SettingsTab";
+import { ImportTab } from "./admin/ImportTab";
 import { ItemDetailModal } from "./admin/ItemDetailModal";
 import { BonDetailModal } from "./admin/BonDetailModal";
 
-export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, users, setUsers, usersLoading, usersError, setUsersError, refreshUsers, sets, bons, bonsLoading, bonsError, setBonsError, refreshBons, logs, addLog, branding, setBranding, onLogout }) {
+export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, users, setUsers, usersLoading, usersError, setUsersError, refreshUsers, sets, refreshSets, bons, bonsLoading, bonsError, setBonsError, refreshBons, logs, addLog, branding, setBranding, onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [q, setQ] = useState(""); const [cat, setCat] = useState("Alle");
   const [addOpen, setAddOpen] = useState(false); const [edit, setEdit] = useState(null);
@@ -155,7 +156,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     return { count, borrowers };
   };
 
-  const tabs=[["dashboard","Dashboard"],["bons","Bonnen"],["items","Materiaal"],["insights","Inzichten"],["log","Logboek"],["barcodes","Barcodes"],["users","Gebruikers"],["settings","Instellingen"]];
+  const tabs=[["dashboard","Dashboard"],["bons","Bonnen"],["items","Materiaal"],["insights","Inzichten"],["log","Logboek"],["barcodes","Barcodes"],["users","Gebruikers"],["import","Import"],["settings","Instellingen"]];
 
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
     <AppHeader branding={branding} role="admin" onLogout={onLogout} onAdd={()=>setAddOpen(true)}>
@@ -173,6 +174,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       {tab==="log"&&<LogTab recentLogs={recentLogs} logFilter={logFilter} setLogFilter={setLogFilter}/>}
       {tab==="barcodes"&&<BarcodesTab eq={eq} printItems={printItems} setPrintItems={setPrintItems} onPrint={handlePrint}/>}
       {tab==="users"&&<UsersTab users={users} usersLoading={usersLoading} usersError={usersError} setUsersError={setUsersError} refreshUsers={refreshUsers} addLog={addLog} newUser={newUser} setNewUser={setNewUser} editUser={editUser} setEditUser={setEditUser}/>}
+      {tab==="import"&&<ImportTab refreshMaterials={refreshMaterials} refreshSets={refreshSets}/>}
       {tab==="settings"&&<SettingsTab branding={branding} setBranding={setBranding}/>}
     </div>
 
