@@ -1,51 +1,59 @@
 import { useState, useEffect, useRef } from "react";
 import { ConnectionBanner } from "../components/ConnectionBanner";
+import { login as apiLogin, loginByBarcode } from "../api/client";
 
-// Pure backend-user als sessie-object. De aliases label/loginCode die in
-// sub-stap C werden toegevoegd zijn weg — bons gebruiken nu user_id/user_name.
-function buildUserObject(backendUser) {
-  return { ...backendUser };
-}
-
-export function LoginView({ onLogin, branding, users, usersLoading, usersError, refreshUsers }) {
+export function LoginView({ onLogin, branding, usersLoading, usersError, refreshUsers }) {
   const [mode, setMode] = useState("scan");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [scanBuffer, setScanBuffer] = useState("");
   const [welcome, setWelcome] = useState(null);
   const scanInputRef = useRef(null);
   const scanTimerRef = useRef(null);
+  const scanInFlightRef = useRef(false);
 
-  // PSEUDO-LOGIN: alleen e-mailadres wordt gecontroleerd, wachtwoord nog niet.
-  // Echte bcrypt-validatie volgt in iteratie 5.
-  const go = () => {
-    const trimmed = email.trim().toLowerCase();
-    const found = users.find(u => u.email && u.email.toLowerCase() === trimmed);
-    if (found) {
-      const u = buildUserObject(found);
-      setWelcome(u);
-      setTimeout(() => onLogin(u), 3000);
-    } else {
-      setError("Onbekend e-mailadres");
+  const finishLogin = (u) => {
+    setWelcome(u);
+    setTimeout(() => onLogin(u), 3000);
+  };
+
+  const go = async () => {
+    if (busy) return;
+    setError("");
+    setBusy(true);
+    try {
+      const u = await apiLogin(email.trim(), pass);
+      finishLogin(u);
+    } catch (err) {
+      if (err.status === 401) {
+        setError("E-mailadres of wachtwoord onjuist");
+      } else {
+        setError(err.message || "Inloggen mislukt");
+      }
+    } finally {
+      setBusy(false);
     }
   };
 
-  const tryScanLogin = (val) => {
+  const tryScanLogin = async (val) => {
     const code = val.trim();
     if (!code || code.length < 3) return;
-    const found = users.find(u =>
-      u.login_barcode === code ||
-      u.login_barcode === code.toUpperCase() ||
-      u.login_barcode === code.replace(/^0+/, '')
-    );
-    if (found) {
-      const u = buildUserObject(found);
-      setWelcome(u);
-      setTimeout(() => onLogin(u), 3000);
-    } else {
-      setError("Badge niet herkend");
+    if (scanInFlightRef.current) return;
+    scanInFlightRef.current = true;
+    try {
+      const u = await loginByBarcode(code);
+      finishLogin(u);
+    } catch (err) {
+      if (err.status === 401) {
+        setError("Badge niet herkend");
+      } else {
+        setError(err.message || "Inloggen mislukt");
+      }
       setScanBuffer("");
+    } finally {
+      scanInFlightRef.current = false;
     }
   };
 
@@ -100,7 +108,7 @@ export function LoginView({ onLogin, branding, users, usersLoading, usersError, 
     if (scanInputRef.current) scanInputRef.current.focus();
     const interval = setInterval(() => { if (scanInputRef.current) scanInputRef.current.focus(); }, 300);
     return () => { window.removeEventListener("keydown", handler, true); window.removeEventListener("click", clickHandler, true); clearInterval(interval); };
-  }, [mode, welcome, users]);
+  }, [mode, welcome]);
 
   // Welcome screen
   if (welcome) return <div className="min-h-screen flex items-center justify-center p-4" style={{background: `linear-gradient(135deg, ${branding.color}20, #f8fafc, ${branding.color}15)`}}>
@@ -157,7 +165,7 @@ export function LoginView({ onLogin, branding, users, usersLoading, usersError, 
         <div className="space-y-4">
           <div><label className="block text-sm font-medium text-gray-700 mb-1.5">E-mailadres</label><input type="email" className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={email} onChange={e=>{setEmail(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()} autoComplete="email"/></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Wachtwoord</label><input type="password" className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={pass} onChange={e=>{setPass(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()} autoComplete="current-password"/></div>
-          <button onClick={go} className="w-full py-3 rounded-xl text-white font-semibold hover:opacity-90" style={{backgroundColor:branding.color}}>Inloggen</button>
+          <button onClick={go} disabled={busy} className="w-full py-3 rounded-xl text-white font-semibold hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed" style={{backgroundColor:branding.color}}>{busy ? "Bezig..." : "Inloggen"}</button>
         </div>
       )}
     </div>

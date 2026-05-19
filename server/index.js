@@ -5,6 +5,7 @@ const materialsRouter = require('./routes/materials');
 const setsRouter = require('./routes/sets');
 const usersRouter = require('./routes/users');
 const bonsRouter = require('./routes/bons');
+const authRouter = require('./routes/auth');
 
 const app = express();
 const PORT = 3001;
@@ -25,6 +26,7 @@ app.use('/api/materials', materialsRouter);
 app.use('/api/sets', setsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/bons', bonsRouter);
+app.use('/api', authRouter);
 
 app.listen(PORT, () => {
   console.log(`Server luistert op http://localhost:${PORT}`);

@@ -56,6 +56,10 @@ export const createUser = (data)     => request('POST',   '/api/users', data);
 export const updateUser = (id, data) => request('PUT',    `/api/users/${id}`, data);
 export const deleteUser = (id)       => request('DELETE', `/api/users/${id}`);
 
+// --- Auth ------------------------------------------------------------------
+export const login          = (email, password) => request('POST', '/api/login', { email, password });
+export const loginByBarcode = (login_barcode)   => request('POST', '/api/login/scan', { login_barcode });
+
 // --- Bons ------------------------------------------------------------------
 export const getBons    = ()         => request('GET',    '/api/bons');
 export const getBon     = (id)       => request('GET',    `/api/bons/${id}`);

@@ -176,10 +176,6 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       {tab==="settings"&&<SettingsTab branding={branding} setBranding={setBranding}/>}
     </div>
 
-    <div className="bg-amber-50 border-t border-amber-200 text-xs text-amber-800 text-center py-2 px-4">
-      {"\u26a0\ufe0f"} Test-modus actief — wachtwoorden worden nog niet gevalideerd (wordt opgelost in iteratie 5)
-    </div>
-
     <Modal open={addOpen} onClose={()=>setAddOpen(false)} title="Nieuw materiaal"><AdminForm onSave={add} onCancel={()=>setAddOpen(false)}/></Modal>
     <Modal open={!!edit} onClose={()=>setEdit(null)} title="Bewerken">{edit&&<AdminForm item={edit} onSave={save} onCancel={()=>setEdit(null)}/>}</Modal>
 

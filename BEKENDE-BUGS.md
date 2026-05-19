@@ -9,11 +9,16 @@ aan het relevante onderdeel werken.
 - **Badge-scan login submit na 3 karakters in plaats van na volledige code of Enter.**
   Pre-existing, bestond al voor de herstructurering. Niet acuut, te fixen wanneer
   we de loginflow opnieuw bekijken (iteratie 4 — authenticatie).
-- **Pseudo-login zonder wachtwoord-validatie.** Bestaande gebruikers in de
-  backend kunnen inloggen door alleen hun e-mailadres in te vullen; het
-  wachtwoord wordt niet gecontroleerd. Tijdelijke maatregel tot iteratie 5
-  waar echte authenticatie via bcrypt-validatie wordt gebouwd. Tool mag
-  absoluut niet op afstand bereikbaar zijn tot iteratie 5 is afgerond.
+
+## API beveiliging
+
+- **API endpoints (GET/POST/PUT/DELETE op materials, sets, users, bons) zijn nog
+  niet beschermd door auth-middleware.** Wie de backend direct kan bereiken
+  (lokaal of via netwerk) kan zonder login data lezen en wijzigen. Acceptabel in
+  lokale single-laptop-context, maar niet zodra de tool via Cloudflare Tunnel of
+  een ander netwerk-pad bereikbaar wordt. Moet opgelost zijn voor iteratie 7
+  (Cloudflare). Concreet: sessie-token bij login, auth-middleware op alle
+  data-endpoints.
 
 ## UI
 
