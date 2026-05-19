@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { AppHeader } from "../components/AppHeader";
 import { Modal } from "../components/Modal";
 import { ConnectionBanner } from "../components/ConnectionBanner";
+import { BackupBanner } from "../components/BackupBanner";
 import { unavailableQty, bonIsOverdue } from "../utils/bons";
 import { encodeCode128B, nextBarcode } from "../utils/barcode";
 import { createMaterial, updateMaterial, deleteMaterial, updateBon, deleteBon, returnBon } from "../api/client";
@@ -165,6 +166,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     </AppHeader>
 
     <div className="max-w-6xl mx-auto px-4 py-6">
+      <BackupBanner/>
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
       {tab==="dashboard"&&<DashboardTab bons={bons} totalStock={totalStock} totalUnavail={totalUnavail} totalValue={totalValue} activeBons={activeBons} overdueBons={overdueBons} reservedBons={reservedBons} recentLogs={recentLogs} onBonClick={setBonDetail}/>}
       {tab==="bons"&&<BonsTab bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} reservedBons={reservedBons} overdueBons={overdueBons} bonFilter={bonFilter} setBonFilter={setBonFilter} onBonClick={setBonDetail}/>}

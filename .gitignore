@@ -26,3 +26,6 @@ server/database.db
 server/database.db-journal
 server/database.db-wal
 server/database.db-shm
+
+# Lokale backups (per laptop, niet in repo)
+server/backups/

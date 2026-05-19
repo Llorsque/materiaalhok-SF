@@ -95,6 +95,24 @@ veertien dagen historie.
 - **Visuele stijl van de label** (kleur, layout, lettertype): keuze van de
   admin in Dymo, geen tool-bemoeienis.
 
+## Iteratie 7-minimum — backup en kioskmodus
+
+- **Dagelijkse backup van het databasebestand.** Opslag: in een map `backups/`
+  naast de database op dezelfde laptop. Niet naar netwerk of cloud.
+- **Frequentie:** één keer per dag om 03:00. **Bewaartermijn:** 14 dagen —
+  oudere backups worden automatisch verwijderd.
+- **"Haal gemiste taken in"-instelling in Windows-taakplanner** zorgt dat de
+  backup alsnog draait wanneer de laptop op het geplande tijdstip uitstond.
+- **Backup-status wordt bijgehouden:** zowel in een logbestand
+  `backups/backup.log` als in een database-tabel `backup_status` (of een
+  vergelijkbaar JSON-bestand met de laatste status).
+- **In de admin verschijnt een waarschuwingsbanner** wanneer de laatste backup
+  ouder is dan 48 uur of gefaald is, met een knop "Maak nu een handmatige
+  backup".
+- **Kioskmodus is geen code-werk in onze tool** maar Windows-configuratie. We
+  schrijven een installatiehandleiding voor de Windows-laptop die later wordt
+  gevolgd.
+
 ## Wat we expliciet niet doen (nu)
 
 - Eigen desktop-app op de scan-laptop (browser in kioskmodus volstaat).

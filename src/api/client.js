@@ -80,6 +80,10 @@ async function uploadFile(path, file) {
 export const importPreview = (file) => uploadFile('/api/import/preview', file);
 export const importExecute = (file) => uploadFile('/api/import/execute', file);
 
+// --- Backup ----------------------------------------------------------------
+export const getBackupStatus = () => request('GET',  '/api/backup/status');
+export const runBackup       = () => request('POST', '/api/backup/run');
+
 // --- Bons ------------------------------------------------------------------
 export const getBons    = ()         => request('GET',    '/api/bons');
 export const getBon     = (id)       => request('GET',    `/api/bons/${id}`);
