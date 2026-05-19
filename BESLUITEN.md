@@ -79,6 +79,22 @@ veertien dagen historie.
   kolomnamen moeten kloppen, anders stopt de import. Foute rijen worden
   overgeslagen en gerapporteerd in de preview.
 
+## Iteratie 6 — barcode-export voor Dymo
+
+- **Tool genereert geen labels zelf.** De admin beheert een eigen Dymo-template
+  in Dymo Label Software (Dymo LabelWriter 550, label 36×89mm).
+- **Tool exporteert CSV** voor import in Dymo Label Software.
+- **In admin → Barcodes komt een selectie-pagina** met vinkjes per item,
+  filters (type, categorie, zoeken op naam) en bulk-acties (selecteer alles,
+  deselecteer alles).
+- **Geen aantal-veld in de tool.** Eén CSV-rij per geselecteerd item. Aantal
+  labels regelt de admin per item in Dymo Label Software bij het printen.
+- **CSV-kolommen:** Barcode, Naam, Categorie, Locatie, Type.
+- **Directe download bij klik op export-knop**, met bestandsnaam
+  `barcodes-export-YYYY-MM-DD-HHMM.csv`.
+- **Visuele stijl van de label** (kleur, layout, lettertype): keuze van de
+  admin in Dymo, geen tool-bemoeienis.
+
 ## Wat we expliciet niet doen (nu)
 
 - Eigen desktop-app op de scan-laptop (browser in kioskmodus volstaat).
