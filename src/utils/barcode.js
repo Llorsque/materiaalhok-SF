@@ -21,3 +21,19 @@ export function genItemBarcode(n) { return "MAT" + String(n).padStart(5, "0"); }
 let _barcodeCounter = 200;
 export function nextBarcode() { _barcodeCounter++; return genItemBarcode(_barcodeCounter); }
 export function syncBarcodeCounter(n) { _barcodeCounter = Math.max(_barcodeCounter, n); }
+
+// Spiegelt server/utils.js#generateBarcode('M'): pakt het hoogste bestaande
+// M-XXXX-nummer in `materials` en geeft de volgende terug (min. 4 cijfers).
+export function nextMaterialBarcode(materials) {
+  let max = 0;
+  for (const m of materials || []) {
+    const match = String(m.barcode || "").match(/^M-(\d+)$/);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > max) max = n;
+    }
+  }
+  const next = max + 1;
+  const pad = Math.max(4, String(next).length);
+  return `M-${String(next).padStart(pad, "0")}`;
+}

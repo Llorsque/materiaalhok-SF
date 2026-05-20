@@ -41,23 +41,6 @@ aan het relevante onderdeel werken.
 - **Totaalaantal materialen niet zichtbaar in admin.** Onduidelijk of dit ooit
   ergens stond. Niet acuut. Mee te nemen wanneer we de admin-dashboard verbeteren.
 
-## Materialen-formulier (admin)
-
-- **Categorie-veld toont nog de oude hardgecodeerde lijst** (Sport sets, Atletiek,
-  etc.) in plaats van de afgesproken nieuwe lijst (Atletiek, Racketsport,
-  Balsporten, Circus, Doelgericht spel, Avontuurlijk, Hulpmiddelen,
-  Aangepast/speciaal, Vervoer & opslag). Wordt opgeruimd in iteratie 6.
-- **Velden voor "type" (uniek/bulk), "barcode" en "inkooplink" ontbreken in het
-  formulier**, terwijl de backend deze ondersteunt. Backend geeft defaults
-  (type=bulk, barcode=null). Wordt opgeruimd in iteratie 6.
-- **Velden voor "Prijs/stuk" en "Onderhoud" zijn nog zichtbaar maar worden door
-  de backend niet opgeslagen** (bewuste keuze conform BESLUITEN.md). Verwijderen
-  of verbergen in iteratie 6.
-- **Bij het wijzigen van de voorraad kan het oude getal niet met backspace
-  worden gewist.** Alleen door het hele veld te selecteren en te overschrijven
-  werkt het. Waarschijnlijk een minimum-validatie die het veld terugzet zodra
-  het leeg dreigt te worden. Wordt opgeruimd in iteratie 6.
-
 ## Foutafhandeling UI
 
 - **ConnectionBanner toont validatiefouten van de backend** (zoals "email bestaat

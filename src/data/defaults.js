@@ -1,4 +1,4 @@
-export const CATS = ["Alle", "Atletiek", "Ballen", "Circus", "Racketsport", "Sport sets", "Gymmateriaal", "Extra"];
+export const CATS = ["Alle", "Atletiek", "Racketsport", "Balsporten", "Circus", "Doelgericht spel", "Avontuurlijk", "Hulpmiddelen", "Aangepast/speciaal", "Vervoer & opslag", "Nog te bepalen"];
 
 export const DEFAULT_USERS = [
   { username: "admin", password: "admin123", role: "admin", label: "Beheerder", loginCode: "USR00001", email: "" },

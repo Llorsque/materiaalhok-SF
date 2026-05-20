@@ -4,7 +4,7 @@ import { Modal } from "../components/Modal";
 import { ConnectionBanner } from "../components/ConnectionBanner";
 import { BackupBanner } from "../components/BackupBanner";
 import { unavailableQty, bonIsOverdue } from "../utils/bons";
-import { encodeCode128B, nextBarcode } from "../utils/barcode";
+import { encodeCode128B, nextMaterialBarcode } from "../utils/barcode";
 import { createMaterial, updateMaterial, deleteMaterial, updateBon, deleteBon, returnBon } from "../api/client";
 import { AdminForm } from "./admin/AdminForm";
 import { DashboardTab } from "./admin/DashboardTab";
@@ -43,7 +43,9 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
 
   const add = async (i) => {
     try {
-      await createMaterial({ ...i, barcode: nextBarcode() });
+      const manualBarcode = typeof i.barcode === "string" ? i.barcode.trim() : "";
+      const barcode = manualBarcode || nextMaterialBarcode(eq);
+      await createMaterial({ ...i, barcode });
       await refreshMaterials();
       addLog("edit", `${i.name} toegevoegd`);
       setAddOpen(false);
@@ -54,7 +56,15 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
 
   const save = async (i) => {
     try {
-      await updateMaterial(edit.id, i);
+      const payload = { ...i };
+      // Lege barcode in edit-modus = behoud bestaande (backend gebruikt existing
+      // als veld undefined is).
+      if (typeof payload.barcode !== "string" || payload.barcode.trim() === "") {
+        delete payload.barcode;
+      } else {
+        payload.barcode = payload.barcode.trim();
+      }
+      await updateMaterial(edit.id, payload);
       await refreshMaterials();
       addLog("edit", `${i.name} bewerkt`);
       setEdit(null);
@@ -77,7 +87,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   };
 
   const regenBarcode = async (id) => {
-    const nb = nextBarcode();
+    const nb = nextMaterialBarcode(eq);
     const item = eq.find(e => e.id === id);
     try {
       const updated = await updateMaterial(id, { barcode: nb });
