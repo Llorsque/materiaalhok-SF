@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { DEFAULT_BRANDING } from "./data/defaults";
-import { store } from "./utils/storage";
+import { store, session } from "./utils/storage";
 import { isoNow } from "./utils/date";
 import { genItemBarcode, syncBarcodeCounter } from "./utils/barcode";
 import { getMaterials, getUsers, getSets, getBons } from "./api/client";
 import { LoginView } from "./views/LoginView";
 import { AdminView } from "./views/AdminView";
 import { UserView } from "./views/UserView";
+
+// Auto-logout bij inactiviteit. Verlaag tijdelijk naar bv. 30 * 1000 om te testen.
+const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -25,6 +28,7 @@ export default function App() {
   const [logs, setLogs] = useState([]);
   const [branding, setBranding] = useState(DEFAULT_BRANDING);
   const [ok, setOk] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   // 200ms-throttle: zet loading pas op true als de fetch langer duurt,
   // zodat snelle responses geen flikkering geven.
@@ -84,12 +88,16 @@ export default function App() {
     }
   }, []);
 
-  // localStorage blijft bron voor logs/branding/user.
+  // localStorage blijft bron voor logs/branding.
+  // mhok-user staat in sessionStorage zodat de sessie eindigt bij browser/laptop-herstart.
   // mhok-eq6, mhok-users en mhok-bons worden bewust NIET meer ingelezen.
   useEffect(() => {
     setLogs(store.get("mhok-logs") || []);
     setBranding(store.get("mhok-brand") || DEFAULT_BRANDING);
-    const u = store.get("mhok-user");
+    // Eenmalig opruimen van oude localStorage-user uit pre-sessionStorage-versies,
+    // zodat een upgrade niet stilletjes blijft inloggen.
+    try { localStorage.removeItem("mhok-user"); } catch {}
+    const u = session.get("mhok-user");
     if (u) setUser(u);
     setOk(true);
   }, []);
@@ -108,21 +116,22 @@ export default function App() {
   useEffect(() => { if (ok) store.set("mhok-brand", branding); }, [branding, ok]);
 
   const addLog = useCallback((action, detail) => setLogs(p => [{ id: Date.now(), date: isoNow(), action, detail }, ...p]), []);
-  const handleLogin = (u) => { setUser(u); store.set("mhok-user", u); };
-  const handleLogout = () => { setUser(null); store.set("mhok-user", null); };
+  const handleLogin = (u) => { setSessionExpired(false); setUser(u); session.set("mhok-user", u); };
+  const handleLogout = () => { setUser(null); session.remove("mhok-user"); };
+  const handleAutoLogout = () => { setUser(null); session.remove("mhok-user"); setSessionExpired(true); };
 
-  // Auto-logout after 5 minutes of inactivity
+  // Auto-logout na INACTIVITY_TIMEOUT_MS — reset bij muis/toets/klik/scroll/touch.
   useEffect(() => {
     if (!user) return;
-    let timer = setTimeout(() => handleLogout(), 5 * 60 * 1000);
-    const reset = () => { clearTimeout(timer); timer = setTimeout(() => handleLogout(), 5 * 60 * 1000); };
+    let timer = setTimeout(handleAutoLogout, INACTIVITY_TIMEOUT_MS);
+    const reset = () => { clearTimeout(timer); timer = setTimeout(handleAutoLogout, INACTIVITY_TIMEOUT_MS); };
     const events = ["mousemove", "keydown", "click", "touchstart", "scroll"];
     events.forEach(e => window.addEventListener(e, reset, true));
     return () => { clearTimeout(timer); events.forEach(e => window.removeEventListener(e, reset, true)); };
   }, [user]);
 
   if (!ok) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Laden...</p></div>;
-  if (!user) return <LoginView onLogin={handleLogin} branding={branding} usersLoading={usersLoading} usersError={usersError} refreshUsers={refreshUsers}/>;
+  if (!user) return <LoginView onLogin={handleLogin} branding={branding} usersLoading={usersLoading} usersError={usersError} refreshUsers={refreshUsers} sessionExpired={sessionExpired} onDismissSessionExpired={()=>setSessionExpired(false)}/>;
   if (user.role === "admin") return <AdminView eq={eq} setEq={setEq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} users={users} setUsers={setUsers} usersLoading={usersLoading} usersError={usersError} setUsersError={setUsersError} refreshUsers={refreshUsers} sets={sets} refreshSets={refreshSets} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} setBonsError={setBonsError} refreshBons={refreshBons} logs={logs} addLog={addLog} branding={branding} setBranding={setBranding} onLogout={handleLogout}/>;
   return <UserView eq={eq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} sets={sets} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} setBonsError={setBonsError} refreshBons={refreshBons} addLog={addLog} branding={branding} onLogout={handleLogout} user={user}/>;
 }

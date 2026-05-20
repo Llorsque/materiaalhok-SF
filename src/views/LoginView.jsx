@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ConnectionBanner } from "../components/ConnectionBanner";
 import { login as apiLogin, loginByBarcode } from "../api/client";
 
-export function LoginView({ onLogin, branding, usersLoading, usersError, refreshUsers }) {
+export function LoginView({ onLogin, branding, usersLoading, usersError, refreshUsers, sessionExpired, onDismissSessionExpired }) {
   const [mode, setMode] = useState("scan");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
@@ -133,6 +133,11 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
       </div>
 
       <ConnectionBanner loading={usersLoading} error={usersError} onRetry={refreshUsers} resource="Gebruikers"/>
+
+      {sessionExpired && <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-sm text-amber-800 flex items-start justify-between gap-3">
+        <span>Sessie verlopen {"\u2014"} log opnieuw in</span>
+        <button onClick={onDismissSessionExpired} className="text-amber-700 hover:text-amber-900 font-bold leading-none" aria-label="Sluiten">{"\u00d7"}</button>
+      </div>}
 
       <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
         <button onClick={()=>{setMode("scan");setError("");setScanBuffer("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="scan"?"bg-white shadow-sm text-gray-900":"text-gray-500"}`}>{"\ud83d\udcf7"} Scan badge</button>
