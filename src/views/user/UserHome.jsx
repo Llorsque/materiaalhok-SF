@@ -5,16 +5,24 @@ import { BonBadge } from "../../components/BonBadge";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { fmtDate } from "../../utils/date";
 import { bonIsOverdue, itemDisplayName } from "../../utils/bons";
+import { MyBonDetailModal } from "./MyBonDetailModal";
+
+function itemLabel(it) {
+  const name = itemDisplayName(it);
+  return it.set_id != null ? `${name} (set)` : name;
+}
 
 function shortItems(bon, limit = 4) {
   const items = bon.items || [];
-  const labels = items.slice(0, limit).map((it) => `${it.quantity}x ${itemDisplayName(it)}`);
+  const labels = items.slice(0, limit).map((it) => `${it.quantity}x ${itemLabel(it)}`);
   if (items.length > limit) labels.push(`+${items.length - limit} meer`);
   return labels.join(", ");
 }
 
-export function UserHome({ user, branding, bons, bonsLoading, bonsError, refreshBons, onLogout, onModeChange, done }) {
+export function UserHome({ user, branding, bons, bonsLoading, bonsError, refreshBons, onLogout, onModeChange, done, sets }) {
   const [showProfile, setShowProfile] = useState(false);
+  const [selectedBonId, setSelectedBonId] = useState(null);
+  const selectedBon = selectedBonId != null ? bons.find((b) => b.id === selectedBonId) : null;
 
   const myBons = bons.filter((b) => b.user_id === user.id && b.status !== "completed");
   const otherActiveBons = bons.filter((b) => b.user_id !== user.id && b.status === "active");
@@ -84,14 +92,14 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
         <p className="text-sm font-semibold text-gray-500 uppercase mb-3">Mijn actieve uitleningen{myBons.length>0?` (${myBons.length})`:""}</p>
         {myBons.length===0 ? <p className="text-sm text-gray-400">Geen actieve uitleningen</p> :
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {myBons.map(b=><div key={b.id} className={`rounded-xl p-4 border ${bonIsOverdue(b)?"border-red-200 bg-red-50":"border-gray-100 bg-gray-50"}`}>
+            {myBons.map(b=><button key={b.id} type="button" onClick={()=>setSelectedBonId(b.id)} className={`text-left rounded-xl p-4 border transition-all cursor-pointer hover:shadow-md ${bonIsOverdue(b)?"border-red-200 bg-red-50 hover:border-red-300":"border-gray-100 bg-gray-50 hover:border-gray-300 hover:bg-white"}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-sm font-bold text-blue-600">{b.bon_number}</span>
                 <BonBadge bon={b}/>
               </div>
               <p className="text-xs text-gray-400 mt-2 break-words">{shortItems(b)}</p>
               <p className="text-xs text-gray-500 mt-1">Retour: {fmtDate(b.return_date)}</p>
-            </div>)}
+            </button>)}
           </div>
         }
       </div>
@@ -108,6 +116,8 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
           <span className="text-4xl block mb-2">{"\ud83d\udce5"}</span><span className="text-lg">Retour / Ophalen</span>
         </button>
       </div>
+
+      <MyBonDetailModal bon={selectedBon} sets={sets} userName={user.name} onClose={()=>setSelectedBonId(null)}/>
 
       {/* Andere uitleningen in het hok (nieuw) — read-only */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">

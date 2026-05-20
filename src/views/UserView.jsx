@@ -29,7 +29,7 @@ export function UserView({ eq, materialsLoading, materialsError, refreshMaterial
     return <LoanFlow eq={eq} materialsLoading={materialsLoading} materialsError={materialsError} refreshMaterials={refreshMaterials} sets={sets} bons={bons} refreshBons={refreshBons} setBonsError={setBonsError} addLog={addLog} user={user} isReservation={isReservation} onCancel={handleCancel} onDone={handleDone}/>;
   }
   if (mode === "return") {
-    return <ReturnFlow eq={eq} materialsLoading={materialsLoading} materialsError={materialsError} refreshMaterials={refreshMaterials} bons={bons} refreshBons={refreshBons} setBonsError={setBonsError} addLog={addLog} user={user} onCancel={handleCancel} onDone={handleDone}/>;
+    return <ReturnFlow eq={eq} sets={sets} materialsLoading={materialsLoading} materialsError={materialsError} refreshMaterials={refreshMaterials} bons={bons} refreshBons={refreshBons} setBonsError={setBonsError} addLog={addLog} user={user} onCancel={handleCancel} onDone={handleDone}/>;
   }
-  return <UserHome user={user} branding={branding} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} onLogout={onLogout} onModeChange={handleModeChange} done={done}/>;
+  return <UserHome user={user} branding={branding} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} onLogout={onLogout} onModeChange={handleModeChange} done={done} sets={sets}/>;
 }

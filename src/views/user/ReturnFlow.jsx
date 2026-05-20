@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { BonBadge } from "../../components/BonBadge";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
+import { KindBadge } from "../../components/KindBadge";
 import { itemDisplayName } from "../../utils/bons";
 import { pickupBon, returnBon } from "../../api/client";
 
-export function ReturnFlow({ eq, materialsLoading, materialsError, refreshMaterials, bons, refreshBons, setBonsError, user, onCancel, onDone }) {
+const bonItemKind = (bi) => (bi.set_id != null ? "set" : "material");
+
+export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refreshMaterials, bons, refreshBons, setBonsError, user, onCancel, onDone }) {
   const [activeBon, setActiveBon] = useState(null);
   // Set met bon_item ids die de gebruiker als retour heeft gemarkeerd
   const [selectedItems, setSelectedItems] = useState(() => new Set());
@@ -37,16 +40,23 @@ export function ReturnFlow({ eq, materialsLoading, materialsError, refreshMateri
   }, []);
 
   // Vind het bon_item dat hoort bij een gescande barcode/id/naam.
+  // Zoekt zowel in materialen (eq) als in sets, en matcht op material_id of set_id.
   const findBonItemByScan = (code) => {
     if (!activeBon || !code) return null;
-    const matchMat = eq.find((i) => i.barcode === code || i.barcode === code.toUpperCase());
+    const upper = code.toUpperCase();
+    const matchMat = (eq || []).find((i) => i.barcode === code || i.barcode === upper);
     if (matchMat) {
       const bi = activeBon.items.find((it) => it.material_id === matchMat.id && !it.returned);
       if (bi) return bi;
     }
+    const matchSet = (sets || []).find((s) => s.barcode === code || s.barcode === upper);
+    if (matchSet) {
+      const bi = activeBon.items.find((it) => it.set_id === matchSet.id && !it.returned);
+      if (bi) return bi;
+    }
     const numId = parseInt(code, 10);
     if (!Number.isNaN(numId)) {
-      const bi = activeBon.items.find((it) => it.material_id === numId && !it.returned);
+      const bi = activeBon.items.find((it) => (it.material_id === numId || it.set_id === numId) && !it.returned);
       if (bi) return bi;
     }
     return activeBon.items.find((it) => {
@@ -168,8 +178,8 @@ export function ReturnFlow({ eq, materialsLoading, materialsError, refreshMateri
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
             <div className="px-5 py-3 border-b border-gray-100"><h3 className="font-bold text-gray-900 text-sm">Items op deze bon</h3></div>
-            {(activeBon.items||[]).map((bi) => <div key={bi.id} className="px-5 py-3 flex items-center justify-between border-b border-gray-50 last:border-0">
-              <p className="text-sm font-medium">{bi.quantity}x {itemDisplayName(bi)}</p>
+            {(activeBon.items||[]).map((bi) => <div key={bi.id} className="px-5 py-3 flex items-center justify-between gap-2 border-b border-gray-50 last:border-0">
+              <p className="text-sm font-medium flex items-center gap-2 flex-wrap"><span>{bi.quantity}x {itemDisplayName(bi)}</span><KindBadge kind={bonItemKind(bi)} compact/></p>
             </div>)}
           </div>
           {submitError && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{submitError}</div>}
@@ -199,7 +209,7 @@ export function ReturnFlow({ eq, materialsLoading, materialsError, refreshMateri
               const isSelected = selectedItems.has(bi.id);
               return <button key={bi.id} type="button" disabled={isReturned} onClick={() => toggleItem(bi.id)} className={`w-full px-5 py-3 flex items-center justify-between border-b border-gray-50 last:border-0 text-left ${isReturned ? "bg-emerald-50/50" : isSelected ? "bg-emerald-50" : "hover:bg-gray-50"}`}>
                 <div>
-                  <p className="text-sm font-medium">{bi.quantity}x {itemDisplayName(bi)}</p>
+                  <p className="text-sm font-medium flex items-center gap-2 flex-wrap"><span>{bi.quantity}x {itemDisplayName(bi)}</span><KindBadge kind={bonItemKind(bi)} compact/></p>
                   <p className="text-xs text-gray-500">{isReturned ? "Al retour" : isSelected ? "Wordt geretourneerd" : "Open"}</p>
                 </div>
                 {isReturned ? <span className="text-emerald-600">{"\u2705"}</span> :

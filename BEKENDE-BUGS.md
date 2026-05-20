@@ -27,14 +27,9 @@ aan het relevante onderdeel werken.
 
 ## Sets
 
-- **Sets kunnen niet via de Lenen- of Reserveren-flow worden uitgeleend door
-  gebruikers.** Database en backend ondersteunen sets in bon_items (set_id-veld),
-  maar de frontend Lenen-/Reserveren-flow toont alleen materialen. Op te lossen
-  in een volgende iteratie waar sets-in-uitleen-flow wordt toegevoegd.
 - **Er is geen Sets-tab in de admin.** Admins kunnen sets niet bewerken
   (voorraad, samenstelling, verwijderen) via de UI. Sets worden alleen
-  aangemaakt via Excel-import. Lijst is te bekijken via /api/sets. Op te lossen
-  samen met sets-in-uitleen-flow.
+  aangemaakt via Excel-import. Lijst is te bekijken via /api/sets.
 
 ## UI
 
