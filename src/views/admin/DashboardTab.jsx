@@ -3,11 +3,12 @@ import { BonCard } from "../../components/BonCard";
 import { fmt } from "../../utils/format";
 import { fmtDate, fmtDT } from "../../utils/date";
 
-export function DashboardTab({ bons, totalStock, totalUnavail, totalValue, activeBons, overdueBons, reservedBons, recentLogs, onBonClick }) {
+export function DashboardTab({ bons, totalStock, totalUnavail, totalValue, materialCount, setCount, activeBons, overdueBons, reservedBons, recentLogs, onBonClick }) {
   return <div className="space-y-6">
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       <Stat label="Voorraad" value={totalStock} color="text-gray-700" icon={"\ud83d\udce6"}/>
       <Stat label="Beschikbaar" value={totalStock-totalUnavail} color="text-emerald-600" icon={"\u2705"}/>
+      <Stat label="Materialen / Sets" value={`${materialCount} / ${setCount}`} color="text-indigo-600" icon={"\ud83d\udcda"}/>
       <Stat label="Actieve bonnen" value={bons.filter(b=>b.status==="active").length} color="text-amber-600" icon={"\ud83d\udce4"}/>
       <Stat label="Reserveringen" value={reservedBons.length} color="text-purple-600" icon={"\ud83d\udcc5"}/>
       <Stat label="Waarde" value={fmt(totalValue)} color="text-gray-600" icon={"\ud83d\udcb0"}/>

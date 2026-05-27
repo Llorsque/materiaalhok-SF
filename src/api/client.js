@@ -18,7 +18,17 @@ async function request(method, path, body) {
     opts.body = JSON.stringify(body);
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, opts);
+  // Onderscheid netwerkfout (fetch faalt, geen response) van server-respons-fout
+  // (response.ok===false). Beide krijgen een `kind`, zodat UI-componenten als
+  // ConnectionBanner een passende stijl en boodschap kunnen kiezen.
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, opts);
+  } catch (e) {
+    const err = new Error(e.message || 'Geen verbinding met de server');
+    err.kind = 'network';
+    throw err;
+  }
 
   // Lege body (bv. toekomstige 204's) niet door JSON.parse halen.
   const text = await res.text();
@@ -27,6 +37,7 @@ async function request(method, path, body) {
   if (!res.ok) {
     const message = (data && data.error) || `HTTP ${res.status}`;
     const err = new Error(message);
+    err.kind = 'response';
     err.status = res.status;
     err.details = data && data.details;
     throw err;
@@ -65,12 +76,20 @@ export const loginByBarcode = (login_barcode)   => request('POST', '/api/login/s
 async function uploadFile(path, file) {
   const fd = new FormData();
   fd.append('file', file);
-  const res = await fetch(`${BASE_URL}${path}`, { method: 'POST', body: fd });
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { method: 'POST', body: fd });
+  } catch (e) {
+    const err = new Error(e.message || 'Geen verbinding met de server');
+    err.kind = 'network';
+    throw err;
+  }
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
     const message = (data && data.error) || `HTTP ${res.status}`;
     const err = new Error(message);
+    err.kind = 'response';
     err.status = res.status;
     err.details = data;
     throw err;

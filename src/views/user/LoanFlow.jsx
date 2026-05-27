@@ -161,7 +161,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         setSubmitError({ message: "Onvoldoende voorraad voor deze periode", conflicts: err.details });
       } else {
         setSubmitError({ message: err.message || "Aanmaken mislukt" });
-        setBonsError(err.message || "Aanmaken mislukt");
+        setBonsError(err);
       }
     } finally {
       setSubmitting(false);

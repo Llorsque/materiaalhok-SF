@@ -106,7 +106,7 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
       onDone({ action: "loan", text: `${activeBon.bon_number} is opgehaald!` });
     } catch (err) {
       setSubmitError(err.message || "Ophalen mislukt");
-      setBonsError(err.message || "Ophalen mislukt");
+      setBonsError(err);
     } finally {
       setSubmitting(false);
     }
@@ -131,7 +131,7 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
       }
     } catch (err) {
       setSubmitError(err.message || "Retour mislukt");
-      setBonsError(err.message || "Retour mislukt");
+      setBonsError(err);
     } finally {
       setSubmitting(false);
     }

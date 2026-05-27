@@ -19,6 +19,14 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
     setTimeout(() => onLogin(u), 3000);
   };
 
+  // Auto-focus op scan-veld bij eerste mount (eerste open, na uitloggen, na
+  // auto-logout). Een autoFocus-attribuut alleen is niet betrouwbaar als andere
+  // focusbare elementen later in de boom worden gerenderd. Door een effect met
+  // [] als deps direct na mount te draaien, is de cursor altijd in het scan-veld.
+  useEffect(() => {
+    if (scanInputRef.current) scanInputRef.current.focus();
+  }, []);
+
   const go = async () => {
     if (busy) return;
     setError("");
@@ -37,9 +45,19 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
     }
   };
 
+  // Submit-strategie:
+  // - Primair: Enter (scanners sturen meestal Enter na de barcode). Enter
+  //   submit ongeacht de lengte; als de code te kort/onbekend is laat de
+  //   backend dat blijken via een 401 en tonen we de bestaande foutmelding.
+  // - Fallback: minimaal SCAN_MIN_LENGTH karakters + SCAN_TIMEOUT_MS zonder
+  //   verdere input. Voorkomt dat handmatig typen na een paar karakters
+  //   ongewenst submit, en dekt scanners die geen Enter sturen.
+  const SCAN_MIN_LENGTH = 5;
+  const SCAN_TIMEOUT_MS = 200;
+
   const tryScanLogin = async (val) => {
     const code = val.trim();
-    if (!code || code.length < 3) return;
+    if (!code) return;
     if (scanInFlightRef.current) return;
     scanInFlightRef.current = true;
     try {
@@ -60,8 +78,8 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
   const handleScanChange = (val) => {
     setScanBuffer(val);
     if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
-    if (val.trim().length >= 3) {
-      scanTimerRef.current = setTimeout(() => tryScanLogin(val), 150);
+    if (val.trim().length >= SCAN_MIN_LENGTH) {
+      scanTimerRef.current = setTimeout(() => tryScanLogin(val), SCAN_TIMEOUT_MS);
     }
   };
 
@@ -94,7 +112,7 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
           if (scanTimerRef.current) clearTimeout(scanTimerRef.current);
           scanTimerRef.current = setTimeout(() => {
             setScanBuffer(cur => { tryScanLogin(cur); return cur; });
-          }, 150);
+          }, SCAN_TIMEOUT_MS);
         }
       }
     };

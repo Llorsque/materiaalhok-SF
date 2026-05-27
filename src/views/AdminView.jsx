@@ -24,7 +24,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   const [q, setQ] = useState(""); const [cat, setCat] = useState("Alle");
   const [addOpen, setAddOpen] = useState(false); const [edit, setEdit] = useState(null);
   const [detail, setDetail] = useState(null); const [bonDetail, setBonDetail] = useState(null);
-  const [logFilter, setLogFilter] = useState(""); const [bonFilter, setBonFilter] = useState("active");
+  const [logFilter, setLogFilter] = useState(""); const [bonFilter, setBonFilter] = useState("all");
   const [newUser, setNewUser] = useState({name:"",email:"",password:"",role:"user"});
   const [editUser, setEditUser] = useState(null);
   const [adminScan, setAdminScan] = useState("");
@@ -50,7 +50,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       addLog("edit", `${i.name} toegevoegd`);
       setAddOpen(false);
     } catch (err) {
-      setMaterialsError(err.message || "Toevoegen mislukt");
+      setMaterialsError(err);
     }
   };
 
@@ -69,7 +69,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       addLog("edit", `${i.name} bewerkt`);
       setEdit(null);
     } catch (err) {
-      setMaterialsError(err.message || "Opslaan mislukt");
+      setMaterialsError(err);
     }
   };
 
@@ -82,7 +82,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       addLog("edit", `${it.name} verwijderd`);
       setDetail(null);
     } catch (err) {
-      setMaterialsError(err.message || "Verwijderen mislukt");
+      setMaterialsError(err);
     }
   };
 
@@ -95,7 +95,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       setDetail(prev => prev && prev.id === id ? { ...prev, ...updated } : prev);
       if (item) addLog("edit", `Barcode ${item.name} vernieuwd: ${nb}`);
     } catch (err) {
-      setMaterialsError(err.message || "Barcode vernieuwen mislukt");
+      setMaterialsError(err);
     }
   };
 
@@ -109,7 +109,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       await refreshBons();
       setBonDetail(updated);
     } catch (err) {
-      setBonsError(err.message || "Forceer compleet mislukt");
+      setBonsError(err);
     }
   };
 
@@ -119,7 +119,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       await refreshBons();
       setBonDetail(updated);
     } catch (err) {
-      setBonsError(err.message || "Bon bijwerken mislukt");
+      setBonsError(err);
     }
   };
 
@@ -129,7 +129,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       await refreshBons();
       setBonDetail(updated);
     } catch (err) {
-      setBonsError(err.message || "Retour mislukt");
+      setBonsError(err);
     }
   };
 
@@ -140,7 +140,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       await refreshBons();
       setBonDetail(null);
     } catch (err) {
-      setBonsError(err.message || "Verwijderen mislukt");
+      setBonsError(err);
     }
   };
 
@@ -178,7 +178,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     <div className="max-w-6xl mx-auto px-4 py-6">
       <BackupBanner/>
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
-      {tab==="dashboard"&&<DashboardTab bons={bons} totalStock={totalStock} totalUnavail={totalUnavail} totalValue={totalValue} activeBons={activeBons} overdueBons={overdueBons} reservedBons={reservedBons} recentLogs={recentLogs} onBonClick={setBonDetail}/>}
+      {tab==="dashboard"&&<DashboardTab bons={bons} totalStock={totalStock} totalUnavail={totalUnavail} totalValue={totalValue} materialCount={eq.length} setCount={sets.length} activeBons={activeBons} overdueBons={overdueBons} reservedBons={reservedBons} recentLogs={recentLogs} onBonClick={setBonDetail}/>}
       {tab==="bons"&&<BonsTab bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} reservedBons={reservedBons} overdueBons={overdueBons} bonFilter={bonFilter} setBonFilter={setBonFilter} onBonClick={setBonDetail}/>}
       {tab==="items"&&<ItemsTab eq={eq} bons={bons} q={q} setQ={setQ} cat={cat} setCat={setCat} onItemClick={setDetail} adminScan={adminScan} setAdminScan={setAdminScan} adminScanMsg={adminScanMsg} setAdminScanMsg={setAdminScanMsg}/>}
       {tab==="insights"&&<InsightsTab eq={eq} bons={bons} oneYearAgo={oneYearAgo}/>}

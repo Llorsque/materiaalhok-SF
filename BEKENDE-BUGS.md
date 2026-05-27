@@ -4,12 +4,6 @@ Dingen die nu niet werken zoals verwacht maar die niet acuut hoeven worden opgel
 Bedoeld als geheugensteun zodat we ze niet vergeten als we in een latere iteratie
 aan het relevante onderdeel werken.
 
-## Login
-
-- **Badge-scan login submit na 3 karakters in plaats van na volledige code of Enter.**
-  Pre-existing, bestond al voor de herstructurering. Niet acuut, te fixen wanneer
-  we de loginflow opnieuw bekijken (iteratie 4 — authenticatie).
-
 ## API beveiliging
 
 - **API endpoints (GET/POST/PUT/DELETE op materials, sets, users, bons) zijn nog
@@ -31,24 +25,8 @@ aan het relevante onderdeel werken.
   (voorraad, samenstelling, verwijderen) via de UI. Sets worden alleen
   aangemaakt via Excel-import. Lijst is te bekijken via /api/sets.
 
-## UI
-
-- **Totaalaantal materialen niet zichtbaar in admin.** Onduidelijk of dit ooit
-  ergens stond. Niet acuut. Mee te nemen wanneer we de admin-dashboard verbeteren.
-
-## Foutafhandeling UI
-
-- **ConnectionBanner toont validatiefouten van de backend** (zoals "email bestaat
-  al") samen met de algemene verbinding-foutmelding "Geen verbinding met de
-  server". Dit is misleidend — server-validatiefouten zouden een eigen, kortere
-  foutweergave moeten krijgen. Op te lossen in iteratie 5 wanneer auth-flow
-  opnieuw wordt bekeken.
-
 ## UX verbeterpunten
 
-- **In admin → Bonnen-tab moet "Alle" de standaard filter zijn** bij openen
-  van het tabblad, niet "Afgerond" of een ander filter. Wordt opgelost in
-  iteratie 5 of 6 bij de UX-opschoning.
 - **In Chrome-kiosk-modus op de Windows-laptop in het hok is de Windows-taakbalk
   niet zichtbaar en heeft de browser geen UI-knoppen.** Vrijwilligers moeten de
   juiste sneltoets weten om de kioskmodus te verlaten: Ctrl + W (sluit huidige

@@ -42,7 +42,7 @@ export default function App() {
       syncBarcodeCounter(counter);
       setEq(data);
     } catch (err) {
-      setMaterialsError(err.message || "Onbekende fout");
+      setMaterialsError(err);
     } finally {
       clearTimeout(t);
       setMaterialsLoading(false);
@@ -55,7 +55,7 @@ export default function App() {
     try {
       setUsers(await getUsers());
     } catch (err) {
-      setUsersError(err.message || "Onbekende fout");
+      setUsersError(err);
     } finally {
       clearTimeout(t);
       setUsersLoading(false);
@@ -68,7 +68,7 @@ export default function App() {
     try {
       setSets(await getSets());
     } catch (err) {
-      setSetsError(err.message || "Onbekende fout");
+      setSetsError(err);
     } finally {
       clearTimeout(t);
       setSetsLoading(false);
@@ -81,7 +81,7 @@ export default function App() {
     try {
       setBons(await getBons());
     } catch (err) {
-      setBonsError(err.message || "Onbekende fout");
+      setBonsError(err);
     } finally {
       clearTimeout(t);
       setBonsLoading(false);

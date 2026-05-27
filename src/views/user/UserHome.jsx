@@ -67,11 +67,11 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
 
             {completed.length>0 && <div>
               <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Geschiedenis ({completed.length})</p>
-              <div className="space-y-2 max-h-64 overflow-y-auto">{completed.slice(0,20).map(b=><div key={b.id} className="rounded-xl p-3 border border-gray-100 bg-white">
+              <div className="space-y-2 max-h-64 overflow-y-auto">{completed.slice(0,20).map(b=><button key={b.id} type="button" onClick={()=>setSelectedBonId(b.id)} className="w-full text-left rounded-xl p-3 border border-gray-100 bg-white hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer">
                 <div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-gray-400">{b.bon_number}</span><span className="text-xs text-emerald-600">{"\u2705"} Compleet</span></div>
                 <p className="text-xs text-gray-500 mt-1">{fmtDate(b.start_date)} {"\u2192"} {fmtDate(b.return_date)}</p>
                 <p className="text-xs text-gray-400 mt-1">{shortItems(b)}</p>
-              </div>)}</div>
+              </button>)}</div>
             </div>}
 
             {userBons.length===0 && <p className="text-center text-gray-400 py-4">Nog geen bonnen</p>}

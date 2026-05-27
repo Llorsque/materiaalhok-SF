@@ -1,10 +1,30 @@
 // Toont een laad- of foutbalk bovenaan een scherm dat backend-data gebruikt.
 // `resource` bepaalt het label in de loading-indicator ("Materialen laden...",
-// "Gebruikers laden...", etc.). De foutboodschap is generiek omdat de oorzaak
-// (server bereikbaar of niet) los staat van de resource.
+// "Gebruikers laden...", etc.).
+//
+// Twee soorten fouten worden onderscheiden:
+// - Netwerkfout (geen response, fetch-error): toont de algemene "Geen verbinding
+//   met de server"-melding met een retry-knop.
+// - Server-respons-fout (HTTP 4xx/5xx met leesbare melding): toont een compacte
+//   inline foutbanner met alleen de message, zonder "Geen verbinding"-tekst en
+//   zonder retry-knop (retry lost een validatiefout niet op).
+// De `error` prop kan een string (legacy) of een Error-object met `.kind` zijn.
 
 export function ConnectionBanner({ loading, error, onRetry, resource = "Materialen" }) {
   if (error) {
+    const errObj = typeof error === 'string' ? { message: error } : error;
+    const message = errObj.message || 'Onbekende fout';
+    const isValidation = errObj.kind === 'response';
+
+    if (isValidation) {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-3 mb-4 flex items-start gap-3">
+          <span className="text-lg flex-shrink-0">{"\u26a0\ufe0f"}</span>
+          <p className="text-sm text-red-800 flex-1 min-w-0">{message}</p>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-4">
         <div className="flex items-start gap-3">
@@ -13,7 +33,7 @@ export function ConnectionBanner({ loading, error, onRetry, resource = "Material
             <p className="text-sm text-red-800">
               Geen verbinding met de server. Zet de laptop in het materiaalhok aan en wacht tot 'ie volledig is opgestart. Probeer daarna opnieuw.
             </p>
-            <p className="text-xs text-red-600 mt-1 font-mono break-all">{error}</p>
+            <p className="text-xs text-red-600 mt-1 font-mono break-all">{message}</p>
           </div>
           <button
             onClick={onRetry}

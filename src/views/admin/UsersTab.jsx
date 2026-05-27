@@ -22,7 +22,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
       addLog("edit", `Gebruiker "${newUser.name.trim()}" (${newUser.email.trim()}) aangemaakt`);
       setNewUser({ name: "", email: "", password: "", role: "user" });
     } catch (err) {
-      setUsersError(err.message || "Aanmaken mislukt");
+      setUsersError(err);
     }
   };
 
@@ -33,7 +33,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
       await refreshUsers();
       addLog("edit", `Gebruiker "${u.name}" (${u.email}) verwijderd`);
     } catch (err) {
-      setUsersError(err.message || "Verwijderen mislukt");
+      setUsersError(err);
     }
   };
 
@@ -55,7 +55,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
       addLog("edit", `Gebruiker "${editUser.name}" bijgewerkt`);
       setEditUser(null);
     } catch (err) {
-      setUsersError(err.message || "Opslaan mislukt");
+      setUsersError(err);
     }
   };
 
