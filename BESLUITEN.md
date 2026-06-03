@@ -121,3 +121,5 @@ veertien dagen historie.
 - TypeScript, automatische tests, CI/CD-pipelines (overkill voor de schaal).
 - Voorrangslogica bij gelijktijdige reserveringen (volgorde van aanvraag,
   herzien na praktijkervaring).
+
+Voor toekomstige features zie ROADMAP.md.
