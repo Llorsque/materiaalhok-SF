@@ -74,20 +74,17 @@ function pruneOld(now = new Date()) {
   return removed;
 }
 
-function runBackup() {
+// Kopieert database.db naar backups/<filename>. Doet eerst een WAL-checkpoint
+// zodat het gekopieerde bestand consistent is. Herbruikbaar voor de dagelijkse
+// backup én voor de ad-hoc reset-backup.
+function copyDatabaseTo(filename) {
   ensureDir(BACKUP_DIR);
-
-  const now = new Date();
-  const filename = `database-${todayString(now)}.db`;
   const dst = path.join(BACKUP_DIR, filename);
 
   if (!fs.existsSync(DB_PATH)) {
     throw new Error(`database niet gevonden op ${DB_PATH}`);
   }
 
-  // WAL-checkpoint TRUNCATE: schrijft alle WAL-records terug naar de hoofd-
-  // .db en maakt het WAL-bestand leeg. Daarna is een gewone file-copy
-  // consistent — geen halve transactie in de backup.
   const db = new Database(DB_PATH);
   try {
     db.pragma('wal_checkpoint(TRUNCATE)');
@@ -96,9 +93,13 @@ function runBackup() {
   }
 
   fs.copyFileSync(DB_PATH, dst);
+  return { filename, path: dst };
+}
 
+function runBackup() {
+  const now = new Date();
+  const { filename } = copyDatabaseTo(`database-${todayString(now)}.db`);
   const removed = pruneOld(now);
-
   return { filename, removed };
 }
 
@@ -132,4 +133,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { runBackup, pruneOld, STATUS_FILE, BACKUP_DIR };
+module.exports = { runBackup, pruneOld, copyDatabaseTo, STATUS_FILE, BACKUP_DIR };

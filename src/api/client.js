@@ -103,6 +103,10 @@ export const importExecute = (file) => uploadFile('/api/import/execute', file);
 export const getBackupStatus = () => request('GET',  '/api/backup/status');
 export const runBackup       = () => request('POST', '/api/backup/run');
 
+// --- Admin (reset) ---------------------------------------------------------
+export const getResetPreview = () => request('GET',  '/api/admin/reset-preview');
+export const executeReset    = () => request('POST', '/api/admin/reset', { confirm: 'RESET' });
+
 // --- Bons ------------------------------------------------------------------
 export const getBons    = ()         => request('GET',    '/api/bons');
 export const getBon     = (id)       => request('GET',    `/api/bons/${id}`);
