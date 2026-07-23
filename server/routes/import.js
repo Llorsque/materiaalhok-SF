@@ -9,8 +9,12 @@ const multer = require('multer');
 const XLSX = require('xlsx');
 const db = require('../db');
 const { nowDutchISO, generateBarcode, logAction } = require('../utils');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Excel-import muteert de inventaris massief — uitsluitend voor admins.
+router.use(requireAdmin);
 
 // Bestand komt binnen in-memory, niet op disk. Beperk grootte zodat een
 // per ongeluk geüploade dump van 200MB de server niet platlegt.
@@ -332,7 +336,7 @@ router.post('/execute', upload.single('file'), (req, res) => {
   if (createdSets) summaryParts.push(`${createdSets} sets toegevoegd`);
   if (updatedSets) summaryParts.push(`${updatedSets} sets bijgewerkt`);
   if (errors.length) summaryParts.push(`${errors.length} rijen overgeslagen`);
-  logAction('import', `Excel-import: ${summaryParts.length > 0 ? summaryParts.join(', ') : 'geen wijzigingen'}`);
+  logAction('import', `Excel-import: ${summaryParts.length > 0 ? summaryParts.join(', ') : 'geen wijzigingen'}`, req.user.id);
 
   res.json({
     createdMaterials,

@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const db = require('../db');
 const { nowDutchISO, handleUniqueError, logAction } = require('../utils');
+const { requireAdmin } = require('../middleware/auth');
 
 function describeUserDiff(existing, next) {
   const parts = [];
@@ -88,6 +89,9 @@ function validateInput(input, existing) {
   return { value: out };
 }
 
+// Alle user-routes zijn admin-only: alleen admins beheren gebruikers.
+router.use(requireAdmin);
+
 router.get('/', (req, res) => {
   const rows = db.prepare('SELECT * FROM users ORDER BY id').all();
   res.json(rows.map(stripPasswordHash));
@@ -118,7 +122,7 @@ router.post('/', (req, res) => {
   }
 
   const created = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
-  logAction('user_create', `Gebruiker '${created.name}' toegevoegd (rol: ${created.role})`, created.id);
+  logAction('user_create', `Gebruiker '${created.name}' toegevoegd (rol: ${created.role})`, req.user.id);
   res.status(201).json(stripPasswordHash(created));
 });
 
@@ -154,7 +158,7 @@ router.put('/:id', (req, res) => {
   const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(existing.id);
   const diffs = describeUserDiff(existing, updated);
   if (diffs.length > 0) {
-    logAction('user_update', `Gebruiker '${updated.name}' bijgewerkt: ${diffs.join(', ')}`, updated.id);
+    logAction('user_update', `Gebruiker '${updated.name}' bijgewerkt: ${diffs.join(', ')}`, req.user.id);
   }
   res.json(stripPasswordHash(updated));
 });
@@ -164,7 +168,7 @@ router.delete('/:id', (req, res) => {
   try {
     const info = db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
     if (info.changes === 0) return res.status(404).json({ error: 'gebruiker niet gevonden' });
-    if (existing) logAction('user_delete', `Gebruiker '${existing.name}' verwijderd`);
+    if (existing) logAction('user_delete', `Gebruiker '${existing.name}' verwijderd`, req.user.id);
     res.json({ deleted: true });
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {

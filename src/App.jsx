@@ -111,22 +111,29 @@ export default function App() {
     setOk(true);
   }, []);
 
-  // Eerste backend-fetch zodra de app klaar is met initialiseren.
+  // Eerste backend-fetch zodra de gebruiker is ingelogd. Vóór login sturen we
+  // geen requests: zonder token krijgen we alleen 401's terug. Admins krijgen
+  // extra endpoints (users, logs) die voor gewone gebruikers 403 geven.
   useEffect(() => {
-    if (!ok) return;
+    if (!ok || !user) return;
     refreshMaterials();
-    refreshUsers();
     refreshSets();
     refreshBons();
-    refreshLogs();
-  }, [ok, refreshMaterials, refreshUsers, refreshSets, refreshBons, refreshLogs]);
+    if (user.role === "admin") {
+      refreshUsers();
+      refreshLogs();
+    }
+  }, [ok, user, refreshMaterials, refreshUsers, refreshSets, refreshBons, refreshLogs]);
 
   useEffect(() => { if (ok) store.set("mhok-brand", branding); }, [branding, ok]);
 
   // Backwards-compatible addLog: sinds v1.2.0 logt de backend zelf. Deze
-  // callback triggert alleen nog een refresh, zodat het dashboard de zojuist
-  // geschreven regel direct ziet. Argumenten worden bewust genegeerd.
-  const addLog = useCallback(() => { refreshLogs(); }, [refreshLogs]);
+  // callback triggert alleen nog een refresh zodat het dashboard de zojuist
+  // geschreven regel direct ziet. Alleen admins mogen /api/logs bevragen —
+  // voor gewone gebruikers is dit een no-op.
+  const addLog = useCallback(() => {
+    if (user?.role === "admin") refreshLogs();
+  }, [refreshLogs, user]);
   const handleLogin = (u) => { setSessionExpired(false); setUser(u); session.set("mhok-user", u); };
   const handleLogout = () => {
     // Server best-effort informeren; client-side sowieso uitloggen zodat een

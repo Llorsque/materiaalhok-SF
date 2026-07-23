@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { nowDutchISO, handleUniqueError, logAction } = require('../utils');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const FIELD_LABELS = {
   name: 'naam',
@@ -80,18 +81,18 @@ function validateInput(input, existing) {
   return { value: out };
 }
 
-router.get('/', (req, res) => {
+router.get('/', requireAuth, (req, res) => {
   const rows = db.prepare('SELECT * FROM sets ORDER BY id').all();
   res.json(rows);
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requireAuth, (req, res) => {
   const row = db.prepare('SELECT * FROM sets WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'set niet gevonden' });
   res.json(row);
 });
 
-router.post('/', (req, res) => {
+router.post('/', requireAdmin, (req, res) => {
   const { error, value } = validateInput(req.body || {}, null);
   if (error) return res.status(400).json({ error });
 
@@ -110,11 +111,11 @@ router.post('/', (req, res) => {
   }
 
   const created = db.prepare('SELECT * FROM sets WHERE id = ?').get(info.lastInsertRowid);
-  logAction('set_create', `Set '${created.name}' toegevoegd (voorraad ${created.stock})`);
+  logAction('set_create', `Set '${created.name}' toegevoegd (voorraad ${created.stock})`, req.user.id);
   res.status(201).json(created);
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', requireAdmin, (req, res) => {
   const existing = db.prepare('SELECT * FROM sets WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'set niet gevonden' });
 
@@ -140,17 +141,17 @@ router.put('/:id', (req, res) => {
   const updated = db.prepare('SELECT * FROM sets WHERE id = ?').get(existing.id);
   const diffs = describeDiff(existing, updated);
   if (diffs.length > 0) {
-    logAction('set_update', `Set '${updated.name}' bijgewerkt: ${diffs.join(', ')}`);
+    logAction('set_update', `Set '${updated.name}' bijgewerkt: ${diffs.join(', ')}`, req.user.id);
   }
   res.json(updated);
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAdmin, (req, res) => {
   const existing = db.prepare('SELECT * FROM sets WHERE id = ?').get(req.params.id);
   try {
     const info = db.prepare('DELETE FROM sets WHERE id = ?').run(req.params.id);
     if (info.changes === 0) return res.status(404).json({ error: 'set niet gevonden' });
-    if (existing) logAction('set_delete', `Set '${existing.name}' verwijderd`);
+    if (existing) logAction('set_delete', `Set '${existing.name}' verwijderd`, req.user.id);
     res.json({ deleted: true });
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {

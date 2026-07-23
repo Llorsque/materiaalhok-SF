@@ -7,23 +7,50 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-23
+
+Token-authenticatie in twee stappen afgerond: eerst het fundament (stap 1),
+daarna alle bestaande routes dichtgezet (stap 2).
+
 ### Toegevoegd
-- **Token-authenticatie — fundament (stap 1 van 2)**: na een succesvolle
-  login geeft de backend een sessie-token uit (12 uur geldig), opgeslagen in
-  een nieuwe `sessions`-tabel. De frontend bewaart het token in
-  `localStorage` en stuurt het als `Authorization: Bearer <token>` mee bij
-  elke API-call. Bij een 401 wist de client het token en stuurt de
-  gebruiker terug naar het loginscherm met "Sessie verlopen".
+- **Token-authenticatie — fundament (stap 1)**: na een succesvolle login
+  geeft de backend een sessie-token uit (12 uur geldig), opgeslagen in een
+  nieuwe `sessions`-tabel. De frontend bewaart het token in `localStorage`
+  en stuurt het als `Authorization: Bearer <token>` mee bij elke API-call.
+  Bij een 401 wist de client het token en stuurt de gebruiker terug naar
+  het loginscherm met "Sessie verlopen".
 - Nieuw endpoint `POST /api/logout` dat de server-side sessie opruimt
   (idempotent — onbekend/verlopen token geeft nog steeds 200).
 - Nieuw endpoint `GET /api/me` (met `requireAuth`) dat de ingelogde
-  gebruiker teruggeeft. Testroute om het mechanisme te controleren voordat
-  stap 2 alles dichtzet.
+  gebruiker teruggeeft.
 - Nieuwe middleware `requireAuth` en `requireAdmin` in
-  `server/middleware/auth.js`. Bestaande routes zijn in stap 1 nog **niet**
-  beveiligd — dat gebeurt in stap 2.
-- Verlopen sessies worden bij elke login opgeruimd; geen aparte cronjob.
+  `server/middleware/auth.js`. Verlopen sessies worden bij elke login
+  opgeruimd; geen aparte cronjob.
+- **Token-authenticatie — routes dichtzetten (stap 2)**: alle bestaande
+  data-endpoints zijn nu beveiligd. Materialen en sets zijn voor iedere
+  ingelogde gebruiker leesbaar; wijzigingen zijn admin-only. Gebruikers-,
+  import-, backup-, admin- (reset) en logboek-endpoints zijn volledig
+  admin-only. Bons volgen role-based access: gewone gebruikers zien en
+  bewerken uitsluitend hun eigen bonnen; `PUT`/`DELETE` en `POST /` (bon
+  bewerken/verwijderen) zijn admin-only.
+- **Wie-kolom in het logboek** is nu gevuld bij materiaal-, set-,
+  gebruikers-, bon-, import- en reset-acties. `logAction` krijgt overal
+  `req.user.id` van de actor mee.
 
+### Gewijzigd
+- Frontend haalt data pas op *na* login (voorheen direct bij mount) en slaat
+  `users`/`logs` over voor gewone gebruikers, om onnodige 403's te vermijden.
+- Bij bon-mutaties is het `user_id` in het logboek nu de actor (bv. de admin
+  die de bon aanmaakte) in plaats van de betrokken lener.
+
+### Opgelost
+- **API-endpoints waren onbeschermd** — iedereen die de backend kon bereiken
+  kon zonder login data lezen en wijzigen. Was gedocumenteerd in
+  `BEKENDE-BUGS.md`; die vermelding is verwijderd.
+
+## [1.2.0] - 2026-07-23
+
+### Toegevoegd
 - **Serverside activity log**: de backend schrijft nu logregels weg voor
   aangemaakte/gewijzigde/verwijderde bonnen, materialen, sets, gebruikers,
   Excel-imports en reset-acties. Logregels bevatten leesbare Nederlandse

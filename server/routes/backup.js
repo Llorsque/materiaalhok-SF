@@ -6,8 +6,12 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Backup-status en handmatige backups zijn admin-functies.
+router.use(requireAdmin);
 
 const SERVER_DIR = path.join(__dirname, '..');
 const STATUS_FILE = path.join(SERVER_DIR, 'backups', 'last-backup.json');

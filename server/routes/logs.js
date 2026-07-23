@@ -13,8 +13,13 @@
 
 const express = require('express');
 const db = require('../db');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Logboek bevat alle activiteit incl. gebruikersnamen en gedetailleerde
+// mutaties — daarom uitsluitend voor admins toegankelijk.
+router.use(requireAdmin);
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 500;

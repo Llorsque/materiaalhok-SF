@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { nowDutchISO, handleUniqueError, logAction } = require('../utils');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const pad2 = (n) => String(n).padStart(2, '0');
 function shortDate(s) {
@@ -140,14 +141,31 @@ function loadBonWithItems(id) {
 
 // ---------------------------------------------------------------------------
 // Routes
+//
+// Alle bon-endpoints vereisen minstens een geldige sessie. Gewone gebruikers
+// zien/wijzigen alleen hun eigen bonnen; admins zien alles. De filter- en
+// eigenaarschapschecks staan in de handlers zelf, niet in de middleware,
+// omdat ze context uit de bon (user_id) nodig hebben.
+router.use(requireAuth);
+
+function isAdmin(req) { return req.user && req.user.role === 'admin'; }
 
 router.get('/', (req, res) => {
-  const bons = db.prepare(`
-    SELECT b.*, u.name AS user_name
-    FROM bons b
-    LEFT JOIN users u ON u.id = b.user_id
-    ORDER BY b.id
-  `).all();
+  const admin = isAdmin(req);
+  const bons = admin
+    ? db.prepare(`
+        SELECT b.*, u.name AS user_name
+        FROM bons b
+        LEFT JOIN users u ON u.id = b.user_id
+        ORDER BY b.id
+      `).all()
+    : db.prepare(`
+        SELECT b.*, u.name AS user_name
+        FROM bons b
+        LEFT JOIN users u ON u.id = b.user_id
+        WHERE b.user_id = ?
+        ORDER BY b.id
+      `).all(req.user.id);
 
   if (bons.length === 0) return res.json([]);
 
@@ -171,14 +189,34 @@ router.get('/', (req, res) => {
   res.json(bons);
 });
 
+// Bewuste keuze om 404 (niet 403) terug te geven wanneer een niet-admin een
+// bon van iemand anders opvraagt. Dat lekt geen bestaan-info: onbekende bon
+// en andermans bon voelen identiek voor de client.
+function assertOwnBonOrAdmin(req, res, bon) {
+  if (!bon) { res.status(404).json({ error: 'bon niet gevonden' }); return false; }
+  if (!isAdmin(req) && bon.user_id !== req.user.id) {
+    res.status(404).json({ error: 'bon niet gevonden' });
+    return false;
+  }
+  return true;
+}
+
 router.get('/:id', (req, res) => {
   const bon = loadBonWithItems(req.params.id);
-  if (!bon) return res.status(404).json({ error: 'bon niet gevonden' });
+  if (!assertOwnBonOrAdmin(req, res, bon)) return;
   res.json(bon);
 });
 
 router.post('/', (req, res) => {
   const body = req.body || {};
+
+  // Gewone gebruikers mogen alleen voor zichzelf bonnen aanmaken; we
+  // overschrijven bewust de user_id in de body zodat een kwaadwillende
+  // frontend geen bon op iemand anders' naam kan boeken. Admins mogen elke
+  // gebruiker kiezen — bijvoorbeeld om achteraf een bon in te schieten.
+  if (!isAdmin(req)) {
+    body.user_id = req.user.id;
+  }
 
   if (!Number.isInteger(body.user_id)) {
     return res.status(400).json({ error: "veld 'user_id' is verplicht (integer)" });
@@ -268,12 +306,12 @@ router.post('/', (req, res) => {
   logAction(
     'bon_create',
     `${created.bon_number} aangemaakt voor ${created.user_name || 'onbekende gebruiker'}: ${formatBonItems(created.items)}`,
-    created.user_id,
+    req.user.id,
   );
   res.status(201).json(created);
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', requireAdmin, (req, res) => {
   const existing = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'bon niet gevonden' });
 
@@ -339,12 +377,12 @@ router.put('/:id', (req, res) => {
   if (return_date !== existing.return_date) changes.push(`retourdatum ${shortDate(existing.return_date)} → ${shortDate(return_date)}`);
   if ((notes || '') !== (existing.notes || '')) changes.push('opmerking aangepast');
   if (changes.length > 0) {
-    logAction('bon_update', `${updated.bon_number} bijgewerkt: ${changes.join(', ')}`, updated.user_id);
+    logAction('bon_update', `${updated.bon_number} bijgewerkt: ${changes.join(', ')}`, req.user.id);
   }
   res.json(updated);
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAdmin, (req, res) => {
   const existing = loadBonWithItems(req.params.id);
   if (!existing) return res.status(404).json({ error: 'bon niet gevonden' });
   const info = db.prepare('DELETE FROM bons WHERE id = ?').run(req.params.id);
@@ -352,14 +390,14 @@ router.delete('/:id', (req, res) => {
   logAction(
     'bon_delete',
     `${existing.bon_number} verwijderd (${existing.user_name || 'onbekende gebruiker'})`,
-    existing.user_id,
+    req.user.id,
   );
   res.json({ deleted: true });
 });
 
 router.post('/:id/pickup', (req, res) => {
   const bon = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
-  if (!bon) return res.status(404).json({ error: 'bon niet gevonden' });
+  if (!assertOwnBonOrAdmin(req, res, bon)) return;
   if (bon.status !== 'reserved') {
     return res.status(409).json({
       error: `pickup alleen toegestaan op een gereserveerde bon (huidige status: ${bon.status})`,
@@ -377,7 +415,7 @@ router.post('/:id/pickup', (req, res) => {
 
 router.post('/:id/return', (req, res) => {
   const bon = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
-  if (!bon) return res.status(404).json({ error: 'bon niet gevonden' });
+  if (!assertOwnBonOrAdmin(req, res, bon)) return;
   if (bon.status !== 'active') {
     return res.status(409).json({
       error: `return alleen toegestaan op een actieve bon (huidige status: ${bon.status})`,
@@ -448,7 +486,7 @@ router.post('/:id/return', (req, res) => {
     logAction(
       'bon_return',
       `Retour ${result.bon_number} voor ${result.user_name || 'onbekende gebruiker'}: ${itemsStr} geretourneerd${suffix}`,
-      result.user_id,
+      req.user.id,
     );
   }
 

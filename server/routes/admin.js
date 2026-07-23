@@ -7,8 +7,12 @@ const express = require('express');
 const db = require('../db');
 const { copyDatabaseTo } = require('../backup');
 const { logAction } = require('../utils');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+
+// De reset-flow raakt in één klik alle bonnen weg — uitsluitend voor admins.
+router.use(requireAdmin);
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -75,6 +79,7 @@ router.post('/reset', (req, res) => {
   logAction(
     'reset',
     `Reset uitgevoerd: ${bonsBefore} bonnen en ${bonItemsBefore} bonregels gewist. Backup: ${backup.filename}`,
+    req.user.id,
   );
 
   res.json({

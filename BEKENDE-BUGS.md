@@ -6,13 +6,6 @@ aan het relevante onderdeel werken.
 
 ## API beveiliging
 
-- **API endpoints (GET/POST/PUT/DELETE op materials, sets, users, bons) zijn nog
-  niet beschermd door auth-middleware.** Wie de backend direct kan bereiken
-  (lokaal of via netwerk) kan zonder login data lezen en wijzigen. Acceptabel in
-  lokale single-laptop-context, maar niet zodra de tool via Cloudflare Tunnel of
-  een ander netwerk-pad bereikbaar wordt. Moet opgelost zijn voor iteratie 7
-  (Cloudflare). Concreet: sessie-token bij login, auth-middleware op alle
-  data-endpoints.
 - **xlsx-pakket heeft een open high-severity npm audit** (prototype pollution +
   ReDoS in SheetJS) zonder fix in de npm-versie. Acceptabel voor lokale
   single-laptop-context, maar moet vóór iteratie 7 (Cloudflare-exposure) weg.
