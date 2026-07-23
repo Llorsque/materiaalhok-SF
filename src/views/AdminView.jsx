@@ -24,7 +24,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   const [q, setQ] = useState(""); const [cat, setCat] = useState("Alle");
   const [addOpen, setAddOpen] = useState(false); const [edit, setEdit] = useState(null);
   const [detail, setDetail] = useState(null); const [bonDetail, setBonDetail] = useState(null);
-  const [logFilter, setLogFilter] = useState(""); const [bonFilter, setBonFilter] = useState("all");
+  const [bonFilter, setBonFilter] = useState("all");
   const [newUser, setNewUser] = useState({name:"",email:"",password:"",role:"user"});
   const [editUser, setEditUser] = useState(null);
   const [adminScan, setAdminScan] = useState("");
@@ -182,7 +182,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       {tab==="bons"&&<BonsTab bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} reservedBons={reservedBons} overdueBons={overdueBons} bonFilter={bonFilter} setBonFilter={setBonFilter} onBonClick={setBonDetail}/>}
       {tab==="items"&&<ItemsTab eq={eq} bons={bons} q={q} setQ={setQ} cat={cat} setCat={setCat} onItemClick={setDetail} adminScan={adminScan} setAdminScan={setAdminScan} adminScanMsg={adminScanMsg} setAdminScanMsg={setAdminScanMsg}/>}
       {tab==="insights"&&<InsightsTab eq={eq} bons={bons} oneYearAgo={oneYearAgo}/>}
-      {tab==="log"&&<LogTab recentLogs={recentLogs} logFilter={logFilter} setLogFilter={setLogFilter}/>}
+      {tab==="log"&&<LogTab/>}
       {tab==="barcodes"&&<BarcodesTab eq={eq} sets={sets}/>}
       {tab==="users"&&<UsersTab users={users} usersLoading={usersLoading} usersError={usersError} setUsersError={setUsersError} refreshUsers={refreshUsers} addLog={addLog} newUser={newUser} setNewUser={setNewUser} editUser={editUser} setEditUser={setEditUser}/>}
       {tab==="import"&&<ImportTab refreshMaterials={refreshMaterials} refreshSets={refreshSets}/>}

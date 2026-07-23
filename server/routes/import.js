@@ -8,7 +8,7 @@ const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const db = require('../db');
-const { nowDutchISO, generateBarcode } = require('../utils');
+const { nowDutchISO, generateBarcode, logAction } = require('../utils');
 
 const router = express.Router();
 
@@ -325,6 +325,14 @@ router.post('/execute', upload.single('file'), (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: `import mislukt: ${err.message}` });
   }
+
+  const summaryParts = [];
+  if (createdMaterials) summaryParts.push(`${createdMaterials} materialen toegevoegd`);
+  if (updatedMaterials) summaryParts.push(`${updatedMaterials} materialen bijgewerkt`);
+  if (createdSets) summaryParts.push(`${createdSets} sets toegevoegd`);
+  if (updatedSets) summaryParts.push(`${updatedSets} sets bijgewerkt`);
+  if (errors.length) summaryParts.push(`${errors.length} rijen overgeslagen`);
+  logAction('import', `Excel-import: ${summaryParts.length > 0 ? summaryParts.join(', ') : 'geen wijzigingen'}`);
 
   res.json({
     createdMaterials,

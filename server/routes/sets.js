@@ -1,6 +1,36 @@
 const express = require('express');
 const db = require('../db');
-const { nowDutchISO, handleUniqueError } = require('../utils');
+const { nowDutchISO, handleUniqueError, logAction } = require('../utils');
+
+const FIELD_LABELS = {
+  name: 'naam',
+  category: 'categorie',
+  stock: 'voorraad',
+  composition: 'samenstelling',
+  location: 'locatie',
+  notes: 'notities',
+  purchase_link: 'inkooplink',
+  barcode: 'barcode',
+};
+
+function describeDiff(existing, next) {
+  const parts = [];
+  for (const [field, label] of Object.entries(FIELD_LABELS)) {
+    const before = existing[field];
+    const after = next[field];
+    if ((before ?? '') === (after ?? '')) continue;
+    if (field === 'stock') {
+      parts.push(`voorraad ${before} → ${after}`);
+    } else if (before && after) {
+      parts.push(`${label} '${before}' → '${after}'`);
+    } else if (!before && after) {
+      parts.push(`${label} ingesteld op '${after}'`);
+    } else {
+      parts.push(`${label} leeggemaakt`);
+    }
+  }
+  return parts;
+}
 
 const router = express.Router();
 
@@ -80,6 +110,7 @@ router.post('/', (req, res) => {
   }
 
   const created = db.prepare('SELECT * FROM sets WHERE id = ?').get(info.lastInsertRowid);
+  logAction('set_create', `Set '${created.name}' toegevoegd (voorraad ${created.stock})`);
   res.status(201).json(created);
 });
 
@@ -107,13 +138,19 @@ router.put('/:id', (req, res) => {
   }
 
   const updated = db.prepare('SELECT * FROM sets WHERE id = ?').get(existing.id);
+  const diffs = describeDiff(existing, updated);
+  if (diffs.length > 0) {
+    logAction('set_update', `Set '${updated.name}' bijgewerkt: ${diffs.join(', ')}`);
+  }
   res.json(updated);
 });
 
 router.delete('/:id', (req, res) => {
+  const existing = db.prepare('SELECT * FROM sets WHERE id = ?').get(req.params.id);
   try {
     const info = db.prepare('DELETE FROM sets WHERE id = ?').run(req.params.id);
     if (info.changes === 0) return res.status(404).json({ error: 'set niet gevonden' });
+    if (existing) logAction('set_delete', `Set '${existing.name}' verwijderd`);
     res.json({ deleted: true });
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {

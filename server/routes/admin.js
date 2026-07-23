@@ -6,6 +6,7 @@
 const express = require('express');
 const db = require('../db');
 const { copyDatabaseTo } = require('../backup');
+const { logAction } = require('../utils');
 
 const router = express.Router();
 
@@ -70,6 +71,11 @@ router.post('/reset', (req, res) => {
       backup: { filename: backup.filename },
     });
   }
+
+  logAction(
+    'reset',
+    `Reset uitgevoerd: ${bonsBefore} bonnen en ${bonItemsBefore} bonregels gewist. Backup: ${backup.filename}`,
+  );
 
   res.json({
     wiped: { bons: bonsBefore, bon_items: bonItemsBefore },

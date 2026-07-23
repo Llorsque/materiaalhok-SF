@@ -1,5 +1,7 @@
 // Gedeelde helpers voor route-bestanden.
 
+const db = require('./db');
+
 // ISO-8601 timestamp in Nederlandse lokale tijd, met expliciete offset
 // (+01:00 / +02:00). Forceert Europe/Amsterdam, dus werkt onafhankelijk
 // van de timezone waarin de Node-proces draait.
@@ -77,4 +79,17 @@ function generateBarcode(db, type) {
   }
 }
 
-module.exports = { nowDutchISO, handleUniqueError, generateBarcode };
+// Schrijft één regel naar de logs-tabel. Bewust fout-tolerant: als het loggen
+// zelf faalt (bv. DB tijdelijk niet beschikbaar), gaat de hoofdactie gewoon
+// door — anders zou een half werkende log-tabel de hele app kunnen breken.
+function logAction(action, detail, userId = null) {
+  try {
+    db.prepare(
+      'INSERT INTO logs (timestamp, action, detail, user_id) VALUES (?, ?, ?, ?)',
+    ).run(nowDutchISO(), action, detail, userId ?? null);
+  } catch (err) {
+    console.error(`logAction faalde (${action}): ${err.message}`);
+  }
+}
+
+module.exports = { nowDutchISO, handleUniqueError, generateBarcode, logAction };

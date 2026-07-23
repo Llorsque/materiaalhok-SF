@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { DEFAULT_BRANDING } from "./data/defaults";
 import { store, session } from "./utils/storage";
-import { isoNow } from "./utils/date";
 import { genItemBarcode, syncBarcodeCounter } from "./utils/barcode";
-import { getMaterials, getUsers, getSets, getBons } from "./api/client";
+import { getMaterials, getUsers, getSets, getBons, getLogs } from "./api/client";
 import { LoginView } from "./views/LoginView";
 import { AdminView } from "./views/AdminView";
 import { UserView } from "./views/UserView";
@@ -88,15 +87,25 @@ export default function App() {
     }
   }, []);
 
-  // localStorage blijft bron voor logs/branding.
+  // Recente logs voor het dashboard (top-8-overzicht). LogTab doet zijn eigen
+  // paginated fetch — deze 200 is enkel voor "Recente activiteit".
+  const refreshLogs = useCallback(async () => {
+    try {
+      const data = await getLogs({ limit: 200 });
+      setLogs(Array.isArray(data?.logs) ? data.logs : []);
+    } catch {
+      // Recente activiteit is niet kritisch; stil falen is oké hier.
+    }
+  }, []);
+
+  // localStorage blijft bron voor branding.
   // mhok-user staat in sessionStorage zodat de sessie eindigt bij browser/laptop-herstart.
-  // mhok-eq6, mhok-users en mhok-bons worden bewust NIET meer ingelezen.
+  // mhok-eq6, mhok-users, mhok-bons en mhok-logs worden bewust NIET meer ingelezen —
+  // logs komen sinds v1.2.0 uit de backend, de rest sinds de SQLite-migratie.
   useEffect(() => {
-    setLogs(store.get("mhok-logs") || []);
     setBranding(store.get("mhok-brand") || DEFAULT_BRANDING);
-    // Eenmalig opruimen van oude localStorage-user uit pre-sessionStorage-versies,
-    // zodat een upgrade niet stilletjes blijft inloggen.
     try { localStorage.removeItem("mhok-user"); } catch {}
+    try { localStorage.removeItem("mhok-logs"); } catch {}
     const u = session.get("mhok-user");
     if (u) setUser(u);
     setOk(true);
@@ -109,13 +118,15 @@ export default function App() {
     refreshUsers();
     refreshSets();
     refreshBons();
-  }, [ok, refreshMaterials, refreshUsers, refreshSets, refreshBons]);
+    refreshLogs();
+  }, [ok, refreshMaterials, refreshUsers, refreshSets, refreshBons, refreshLogs]);
 
-  // mhok-eq6, mhok-users en mhok-bons worden bewust niet meer naar localStorage geschreven.
-  useEffect(() => { if (ok) store.set("mhok-logs", logs); }, [logs, ok]);
   useEffect(() => { if (ok) store.set("mhok-brand", branding); }, [branding, ok]);
 
-  const addLog = useCallback((action, detail) => setLogs(p => [{ id: Date.now(), date: isoNow(), action, detail }, ...p]), []);
+  // Backwards-compatible addLog: sinds v1.2.0 logt de backend zelf. Deze
+  // callback triggert alleen nog een refresh, zodat het dashboard de zojuist
+  // geschreven regel direct ziet. Argumenten worden bewust genegeerd.
+  const addLog = useCallback(() => { refreshLogs(); }, [refreshLogs]);
   const handleLogin = (u) => { setSessionExpired(false); setUser(u); session.set("mhok-user", u); };
   const handleLogout = () => { setUser(null); session.remove("mhok-user"); };
   const handleAutoLogout = () => { setUser(null); session.remove("mhok-user"); setSessionExpired(true); };

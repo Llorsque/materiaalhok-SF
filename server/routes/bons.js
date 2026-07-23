@@ -1,6 +1,20 @@
 const express = require('express');
 const db = require('../db');
-const { nowDutchISO, handleUniqueError } = require('../utils');
+const { nowDutchISO, handleUniqueError, logAction } = require('../utils');
+
+const pad2 = (n) => String(n).padStart(2, '0');
+function shortDate(s) {
+  if (!s) return '?';
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+function formatBonItems(items) {
+  return items.map((it) => {
+    const name = it.material_name || it.set_name || '?';
+    return `${it.quantity}x ${name}`;
+  }).join(', ');
+}
 
 const router = express.Router();
 
@@ -250,7 +264,13 @@ router.post('/', (req, res) => {
     throw err;
   }
 
-  res.status(201).json(loadBonWithItems(createdId));
+  const created = loadBonWithItems(createdId);
+  logAction(
+    'bon_create',
+    `${created.bon_number} aangemaakt voor ${created.user_name || 'onbekende gebruiker'}: ${formatBonItems(created.items)}`,
+    created.user_id,
+  );
+  res.status(201).json(created);
 });
 
 router.put('/:id', (req, res) => {
@@ -309,12 +329,31 @@ router.put('/:id', (req, res) => {
     WHERE id = @id
   `).run({ user_id, start_date, return_date, notes, status, completed_at, id: existing.id });
 
-  res.json(loadBonWithItems(existing.id));
+  const updated = loadBonWithItems(existing.id);
+  const changes = [];
+  if (user_id !== existing.user_id) {
+    const oldName = db.prepare('SELECT name FROM users WHERE id = ?').get(existing.user_id)?.name || '?';
+    changes.push(`gebruiker '${oldName}' → '${updated.user_name || '?'}'`);
+  }
+  if (start_date !== existing.start_date) changes.push(`startdatum ${shortDate(existing.start_date)} → ${shortDate(start_date)}`);
+  if (return_date !== existing.return_date) changes.push(`retourdatum ${shortDate(existing.return_date)} → ${shortDate(return_date)}`);
+  if ((notes || '') !== (existing.notes || '')) changes.push('opmerking aangepast');
+  if (changes.length > 0) {
+    logAction('bon_update', `${updated.bon_number} bijgewerkt: ${changes.join(', ')}`, updated.user_id);
+  }
+  res.json(updated);
 });
 
 router.delete('/:id', (req, res) => {
+  const existing = loadBonWithItems(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'bon niet gevonden' });
   const info = db.prepare('DELETE FROM bons WHERE id = ?').run(req.params.id);
   if (info.changes === 0) return res.status(404).json({ error: 'bon niet gevonden' });
+  logAction(
+    'bon_delete',
+    `${existing.bon_number} verwijderd (${existing.user_name || 'onbekende gebruiker'})`,
+    existing.user_id,
+  );
   res.json({ deleted: true });
 });
 
@@ -370,7 +409,22 @@ router.post('/:id/return', (req, res) => {
     }
   }
 
+  // Snapshot van de betrokken items (met namen) vóór de mutatie, zodat de
+  // logregel kan vermelden wat er precies retour is gebracht.
+  let returnedNames = [];
+  if (idsToMark.length > 0) {
+    const placeholders = idsToMark.map(() => '?').join(',');
+    returnedNames = db.prepare(`
+      SELECT bi.quantity, m.name AS material_name, s.name AS set_name
+      FROM bon_items bi
+      LEFT JOIN materials m ON m.id = bi.material_id
+      LEFT JOIN sets s ON s.id = bi.set_id
+      WHERE bi.id IN (${placeholders})
+    `).all(...idsToMark);
+  }
+
   const now = nowDutchISO();
+  let bonCompleted = false;
   const tx = db.transaction(() => {
     if (idsToMark.length > 0) {
       const placeholders = idsToMark.map(() => '?').join(',');
@@ -382,11 +436,23 @@ router.post('/:id/return', (req, res) => {
     if (openCount === 0) {
       db.prepare('UPDATE bons SET status = ?, completed_at = ? WHERE id = ?')
         .run('completed', now, bon.id);
+      bonCompleted = true;
     }
   });
   tx();
 
-  res.json(loadBonWithItems(bon.id));
+  const result = loadBonWithItems(bon.id);
+  if (idsToMark.length > 0) {
+    const itemsStr = formatBonItems(returnedNames);
+    const suffix = bonCompleted ? ' (bon voltooid)' : '';
+    logAction(
+      'bon_return',
+      `Retour ${result.bon_number} voor ${result.user_name || 'onbekende gebruiker'}: ${itemsStr} geretourneerd${suffix}`,
+      result.user_id,
+    );
+  }
+
+  res.json(result);
 });
 
 module.exports = router;

@@ -9,6 +9,7 @@ const authRouter = require('./routes/auth');
 const importRouter = require('./routes/import');
 const backupRouter = require('./routes/backup');
 const adminRouter = require('./routes/admin');
+const logsRouter = require('./routes/logs');
 
 const app = express();
 const PORT = 3001;
@@ -33,6 +34,7 @@ app.use('/api', authRouter);
 app.use('/api/import', importRouter);
 app.use('/api/backup', backupRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/logs', logsRouter);
 
 app.listen(PORT, () => {
   console.log(`Server luistert op http://localhost:${PORT}`);

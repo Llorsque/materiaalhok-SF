@@ -8,6 +8,28 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 ## [Unreleased]
 
 ### Toegevoegd
+- **Serverside activity log**: de backend schrijft nu logregels weg voor
+  aangemaakte/gewijzigde/verwijderde bonnen, materialen, sets, gebruikers,
+  Excel-imports en reset-acties. Logregels bevatten leesbare Nederlandse
+  omschrijvingen met namen en aantallen.
+- Nieuwe `logAction(action, detail, userId)` helper in `server/utils.js` die
+  faal-tolerant schrijft naar de bestaande `logs`-tabel.
+- Nieuw endpoint `GET /api/logs` met paginering (`limit`/`offset`), filters op
+  `action`, zoekterm `q`, datumbereik (`from`/`to`) en totaaltelling.
+- **Logboek-tab** in de admin met tabel (tijdstip, actie, wie, omschrijving),
+  zoekveld, actie-dropdown, vorige/volgende-paginering en een rustige lege
+  staat wanneer er nog niets is gebeurd.
+- `getLogs(params)` in de frontend-API-client.
+
+### Gewijzigd
+- Recente activiteit op het admin-dashboard leest voortaan uit de backend in
+  plaats van uit `localStorage`.
+- `addLog(...)` op de frontend is nu een dunne wrapper die enkel de logs
+  ververst; de backend is de bron van waarheid geworden.
+
+## [1.1.0] - 2026-07-23
+
+### Toegevoegd
 - **Reset voor livegang** (admin → Instellingen → Gevarenzone): wist alle bonnen
   en bonregels na expliciete bevestiging (typ `RESET`). Materialen, sets,
   gebruikers en logs blijven staan. Bonnummers beginnen daarna weer bij 1.

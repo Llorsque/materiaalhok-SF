@@ -107,6 +107,20 @@ export const runBackup       = () => request('POST', '/api/backup/run');
 export const getResetPreview = () => request('GET',  '/api/admin/reset-preview');
 export const executeReset    = () => request('POST', '/api/admin/reset', { confirm: 'RESET' });
 
+// --- Logs ------------------------------------------------------------------
+// Bouwt een querystring uit de gedefinieerde params; lege waarden overslaan
+// zodat we niet per ongeluk 'action=' als een echte filter meesturen.
+export const getLogs = (params = {}) => {
+  const qs = new URLSearchParams();
+  for (const key of ['limit', 'offset', 'action', 'q', 'from', 'to']) {
+    const v = params[key];
+    if (v === undefined || v === null || v === '') continue;
+    qs.set(key, v);
+  }
+  const s = qs.toString();
+  return request('GET', `/api/logs${s ? `?${s}` : ''}`);
+};
+
 // --- Bons ------------------------------------------------------------------
 export const getBons    = ()         => request('GET',    '/api/bons');
 export const getBon     = (id)       => request('GET',    `/api/bons/${id}`);
