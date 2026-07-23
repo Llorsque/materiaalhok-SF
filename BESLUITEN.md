@@ -113,6 +113,29 @@ veertien dagen historie.
   schrijven een installatiehandleiding voor de Windows-laptop die later wordt
   gevolgd.
 
+## Operationele besluiten — laptop en e-mail
+
+- **Laptop draait maandag t/m vrijdag.** Handmatig aan om 08:00 op
+  maandagochtend, automatisch uit om 19:00 op vrijdagavond via de
+  Windows-taakplanner. In het weekend staat 'ie uit — dus geen bonnen,
+  geen mails, geen backups tussen vrijdag 19:00 en maandag 08:00.
+- **WiFi in het materiaalhok is aanwezig**, dus e-mailverzending vanuit
+  de tool is technisch mogelijk. Geen SMS-fallback of andere kanalen.
+- **Automatische mails alleen tussen 08:00 en 18:00.** Nooit daarbuiten.
+  Wie op maandagochtend 08:05 z'n materiaal komt afhalen krijgt geen
+  mail die om 07:59 al klaarstond.
+- **Bevestigingsmails (bon aangemaakt, materiaal afgehaald) gaan direct
+  bij de handeling.** Die vallen automatisch binnen kantoortijd omdat
+  de tool alleen dan gebruikt wordt — geen aparte planning nodig.
+- **Retourherinnering gaat naar de laatste werkdag vóór de retourdatum.**
+  Retour op maandag → mail op vrijdag. Retour op woensdag → mail op
+  dinsdag. Geen "één dag ervoor" als dat op een zaterdag valt.
+- **Retourdatums kunnen alleen op werkdagen vallen.** Zaterdag en zondag
+  zijn niet selecteerbaar. Wordt in de datumkiezer afgedwongen, niet
+  pas bij het opslaan.
+- **Gebruikers kunnen e-mailherinneringen zelf uitzetten in hun profiel.**
+  Bevestigingsmails blijven altijd, herinneringen zijn opt-out.
+
 ## Wat we expliciet niet doen (nu)
 
 - Eigen desktop-app op de scan-laptop (browser in kioskmodus volstaat).

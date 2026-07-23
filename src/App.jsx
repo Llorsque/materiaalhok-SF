@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DEFAULT_BRANDING } from "./data/defaults";
 import { store, session } from "./utils/storage";
 import { genItemBarcode, syncBarcodeCounter } from "./utils/barcode";
-import { getMaterials, getUsers, getSets, getBons, getLogs } from "./api/client";
+import { getMaterials, getUsers, getSets, getBons, getLogs, logout as apiLogout } from "./api/client";
 import { LoginView } from "./views/LoginView";
 import { AdminView } from "./views/AdminView";
 import { UserView } from "./views/UserView";
@@ -128,8 +128,23 @@ export default function App() {
   // geschreven regel direct ziet. Argumenten worden bewust genegeerd.
   const addLog = useCallback(() => { refreshLogs(); }, [refreshLogs]);
   const handleLogin = (u) => { setSessionExpired(false); setUser(u); session.set("mhok-user", u); };
-  const handleLogout = () => { setUser(null); session.remove("mhok-user"); };
-  const handleAutoLogout = () => { setUser(null); session.remove("mhok-user"); setSessionExpired(true); };
+  const handleLogout = () => {
+    // Server best-effort informeren; client-side sowieso uitloggen zodat een
+    // haperende backend geen "kan niet uitloggen"-situatie oplevert.
+    apiLogout();
+    setUser(null);
+    session.remove("mhok-user");
+  };
+  const handleAutoLogout = () => { apiLogout(); setUser(null); session.remove("mhok-user"); setSessionExpired(true); };
+
+  // Wanneer een API-call een 401 teruggeeft, dispatcht de client een event.
+  // We wissen de user (token is al door de client opgeruimd) en tonen het
+  // "sessie verlopen"-bericht op het loginscherm.
+  useEffect(() => {
+    const handler = () => { setUser(null); session.remove("mhok-user"); setSessionExpired(true); };
+    window.addEventListener("mhok:auth-expired", handler);
+    return () => window.removeEventListener("mhok:auth-expired", handler);
+  }, []);
 
   // Auto-logout na INACTIVITY_TIMEOUT_MS — reset bij muis/toets/klik/scroll/touch.
   useEffect(() => {

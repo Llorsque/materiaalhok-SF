@@ -72,6 +72,14 @@ CREATE TABLE IF NOT EXISTS bon_items (
   )
 );
 
+CREATE TABLE IF NOT EXISTS sessions (
+  token       TEXT    PRIMARY KEY,
+  user_id     INTEGER NOT NULL,
+  created_at  TEXT    NOT NULL,
+  expires_at  TEXT    NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS logs (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   timestamp  TEXT    NOT NULL,
@@ -89,3 +97,5 @@ CREATE INDEX IF NOT EXISTS idx_users_login_barcode  ON users (login_barcode);
 CREATE INDEX IF NOT EXISTS idx_bons_bon_number      ON bons (bon_number);
 CREATE INDEX IF NOT EXISTS idx_bons_user_id         ON bons (user_id);
 CREATE INDEX IF NOT EXISTS idx_bons_status          ON bons (status);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id     ON sessions (user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at  ON sessions (expires_at);

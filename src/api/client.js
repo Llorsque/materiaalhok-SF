@@ -8,11 +8,45 @@
 // `import.meta.env.VITE_API_BASE_URL` met deze constante als fallback.
 const BASE_URL = 'http://localhost:3001';
 
+// --- Token-opslag ----------------------------------------------------------
+// Token staat in localStorage (blijft over browser-restart heen), de user
+// zelf in sessionStorage (verdwijnt bij laptop-herstart). Zo hoeft een admin
+// die z'n laptop herstart wél opnieuw in te loggen, maar tussen twee tabs
+// werkt de sessie transparant door.
+const TOKEN_KEY = 'mhok-token';
+
+export function getToken() {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
+
+export function setToken(token) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // localStorage kan geblokkeerd zijn (privé-modus, quota vol). Stil
+    // negeren is beter dan de app opblazen; requests werken dan alleen
+    // niet auth-gebonden.
+  }
+}
+
+// Signaleert de app dat het token niet meer geldig is. App.jsx luistert
+// hierop en stuurt de gebruiker terug naar het loginscherm.
+function fireAuthExpired() {
+  try {
+    window.dispatchEvent(new CustomEvent('mhok:auth-expired'));
+  } catch {}
+}
+
+// --- Core request ----------------------------------------------------------
+
 async function request(method, path, body) {
+  const token = getToken();
   const opts = {
     method,
     headers: { Accept: 'application/json' },
   };
+  if (token) opts.headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(body);
@@ -35,6 +69,15 @@ async function request(method, path, body) {
   const data = text ? JSON.parse(text) : null;
 
   if (!res.ok) {
+    // 401 bij een verzoek waarbij we wél een token stuurden = onze sessie is
+    // ongeldig/verlopen. Token weggooien en de app terug naar login. Bij een
+    // login-poging zelf sturen we geen token, dus die 401 gaat gewoon terug
+    // als foutmelding naar het loginscherm.
+    if (res.status === 401 && token) {
+      setToken(null);
+      fireAuthExpired();
+    }
+
     const message = (data && data.error) || `HTTP ${res.status}`;
     const err = new Error(message);
     err.kind = 'response';
@@ -68,17 +111,40 @@ export const updateUser = (id, data) => request('PUT',    `/api/users/${id}`, da
 export const deleteUser = (id)       => request('DELETE', `/api/users/${id}`);
 
 // --- Auth ------------------------------------------------------------------
-export const login          = (email, password) => request('POST', '/api/login', { email, password });
-export const loginByBarcode = (login_barcode)   => request('POST', '/api/login/scan', { login_barcode });
+// login/loginByBarcode: token uit de response strippen en apart opslaan zodat
+// de rest van de app niet weet dat 'ie bestaat — die ziet alleen de user.
+async function loginRequest(path, body) {
+  const data = await request('POST', path, body);
+  if (data && data.token) {
+    setToken(data.token);
+    const { token, ...user } = data;
+    return user;
+  }
+  return data;
+}
+export const login          = (email, password) => loginRequest('/api/login',      { email, password });
+export const loginByBarcode = (login_barcode)   => loginRequest('/api/login/scan', { login_barcode });
+export const getMe          = ()                => request('GET', '/api/me');
+
+// Logout probeert de server-side sessie op te ruimen maar wist het token
+// hoe dan ook. Als de server niet bereikbaar is willen we alsnog uitloggen
+// aan de clientkant.
+export async function logout() {
+  try { await request('POST', '/api/logout'); } catch {}
+  setToken(null);
+}
 
 // --- Import ----------------------------------------------------------------
 // Excel-upload gaat via multipart/form-data, dus omzeilt het JSON-pad.
 async function uploadFile(path, file) {
+  const token = getToken();
   const fd = new FormData();
   fd.append('file', file);
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
   let res;
   try {
-    res = await fetch(`${BASE_URL}${path}`, { method: 'POST', body: fd });
+    res = await fetch(`${BASE_URL}${path}`, { method: 'POST', body: fd, headers });
   } catch (e) {
     const err = new Error(e.message || 'Geen verbinding met de server');
     err.kind = 'network';
@@ -87,6 +153,10 @@ async function uploadFile(path, file) {
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
+    if (res.status === 401 && token) {
+      setToken(null);
+      fireAuthExpired();
+    }
     const message = (data && data.error) || `HTTP ${res.status}`;
     const err = new Error(message);
     err.kind = 'response';

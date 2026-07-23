@@ -8,6 +8,22 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 ## [Unreleased]
 
 ### Toegevoegd
+- **Token-authenticatie — fundament (stap 1 van 2)**: na een succesvolle
+  login geeft de backend een sessie-token uit (12 uur geldig), opgeslagen in
+  een nieuwe `sessions`-tabel. De frontend bewaart het token in
+  `localStorage` en stuurt het als `Authorization: Bearer <token>` mee bij
+  elke API-call. Bij een 401 wist de client het token en stuurt de
+  gebruiker terug naar het loginscherm met "Sessie verlopen".
+- Nieuw endpoint `POST /api/logout` dat de server-side sessie opruimt
+  (idempotent — onbekend/verlopen token geeft nog steeds 200).
+- Nieuw endpoint `GET /api/me` (met `requireAuth`) dat de ingelogde
+  gebruiker teruggeeft. Testroute om het mechanisme te controleren voordat
+  stap 2 alles dichtzet.
+- Nieuwe middleware `requireAuth` en `requireAdmin` in
+  `server/middleware/auth.js`. Bestaande routes zijn in stap 1 nog **niet**
+  beveiligd — dat gebeurt in stap 2.
+- Verlopen sessies worden bij elke login opgeruimd; geen aparte cronjob.
+
 - **Serverside activity log**: de backend schrijft nu logregels weg voor
   aangemaakte/gewijzigde/verwijderde bonnen, materialen, sets, gebruikers,
   Excel-imports en reset-acties. Logregels bevatten leesbare Nederlandse
