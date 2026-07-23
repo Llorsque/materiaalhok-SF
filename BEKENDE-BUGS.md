@@ -12,12 +12,6 @@ aan het relevante onderdeel werken.
   Mogelijke oplossingen: overstap naar SheetJS Pro/CDN-versie of overstap naar
   exceljs-package.
 
-## Sets
-
-- **Er is geen Sets-tab in de admin.** Admins kunnen sets niet bewerken
-  (voorraad, samenstelling, verwijderen) via de UI. Sets worden alleen
-  aangemaakt via Excel-import. Lijst is te bekijken via /api/sets.
-
 ## UX verbeterpunten
 
 - **In Chrome-kiosk-modus op de Windows-laptop in het hok is de Windows-taakbalk

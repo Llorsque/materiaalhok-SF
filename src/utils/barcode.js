@@ -37,3 +37,19 @@ export function nextMaterialBarcode(materials) {
   const pad = Math.max(4, String(next).length);
   return `M-${String(next).padStart(pad, "0")}`;
 }
+
+// Spiegelt server/utils.js#generateBarcode('S'): identiek aan de materiaal-
+// variant maar met S-prefix voor sets.
+export function nextSetBarcode(sets) {
+  let max = 0;
+  for (const s of sets || []) {
+    const match = String(s.barcode || "").match(/^S-(\d+)$/);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > max) max = n;
+    }
+  }
+  const next = max + 1;
+  const pad = Math.max(4, String(next).length);
+  return `S-${String(next).padStart(pad, "0")}`;
+}

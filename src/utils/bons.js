@@ -33,6 +33,37 @@ export function availQty(item, bons) {
   return Math.max(0, (item.stock || 0) - unavailableQty(bons, item.id));
 }
 
+// Set-varianten: identieke logica maar tegen set_id in bon_items.
+export function loanedSetQty(bons, setId) {
+  let total = 0;
+  for (const b of bons) {
+    if (b.status !== "active") continue;
+    for (const it of b.items || []) {
+      if (it.set_id === setId && !it.returned) total += it.quantity;
+    }
+  }
+  return total;
+}
+
+export function reservedSetQty(bons, setId) {
+  let total = 0;
+  for (const b of bons) {
+    if (b.status !== "reserved") continue;
+    for (const it of b.items || []) {
+      if (it.set_id === setId) total += it.quantity;
+    }
+  }
+  return total;
+}
+
+export function unavailableSetQty(bons, setId) {
+  return loanedSetQty(bons, setId) + reservedSetQty(bons, setId);
+}
+
+export function availSetQty(item, bons) {
+  return Math.max(0, (item.stock || 0) - unavailableSetQty(bons, item.id));
+}
+
 export function bonIsOverdue(b) {
   if (!b || b.status === "completed") return false;
   if (!b.return_date) return false;

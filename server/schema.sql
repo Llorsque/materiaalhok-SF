@@ -42,16 +42,18 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS bons (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  bon_number    TEXT    NOT NULL UNIQUE,
-  user_id       INTEGER NOT NULL,
-  start_date    TEXT,
-  return_date   TEXT,
-  status        TEXT    NOT NULL CHECK (status IN ('active', 'reserved', 'completed')),
-  notes         TEXT,
-  created_at    TEXT    NOT NULL,
-  completed_at  TEXT,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+  id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+  bon_number             TEXT    NOT NULL UNIQUE,
+  user_id                INTEGER NOT NULL,
+  start_date             TEXT,
+  return_date            TEXT,
+  status                 TEXT    NOT NULL CHECK (status IN ('active', 'reserved', 'completed')),
+  notes                  TEXT,
+  created_at             TEXT    NOT NULL,
+  completed_at           TEXT,
+  created_by_admin_id    INTEGER,
+  FOREIGN KEY (user_id)             REFERENCES users(id) ON DELETE RESTRICT,
+  FOREIGN KEY (created_by_admin_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS bon_items (

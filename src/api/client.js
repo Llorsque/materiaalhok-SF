@@ -104,11 +104,12 @@ export const updateSet = (id, data) => request('PUT',    `/api/sets/${id}`, data
 export const deleteSet = (id)       => request('DELETE', `/api/sets/${id}`);
 
 // --- Users -----------------------------------------------------------------
-export const getUsers   = ()         => request('GET',    '/api/users');
-export const getUser    = (id)       => request('GET',    `/api/users/${id}`);
-export const createUser = (data)     => request('POST',   '/api/users', data);
-export const updateUser = (id, data) => request('PUT',    `/api/users/${id}`, data);
-export const deleteUser = (id)       => request('DELETE', `/api/users/${id}`);
+export const getUsers          = ()             => request('GET',    '/api/users');
+export const getUser           = (id)           => request('GET',    `/api/users/${id}`);
+export const createUser        = (data)         => request('POST',   '/api/users', data);
+export const updateUser        = (id, data)     => request('PUT',    `/api/users/${id}`, data);
+export const deleteUser        = (id)           => request('DELETE', `/api/users/${id}`);
+export const resetUserPassword = (id, password) => request('PUT',    `/api/users/${id}/password`, { password });
 
 // --- Auth ------------------------------------------------------------------
 // login/loginByBarcode: token uit de response strippen en apart opslaan zodat

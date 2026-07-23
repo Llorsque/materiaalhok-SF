@@ -163,6 +163,32 @@ router.put('/:id', (req, res) => {
   res.json(stripPasswordHash(updated));
 });
 
+// Admin-only wachtwoord-reset. Los endpoint zodat het los te gebruiken is
+// naast de reguliere PUT (die password ook accepteert). Extra strenge lengte
+// (8+) en veegt tegelijk alle bestaande sessies van deze gebruiker, zodat
+// een eventueel gestolen token direct dood is.
+router.put('/:id/password', async (req, res) => {
+  const targetId = parseInt(req.params.id, 10);
+  const target = db.prepare('SELECT * FROM users WHERE id = ?').get(targetId);
+  if (!target) return res.status(404).json({ error: 'gebruiker niet gevonden' });
+
+  const password = req.body && req.body.password;
+  if (typeof password !== 'string' || password.length < 8) {
+    return res.status(400).json({ error: "veld 'password' moet minstens 8 tekens lang zijn" });
+  }
+
+  const hash = await bcrypt.hash(password, BCRYPT_COST);
+
+  const tx = db.transaction(() => {
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, targetId);
+    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(targetId);
+  });
+  tx();
+
+  logAction('user_password_reset', `Wachtwoord gereset voor ${target.name}`, req.user.id);
+  res.json({ ok: true });
+});
+
 router.delete('/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
   try {

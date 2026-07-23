@@ -7,6 +7,63 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-23
+
+### Toegevoegd
+- **Admin kan een bon aanmaken namens een gebruiker**. Nieuwe knop "Nieuwe
+  bon" in het bonnen-overzicht opent een tweefase-flow: eerst kies je de
+  gebruiker (alleen accounts met rol 'gebruiker'), daarna kies je direct
+  lenen of reserveren en doorloop je de bestaande `LoanFlow` ongewijzigd
+  (voorraadcheck, weekend-blokkade, datums, samenvatting). Admins kunnen
+  géén bon voor zichzelf of voor een andere admin aanmaken; de backend
+  weigert dat met een Nederlandse foutmelding.
+- Nieuwe kolom `bons.created_by_admin_id` (nullable, FK naar `users(id)`
+  met `ON DELETE SET NULL`) plus lichte migratie in `server/db.js`. Wordt
+  alleen gezet wanneer een admin de bon namens iemand anders aanmaakt.
+- `GET /api/bons` geeft `created_by_admin_id` en `created_by_admin_name`
+  mee (JOIN op users), zowel voor de lijst als de detail-endpoints.
+- `logAction` bij zulke bonnen: `"BON-2026-XXXX aangemaakt door <admin>
+  namens <gebruiker>: 2x Voetbal"`. De actor blijft de admin.
+- **Sterretje bij admin-gemaakte bonnen**: in het admin bonnen-overzicht
+  (BonsTab), op het dashboard, in item- en set-detailmodals verschijnt een
+  amber `*` achter het bonnummer met tooltip en ondertitel "Aangemaakt door
+  X namens Y". In het bon-detail komt het als eigen regel te staan. De
+  gebruiker ziet in zijn eigen overzicht geen sterretje — voor hem is het
+  een normale bon.
+
+## [1.4.0] - 2026-07-23
+
+### Toegevoegd
+- **Sets-tab in de admin**: eigen tab naast Materiaal met dezelfde vorm
+  (overzicht, zoeken, filteren op categorie, scan-bar, add/edit/delete-modals,
+  detail-modal met barcode-SVG en samenstelling). Barcode wordt automatisch
+  gegenereerd als `S-XXXX` en kan opnieuw worden gegenereerd via de
+  detail-modal. Verwijderen wordt door de backend geblokkeerd zolang de set
+  op een openstaande bon staat.
+- **Wachtwoord resetten vanuit admin**: per gebruiker een gele knop
+  "Wachtwoord resetten" in de gebruikersbeheer-tab. Opent een modal met een
+  nieuw wachtwoord + bevestiging (minimaal 8 tekens). Backend:
+  `PUT /api/users/:id/password` (admin-only). Bij een reset worden alle
+  actieve sessies van die gebruiker in één transactie verwijderd, zodat een
+  gestolen token direct dood is. Log-actie `user_password_reset` met
+  omschrijving "Wachtwoord gereset voor <naam>" — het wachtwoord zelf wordt
+  nooit gelogd.
+- **Weekend geblokkeerd in datumkiezer**: zaterdag en zondag zijn niet meer
+  bruikbaar voor `start_date` en `return_date` in lenen, reserveren en bij
+  admin-bon-edit. De UI toont inline een rode melding en houdt de
+  volgende-knop uit. De backend (`POST /api/bons`, `PUT /api/bons/:id`)
+  weigert weekend-datums met een Nederlandse foutmelding als tweede
+  verdedigingslinie.
+- Nieuwe helpers `isWeekend(dateStr)` in `src/utils/date.js`,
+  `nextSetBarcode(sets)` in `src/utils/barcode.js`, en set-varianten van
+  `loanedQty` / `reservedQty` / `unavailableQty` / `availQty` in
+  `src/utils/bons.js`.
+- `resetUserPassword(id, password)` in de frontend-API-client.
+
+### Opgelost
+- **Er is geen Sets-tab in de admin** (was gedocumenteerd in
+  `BEKENDE-BUGS.md`) is opgelost door de nieuwe Sets-tab.
+
 ## [1.3.0] - 2026-07-23
 
 Token-authenticatie in twee stappen afgerond: eerst het fundament (stap 1),

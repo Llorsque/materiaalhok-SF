@@ -53,5 +53,11 @@ const bonsCols = db.pragma('table_info(bons)').map((c) => c.name);
 if (bonsCols.length > 0 && !bonsCols.includes('notes')) {
   db.exec('ALTER TABLE bons ADD COLUMN notes TEXT');
 }
+if (bonsCols.length > 0 && !bonsCols.includes('created_by_admin_id')) {
+  // Nullable FK. Bij het verwijderen van de admin wordt de kolom NULL zodat de
+  // bon zelf blijft bestaan (audit-trail via logs). Bestaande bonnen krijgen
+  // automatisch NULL — die zijn per definitie door de gebruiker zelf gemaakt.
+  db.exec('ALTER TABLE bons ADD COLUMN created_by_admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL');
+}
 
 module.exports = db;

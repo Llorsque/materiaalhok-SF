@@ -2,14 +2,22 @@ import { bonIsOverdue, bonRemaining } from "../utils/bons";
 import { fmtDate } from "../utils/date";
 import { BonBadge } from "./BonBadge";
 
-export function BonCard({ bon, onClick, showUser }) {
+export function BonCard({ bon, onClick, showUser, showAdminMark }) {
   const rem = bonRemaining(bon);
   const overdue = bonIsOverdue(bon);
+  const byAdmin = showAdminMark && bon.created_by_admin_id;
+  const adminTitle = byAdmin
+    ? `Aangemaakt door ${bon.created_by_admin_name || "een admin"} namens ${bon.user_name || "?"}`
+    : undefined;
   return <div onClick={onClick} className={`bg-white rounded-2xl px-5 py-4 shadow-sm border cursor-pointer hover:shadow-md ${overdue && bon.status !== "completed" ? "border-red-200" : "border-gray-100 hover:border-gray-200"}`}>
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <div className="flex items-center gap-2"><span className="font-mono text-sm font-bold text-blue-600">{bon.bon_number}</span><BonBadge bon={bon}/></div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm font-bold text-blue-600">{bon.bon_number}{byAdmin && <span className="text-amber-500 ml-0.5" title={adminTitle}>*</span>}</span>
+          <BonBadge bon={bon}/>
+        </div>
         <p className="text-xs text-gray-500 mt-1">{showUser && <><span className="font-medium">{bon.user_name}</span> {"\u00b7"} </>}{fmtDate(bon.start_date)} {"\u2192"} {fmtDate(bon.return_date)}{bon.status !== "completed" && <> {"\u00b7"} {rem.length} open</>}</p>
+        {byAdmin && <p className="text-[11px] text-amber-700 mt-0.5">Aangemaakt door {bon.created_by_admin_name || "admin"} namens {bon.user_name}</p>}
       </div>
       <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5l7 7-7 7"/></svg>
     </div>

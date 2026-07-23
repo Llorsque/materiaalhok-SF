@@ -2,7 +2,10 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { CATS } from "../../data/defaults";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { getIcon } from "../../utils/format";
-import { fmtDate, today } from "../../utils/date";
+import { fmtDate, today, isWeekend } from "../../utils/date";
+
+const WEEKEND_MSG_START = "Ophaaldatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.";
+const WEEKEND_MSG_END = "Retourdatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.";
 import { createBon } from "../../api/client";
 import { KindBadge } from "../../components/KindBadge";
 
@@ -24,6 +27,8 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
   const loanScanTimer = useRef(null);
   const loanScanValue = useRef("");
   const totalCartQty = cart.reduce((s, c) => s + c.qty, 0);
+  const startDateInvalid = isWeekend(startDate);
+  const endDateInvalid = isWeekend(endDate);
 
   useEffect(() => {
     const handler = (e) => {
@@ -207,15 +212,17 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         <h3 className="font-bold text-gray-900 text-lg">{"\ud83d\udcc5"} Wanneer heb je het materiaal nodig?</h3>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Ophaaldatum</label>
-          <input type="date" className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-purple-500" value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/>
+          <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${startDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-purple-500"}`} value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/>
+          {startDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_START}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Retourdatum</label>
-          <input type="date" className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-purple-500" value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/>
+          <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-purple-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/>
+          {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
         </div>
-        {startDate && endDate && <p className="text-sm text-purple-700 bg-purple-50 rounded-xl px-4 py-3">{"\ud83d\udcc6"} Periode: {fmtDate(startDate)} t/m {fmtDate(endDate)} ({Math.max(1,Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24)))} dagen)</p>}
+        {startDate && endDate && !startDateInvalid && !endDateInvalid && <p className="text-sm text-purple-700 bg-purple-50 rounded-xl px-4 py-3">{"\ud83d\udcc6"} Periode: {fmtDate(startDate)} t/m {fmtDate(endDate)} ({Math.max(1,Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24)))} dagen)</p>}
       </div>
-      <button onClick={()=>setLoanStep(2)} disabled={!startDate||!endDate} className="w-full py-4 rounded-2xl bg-purple-500 text-white font-bold text-base hover:bg-purple-600 disabled:opacity-40 shadow-lg">
+      <button onClick={()=>setLoanStep(2)} disabled={!startDate||!endDate||startDateInvalid||endDateInvalid} className="w-full py-4 rounded-2xl bg-purple-500 text-white font-bold text-base hover:bg-purple-600 disabled:opacity-40 shadow-lg">
         Bekijk beschikbaarheid {"\u2192"}
       </button>
     </div>}
@@ -321,7 +328,8 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       {!isReservation && <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h3 className="font-bold text-gray-900 text-lg mb-4">Retourdatum</h3>
         <label className="block text-sm font-medium text-gray-700 mb-2">Wanneer breng je het terug? *</label>
-        <input type="date" className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={endDate} onChange={e => setEndDate(e.target.value)} min={today()}/>
+        <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500"}`} value={endDate} onChange={e => setEndDate(e.target.value)} min={today()}/>
+        {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
       </div>}
 
       {isReservation && <div className="bg-purple-50 rounded-2xl px-5 py-4 text-sm text-purple-800">
@@ -338,7 +346,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         </ul>}
       </div>}
 
-      <button onClick={submitBon} disabled={cart.length === 0 || !endDate || submitting} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-amber-500 hover:bg-amber-600"}`}>
+      <button onClick={submitBon} disabled={cart.length === 0 || !endDate || submitting || startDateInvalid || endDateInvalid} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-amber-500 hover:bg-amber-600"}`}>
         {submitting ? "Bezig..." : (isReservation ? "\ud83d\udcc5 Reservering bevestigen" : "\ud83d\udce4 Bon aanmaken")} ({totalCartQty} items)
       </button>
     </div>}

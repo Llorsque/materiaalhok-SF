@@ -22,7 +22,7 @@ export function ItemDetailModal({ detail, setDetail, bons, eq, addLog, getItemSt
           <div className="flex justify-between"><span className="text-gray-500">Uitgeleend (jaar)</span><span className="font-medium">{stats.count}x</span></div>
           {Object.keys(stats.borrowers).length>0&&<div><span className="text-gray-500">Door:</span><div className="mt-1 flex flex-wrap gap-1">{Object.entries(stats.borrowers).sort((a,b)=>b[1]-a[1]).map(([n,c])=><span key={n} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs">{n} ({c}x)</span>)}</div></div>}
         </div>
-        {itemBons.length>0&&<div><p className="text-xs font-semibold text-gray-500 uppercase mb-2">Bonnen met dit item</p>{itemBons.map(b=><BonCard key={b.id} bon={b} onClick={()=>{setDetail(null);onOpenBon(b)}} showUser/>)}</div>}
+        {itemBons.length>0&&<div><p className="text-xs font-semibold text-gray-500 uppercase mb-2">Bonnen met dit item</p>{itemBons.map(b=><BonCard key={b.id} bon={b} onClick={()=>{setDetail(null);onOpenBon(b)}} showUser showAdminMark/>)}</div>}
         <div className="flex gap-2 pt-2">
           <button onClick={()=>{onEdit(detail);setDetail(null)}} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Bewerken</button>
           <button onClick={()=>onRegenBarcode(detail.id)} className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-200" title="Nieuwe barcode">{"\ud83d\udd04"}</button>

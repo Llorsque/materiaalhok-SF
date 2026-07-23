@@ -1,10 +1,48 @@
+import { useState } from "react";
 import { Modal } from "../../components/Modal";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { encodeCode128B } from "../../utils/barcode";
 import { genLoginCode } from "../../utils/bons";
-import { createUser, updateUser, deleteUser as apiDeleteUser } from "../../api/client";
+import { createUser, updateUser, deleteUser as apiDeleteUser, resetUserPassword } from "../../api/client";
 
 export function UsersTab({ users, usersLoading, usersError, setUsersError, refreshUsers, addLog, newUser, setNewUser, editUser, setEditUser }) {
+  const [resetTarget, setResetTarget] = useState(null);
+  const [resetPass, setResetPass] = useState("");
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetError, setResetError] = useState(null);
+  const [resetDone, setResetDone] = useState(null);
+
+  const openReset = (u) => {
+    setResetTarget(u);
+    setResetPass("");
+    setResetConfirm("");
+    setResetError(null);
+    setResetDone(null);
+  };
+  const closeReset = () => {
+    if (resetBusy) return;
+    setResetTarget(null);
+    setResetPass("");
+    setResetConfirm("");
+    setResetError(null);
+    setResetDone(null);
+  };
+  const confirmReset = async () => {
+    setResetError(null);
+    if (resetPass.length < 8) { setResetError("Wachtwoord moet minstens 8 tekens zijn"); return; }
+    if (resetPass !== resetConfirm) { setResetError("De twee wachtwoorden komen niet overeen"); return; }
+    setResetBusy(true);
+    try {
+      await resetUserPassword(resetTarget.id, resetPass);
+      setResetDone({ name: resetTarget.name });
+      addLog();
+    } catch (err) {
+      setResetError(err.message || "Reset mislukt");
+    } finally {
+      setResetBusy(false);
+    }
+  };
   const ic = "w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
   const lc = "block text-sm font-medium text-gray-700 mb-1.5";
 
@@ -132,6 +170,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
           <div className="flex items-center gap-2">
             <button onClick={()=>printBadge(u)} className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200">{"\ud83d\udda8"}</button>
             <button onClick={()=>setEditUser({...u, password: ""})} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100">Bewerken</button>
+            <button onClick={()=>openReset(u)} className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100">Wachtwoord resetten</button>
             <button onClick={()=>handleDelete(u)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100">Verwijder</button>
           </div>
         </div>
@@ -152,6 +191,36 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
       <p className="text-xs text-gray-400">Er wordt automatisch een unieke badge-code aangemaakt</p>
       <button onClick={addUser} disabled={!newUser.name?.trim()||!newUser.email?.trim()||!newUser.password?.trim()} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Gebruiker toevoegen</button>
     </div>
+
+    {/* Password reset modal */}
+    <Modal open={!!resetTarget} onClose={closeReset} title={resetTarget ? `Wachtwoord resetten — ${resetTarget.name}` : "Wachtwoord resetten"}>
+      {resetTarget && !resetDone && <div className="space-y-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-900">
+          Na het resetten wordt <span className="font-semibold">{resetTarget.name}</span> op alle
+          apparaten uitgelogd. De gebruiker moet inloggen met het nieuwe wachtwoord.
+        </div>
+        <div>
+          <label className={lc}>Nieuw wachtwoord *</label>
+          <input type="password" autoComplete="new-password" className={ic} value={resetPass} onChange={e=>setResetPass(e.target.value)} placeholder="Minimaal 8 tekens"/>
+        </div>
+        <div>
+          <label className={lc}>Herhaal wachtwoord *</label>
+          <input type="password" autoComplete="new-password" className={ic} value={resetConfirm} onChange={e=>setResetConfirm(e.target.value)} placeholder="Typ hetzelfde wachtwoord"/>
+        </div>
+        {resetError && <p className="text-sm text-red-600">{resetError}</p>}
+        <div className="flex gap-3 pt-2">
+          <button onClick={confirmReset} disabled={resetBusy} className="flex-1 py-2.5 rounded-xl bg-amber-600 text-white font-semibold text-sm hover:bg-amber-700 disabled:opacity-40">{resetBusy ? "Bezig..." : "Wachtwoord resetten"}</button>
+          <button onClick={closeReset} disabled={resetBusy} className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 disabled:opacity-40">Annuleren</button>
+        </div>
+      </div>}
+      {resetTarget && resetDone && <div className="space-y-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-800">
+          Wachtwoord van <span className="font-semibold">{resetDone.name}</span> is bijgewerkt.
+          Actieve sessies zijn ongeldig gemaakt.
+        </div>
+        <button onClick={closeReset} className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Sluiten</button>
+      </div>}
+    </Modal>
 
     {/* Edit modal */}
     <Modal open={!!editUser} onClose={()=>setEditUser(null)} title="Gebruiker bewerken">

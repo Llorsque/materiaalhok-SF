@@ -28,6 +28,16 @@ function parseDate(s) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+// Zaterdag (6) en zondag (0). We nemen de weekdag in UTC omdat de frontend
+// datums stuurt als YYYY-MM-DD (=UTC-middernacht) — dat is dezelfde
+// kalenderdag als in NL. Zie BESLUITEN.md "Operationele besluiten": bonnen
+// mogen alleen op werkdagen starten of retour zijn.
+function isWeekendDate(d) {
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return false;
+  const day = d.getUTCDay();
+  return day === 0 || day === 6;
+}
+
 function computeStatus(startStr, returnStr) {
   const now = new Date();
   const start = new Date(startStr);
@@ -122,9 +132,10 @@ function checkStock(items, period, excludeBonId = null) {
 
 function loadBonWithItems(id) {
   const bon = db.prepare(`
-    SELECT b.*, u.name AS user_name
+    SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name
     FROM bons b
     LEFT JOIN users u ON u.id = b.user_id
+    LEFT JOIN users a ON a.id = b.created_by_admin_id
     WHERE b.id = ?
   `).get(id);
   if (!bon) return null;
@@ -154,15 +165,17 @@ router.get('/', (req, res) => {
   const admin = isAdmin(req);
   const bons = admin
     ? db.prepare(`
-        SELECT b.*, u.name AS user_name
+        SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name
         FROM bons b
         LEFT JOIN users u ON u.id = b.user_id
+        LEFT JOIN users a ON a.id = b.created_by_admin_id
         ORDER BY b.id
       `).all()
     : db.prepare(`
-        SELECT b.*, u.name AS user_name
+        SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name
         FROM bons b
         LEFT JOIN users u ON u.id = b.user_id
+        LEFT JOIN users a ON a.id = b.created_by_admin_id
         WHERE b.user_id = ?
         ORDER BY b.id
       `).all(req.user.id);
@@ -209,20 +222,29 @@ router.get('/:id', (req, res) => {
 
 router.post('/', (req, res) => {
   const body = req.body || {};
+  const actorIsAdmin = isAdmin(req);
 
   // Gewone gebruikers mogen alleen voor zichzelf bonnen aanmaken; we
   // overschrijven bewust de user_id in de body zodat een kwaadwillende
-  // frontend geen bon op iemand anders' naam kan boeken. Admins mogen elke
-  // gebruiker kiezen — bijvoorbeeld om achteraf een bon in te schieten.
-  if (!isAdmin(req)) {
+  // frontend geen bon op iemand anders' naam kan boeken. Admins mogen
+  // namens iedere gebruiker met rol 'user' een bon inschieten — maar
+  // uitdrukkelijk niet voor zichzelf of voor een andere admin, want
+  // admin en gebruiker hebben gescheiden portalen.
+  if (!actorIsAdmin) {
     body.user_id = req.user.id;
   }
 
   if (!Number.isInteger(body.user_id)) {
     return res.status(400).json({ error: "veld 'user_id' is verplicht (integer)" });
   }
-  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(body.user_id);
+  const user = db.prepare('SELECT id, role FROM users WHERE id = ?').get(body.user_id);
   if (!user) return res.status(400).json({ error: 'user_id verwijst naar een onbekende gebruiker' });
+
+  if (actorIsAdmin && user.role !== 'user') {
+    return res.status(400).json({
+      error: "Een admin kan alleen een bon aanmaken namens een gebruiker met de rol 'gebruiker' — niet voor zichzelf of voor een andere admin.",
+    });
+  }
 
   if (!parseDate(body.start_date)) {
     return res.status(400).json({ error: "veld 'start_date' moet een geldige datum/tijd zijn" });
@@ -232,6 +254,12 @@ router.post('/', (req, res) => {
   }
   if (parseDate(body.return_date) <= parseDate(body.start_date)) {
     return res.status(400).json({ error: "'return_date' moet na 'start_date' liggen" });
+  }
+  if (isWeekendDate(parseDate(body.start_date))) {
+    return res.status(400).json({ error: 'Ophaaldatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.' });
+  }
+  if (isWeekendDate(parseDate(body.return_date))) {
+    return res.status(400).json({ error: 'Retourdatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.' });
   }
 
   if (!Array.isArray(body.items) || body.items.length === 0) {
@@ -267,6 +295,10 @@ router.post('/', (req, res) => {
   const now = nowDutchISO();
   const status = computeStatus(body.start_date, body.return_date);
   const completedAt = status === 'completed' ? now : null;
+  // Alleen zetten als de admin namens iemand anders inschiet. Als de admin
+  // ooit toch voor zichzelf zou proberen te boeken is dat hierboven al
+  // afgevangen — deze regel is puur voor de administratie-trail.
+  const createdByAdminId = actorIsAdmin ? req.user.id : null;
 
   let createdId;
   try {
@@ -274,9 +306,9 @@ router.post('/', (req, res) => {
       const bonNumber = generateBonNumber();
       const info = db.prepare(`
         INSERT INTO bons
-          (bon_number, user_id, start_date, return_date, status, notes, created_at, completed_at)
+          (bon_number, user_id, start_date, return_date, status, notes, created_at, completed_at, created_by_admin_id)
         VALUES
-          (@bon_number, @user_id, @start_date, @return_date, @status, @notes, @created_at, @completed_at)
+          (@bon_number, @user_id, @start_date, @return_date, @status, @notes, @created_at, @completed_at, @created_by_admin_id)
       `).run({
         bon_number: bonNumber,
         user_id: body.user_id,
@@ -286,6 +318,7 @@ router.post('/', (req, res) => {
         notes: body.notes ?? null,
         created_at: now,
         completed_at: completedAt,
+        created_by_admin_id: createdByAdminId,
       });
 
       const insertItem = db.prepare(
@@ -303,11 +336,11 @@ router.post('/', (req, res) => {
   }
 
   const created = loadBonWithItems(createdId);
-  logAction(
-    'bon_create',
-    `${created.bon_number} aangemaakt voor ${created.user_name || 'onbekende gebruiker'}: ${formatBonItems(created.items)}`,
-    req.user.id,
-  );
+  const itemsStr = formatBonItems(created.items);
+  const detail = created.created_by_admin_id
+    ? `${created.bon_number} aangemaakt door ${req.user.name} namens ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`
+    : `${created.bon_number} aangemaakt voor ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`;
+  logAction('bon_create', detail, req.user.id);
   res.status(201).json(created);
 });
 
@@ -344,6 +377,12 @@ router.put('/:id', requireAdmin, (req, res) => {
   }
   if (parseDate(return_date) <= parseDate(start_date)) {
     return res.status(400).json({ error: "'return_date' moet na 'start_date' liggen" });
+  }
+  if (isWeekendDate(parseDate(start_date))) {
+    return res.status(400).json({ error: 'Ophaaldatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.' });
+  }
+  if (isWeekendDate(parseDate(return_date))) {
+    return res.status(400).json({ error: 'Retourdatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.' });
   }
 
   let notes = existing.notes;
