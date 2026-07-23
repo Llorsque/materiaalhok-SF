@@ -2,6 +2,8 @@ const express = require('express');
 const db = require('../db');
 const { nowDutchISO, handleUniqueError, logAction } = require('../utils');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { sendMail } = require('../mail/mailer');
+const { bonConfirmation } = require('../mail/templates');
 
 const pad2 = (n) => String(n).padStart(2, '0');
 function shortDate(s) {
@@ -341,6 +343,28 @@ router.post('/', (req, res) => {
     ? `${created.bon_number} aangemaakt door ${req.user.name} namens ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`
     : `${created.bon_number} aangemaakt voor ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`;
   logAction('bon_create', detail, req.user.id);
+
+  // Bevestigingsmail — fire and forget. Sendmail is intern fout-tolerant en
+  // logt zelf naar de logs-tabel; we willen de HTTP-respons niet blokkeren op
+  // een trage SMTP-server, en al helemaal niet laten falen als de mail hapert.
+  const borrower = db.prepare('SELECT email FROM users WHERE id = ?').get(created.user_id);
+  const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
+  if (!email) {
+    logAction('mail_skipped', `Bevestigingsmail voor ${created.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
+  } else {
+    const tpl = bonConfirmation(created);
+    sendMail({
+      to: email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      context: created.bon_number,
+    }).catch((err) => {
+      // sendMail vangt zelf al af, maar dit is de laatste vangnet-lijn.
+      console.error(`[bons] onverwachte mailfout voor ${created.bon_number}: ${err.message}`);
+    });
+  }
+
   res.status(201).json(created);
 });
 

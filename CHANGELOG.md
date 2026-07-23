@@ -7,6 +7,57 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-07-23
+
+E-mailfundament: bevestigingsmails na aanmaken van een bon plus alle
+infrastructuur waar herinneringen en externe verhuur straks op leunen.
+Herinneringen en externe verhuur zitten expliciet **nog niet** in deze release.
+
+### Toegevoegd
+- **Verzendlaag** `server/mail/mailer.js` met nodemailer. Publieke functie
+  `sendMail({ to, subject, html, text, context })` respecteert `MAIL_MODE`
+  (`off` / `redirect` / `live`) en is fout-tolerant: een falende mail laat
+  de hoofdactie nooit crashen. Succes/mislukking/skip komt zowel in de
+  console als in de `logs`-tabel (`mail_sent`, `mail_failed`,
+  `mail_skipped`).
+- **Verzendvenster-helper** `isBinnenVerzendvenster()` (werkdag + 08:00–17:59
+  in `APP_TIMEZONE`, zie `BESLUITEN.md`). Nog niet in gebruik; klaar voor de
+  retourherinneringen die straks komen. Bevestigingsmails omzeilen het
+  venster bewust.
+- **Sjablonen** `server/mail/templates.js`: nette mobielvriendelijke basis
+  met inline CSS + platte-tekst-variant, plus de eerste sjabloon
+  `bonConfirmation(bon)` voor uitleen én reservering (bonnummer, items met
+  aantallen, ophaal- en retourdatum, informele NL-tekst).
+- **Koppeling**: `POST /api/bons` verstuurt na succesvol aanmaken een
+  bevestigingsmail naar het e-mailadres van de betrokken gebruiker (fire &
+  forget). Zonder e-mailadres: `mail_skipped` log, geen fout.
+- **Testendpoint** `POST /api/admin/mail-test` (admin-only) om de
+  SMTP-configuratie te controleren zonder een bon aan te maken.
+- **Nieuwe kolom** `users.email_reminders` (`INTEGER NOT NULL DEFAULT 1`),
+  incl. lichte migratie voor bestaande DBs. Nog niet in gebruik — bedoeld
+  voor de herinneringen. Bevestigingsmails blijven altijd gaan
+  (`BESLUITEN.md`).
+- **Configuratie via dotenv**: `server/.env.example` met commentaar per
+  variabele (`MAIL_MODE`, `MAIL_REDIRECT_TO`, `SMTP_*`, `MAIL_FROM_NAME`,
+  `APP_TIMEZONE`). `server/.env` staat in `.gitignore` en komt nooit in de
+  repo.
+- **README**: sectie "E-mailconfiguratie" met de variabelen, uitleg per
+  `MAIL_MODE`, stappen voor het maken van een Gmail app-wachtwoord en hoe
+  je met het testendpoint controleert of alles staat.
+
+### Wijzigingen
+- Dependencies `nodemailer` en `dotenv` toegevoegd aan `server/package.json`.
+- `server/index.js` laadt `dotenv` als eerste zodat modules die tijdens
+  `require` uit `process.env` lezen (zoals de mailer) de juiste config zien.
+
+## [1.5.1] - 2026-07-23
+
+### Opgelost
+- **Aantal-teller in de Sets-tab**: Sets-tab toonde geen teller met het aantal
+  items in de lijst, waardoor 'ie afweek van de Materiaal-tab. Beide tabs
+  hebben nu dezelfde `<h3>Materiaal ({n})</h3>` / `<h3>Sets ({n})</h3>`
+  header boven de lijst met het aantal na filter en categorie-selectie.
+
 ## [1.5.0] - 2026-07-23
 
 ### Toegevoegd

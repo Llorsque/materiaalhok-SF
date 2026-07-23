@@ -8,6 +8,8 @@ const db = require('../db');
 const { copyDatabaseTo } = require('../backup');
 const { logAction } = require('../utils');
 const { requireAdmin } = require('../middleware/auth');
+const { sendMail } = require('../mail/mailer');
+const { mailTest } = require('../mail/templates');
 
 const router = express.Router();
 
@@ -85,6 +87,29 @@ router.post('/reset', (req, res) => {
   res.json({
     wiped: { bons: bonsBefore, bon_items: bonItemsBefore },
     backup: { filename: backup.filename },
+  });
+});
+
+// Testendpoint voor de mailconfiguratie. Stuurt een testmail zonder een bon
+// aan te maken; respecteert MAIL_MODE (in 'off' wordt niets verstuurd maar
+// laat het endpoint dat wél weten in de response).
+router.post('/mail-test', async (req, res) => {
+  const to = req.body && typeof req.body.to === 'string' ? req.body.to.trim() : '';
+  if (!to || !to.includes('@')) {
+    return res.status(400).json({ error: "veld 'to' moet een geldig e-mailadres zijn" });
+  }
+  const tpl = mailTest();
+  const result = await sendMail({
+    to,
+    subject: tpl.subject,
+    html: tpl.html,
+    text: tpl.text,
+    context: `mail-test door ${req.user.name}`,
+  });
+  res.json({
+    to,
+    mode: (process.env.MAIL_MODE || 'off').toLowerCase(),
+    ...result,
   });
 });
 

@@ -1,3 +1,8 @@
+// Dotenv als eerste laden — sommige modules (mailer) lezen bij require al uit
+// process.env. Bestand mag ontbreken; dotenv geeft dan een nette waarschuwing
+// terug via debug maar breekt de start niet.
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+
 const express = require('express');
 const cors = require('cors');
 require('./db');

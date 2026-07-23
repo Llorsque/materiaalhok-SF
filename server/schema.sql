@@ -32,13 +32,14 @@ CREATE TABLE IF NOT EXISTS sets (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-  id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  name           TEXT    NOT NULL,
-  email          TEXT    NOT NULL UNIQUE,
-  password_hash  TEXT    NOT NULL,
-  role           TEXT    NOT NULL CHECK (role IN ('admin', 'user')),
-  login_barcode  TEXT    UNIQUE,
-  created_at     TEXT    NOT NULL
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  name              TEXT    NOT NULL,
+  email             TEXT    NOT NULL UNIQUE,
+  password_hash     TEXT    NOT NULL,
+  role              TEXT    NOT NULL CHECK (role IN ('admin', 'user')),
+  login_barcode     TEXT    UNIQUE,
+  created_at        TEXT    NOT NULL,
+  email_reminders   INTEGER NOT NULL DEFAULT 1 CHECK (email_reminders IN (0, 1))
 );
 
 CREATE TABLE IF NOT EXISTS bons (

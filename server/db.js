@@ -60,4 +60,12 @@ if (bonsCols.length > 0 && !bonsCols.includes('created_by_admin_id')) {
   db.exec('ALTER TABLE bons ADD COLUMN created_by_admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL');
 }
 
+// Herinneringen-opt-out per gebruiker. Bestaande accounts krijgen 1 (aan) als
+// default: opt-out, geen opt-in. Bevestigingsmails blijven altijd gaan, zie
+// BESLUITEN.md.
+const usersCols = db.pragma('table_info(users)').map((c) => c.name);
+if (usersCols.length > 0 && !usersCols.includes('email_reminders')) {
+  db.exec('ALTER TABLE users ADD COLUMN email_reminders INTEGER NOT NULL DEFAULT 1');
+}
+
 module.exports = db;

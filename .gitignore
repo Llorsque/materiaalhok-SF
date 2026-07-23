@@ -16,10 +16,12 @@ yarn-error.log*
 .vscode/
 .idea/
 
-# Env files (voor later, als we secrets gaan gebruiken)
+# Env files — bevatten SMTP-wachtwoorden en andere secrets.
+# .env.example wél in de repo als template.
 .env
 .env.local
 .env.*.local
+server/.env
 
 # Lokale SQLite-database
 server/database.db

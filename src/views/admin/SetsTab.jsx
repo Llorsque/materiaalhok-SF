@@ -60,6 +60,8 @@ export function SetsTab({ sets, bons, q, setQ, cat, setCat, onSetClick, scanValu
       <div className="flex gap-1.5 overflow-x-auto">{CATS.map(c => <button key={c} onClick={() => setCat(c)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap ${cat === c ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{c}</button>)}</div>
     </div></div>
 
+    <h3 className="text-lg font-bold text-gray-900">Sets ({filt.length})</h3>
+
     {filt.length === 0 ? <div className="bg-white rounded-2xl p-10 text-center border border-gray-100"><p className="text-gray-400 text-sm">Geen sets gevonden</p></div>
       : <div className="space-y-2">{filt.map(s => {
       const av = availSetQty(s, bons);
