@@ -62,10 +62,12 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     bons.forEach((b) => {
       if (b.status === "active") {
         (b.items || []).forEach((bi) => {
+          if (bi.removed_at_pickup === 1) return;
           if (bi[idField] === item.id && !bi.returned) av -= bi.quantity;
         });
       } else if (b.status === "reserved") {
         (b.items || []).forEach((bi) => {
+          if (bi.removed_at_pickup === 1) return;
           if (bi[idField] === item.id) av -= bi.quantity;
         });
       }
@@ -148,6 +150,10 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     try {
       const created = await createBon({
         user_id: user.id,
+        // Intentie is leidend voor de status op de backend. Een reservering
+        // blijft 'reserved' tot de PickupFlow 'm ophaalt, ook als de start-
+        // datum vandaag is; een directe uitlening wordt meteen 'active'.
+        intent: isReservation ? "reservation" : "loan",
         start_date: startDate,
         return_date: endDate,
         items: cart.map((c) => (

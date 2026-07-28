@@ -136,6 +136,88 @@ veertien dagen historie.
 - **Gebruikers kunnen e-mailherinneringen zelf uitzetten in hun profiel.**
   Bevestigingsmails blijven altijd, herinneringen zijn opt-out.
 
+## Ronde B — reservering/ophaal, kwijt/kapot en admin-dashboard
+
+### Reservering en ophalen zijn twee losse momenten
+
+- **Reservering** legt materiaal, ophaaldatum én retourdatum vast en stuurt
+  een reserveringsbevestiging. De retourdatum ligt vanaf dat moment vast —
+  ophalen kan de scope nog verkleinen of verruimen, maar niet de retourdatum
+  opschuiven. Wie later terug wil, moet een nieuwe reservering maken.
+- **Ophalen** is het echte uitleenmoment. De reservering wordt op dat moment
+  de definitieve bon. De inhoud mag bij ophalen nog afwijken:
+  - **Minder**: de gebruiker verwijdert items uit de te-scannen lijst.
+    Waarom: bij de reservering weet je nog niet altijd exact wat er past;
+    liever een correcte bon dan een bon met spookitems die daarna scheve
+    voorraadcijfers geeft.
+  - **Meer**: knop "extra materiaal toevoegen" die de normale
+    beschikbaarheidscheck doet. Toegevoegd materiaal blijft in de data
+    herkenbaar als "na reservering toegevoegd" (bv. een vlag op het
+    bon_item), zodat we later kunnen zien hoe vaak dit gebeurt.
+- **Op het ophaalmoment** gaat de ophaalbevestiging (de definitieve bon) de
+  deur uit. Reservering en ophaal zijn dus twee mailmomenten met twee
+  voorkeurs-toggles, precies zoals `notify_reservation` en `notify_pickup`
+  al gescheiden zijn (v1.7.0).
+- **Directe uitlening zonder voorafgaande reservering** krijgt géén aparte
+  ophaalmail; die krijgt gewoon de bonbevestiging. Anders zou de gebruiker
+  bij een spontane uitleen ineens twee bijna-identieke mails krijgen.
+
+### Kwijt en kapot
+
+- **Gebruiker meldt bij retour** of een item kwijt of kapot is. Twee aparte
+  keuzes, niet één "probleem"-vlag — kwijt en kapot vragen verschillende
+  vervolgacties (zoeken vs. repareren/afschrijven) en we willen het
+  onderscheid in de data terugzien.
+- **Voorraad wordt op dat moment direct aangepast.** Bij bulk-materiaal
+  zakt het aantal met de gemelde hoeveelheid; een uniek item wordt
+  onbeschikbaar (aparte status, zodat 'ie later gerepareerd kan worden
+  zonder dat we een nieuwe barcode moeten uitgeven).
+- **Waarom direct en waarom via de gebruiker?** Het materiaal is op dat
+  moment fysiek weg of stuk. Wachten tot een admin er ooit naar kijkt is
+  geen optie — dan lopen voorraadcijfers en werkelijkheid uiteen, en de
+  volgende gebruiker vertrouwt de app niet meer. De gebruiker legt het
+  fysiek apart en meldt het; de admin krijgt een signaal en behoudt
+  controle via het overzicht. Elk geval levert een spoor + adminmelding op.
+- **Schade/verlies-overzicht** is altijd live: openstaande gevallen bovenaan,
+  afgehandelde historie eronder. Geen jaarlijkse afsluiting — dan verlies
+  je juist de langetermijnpatronen waar we het overzicht voor maken.
+- **Admin kan de status later bijwerken**:
+  - *Gerepareerd* / *vervangen* → voorraad omhoog.
+  - *Afgeschreven* → voorraad blijft eraf.
+  - Elke mutatie komt in het logboek (bestaande `logs`-tabel).
+- **Doel op termijn**: inzicht in welk materiaal vaak kapot gaat of
+  kwijtraakt, als basis voor vervangings- en inkoopbeslissingen. Alleen de
+  raw data verzamelen is nu genoeg — analyse-tooling komt pas als er een
+  jaar aan data ligt.
+
+### Admin-dashboard
+
+- **Dashboard/homepagina voor admins met tiles.** Elke tile toont één
+  signaal + telling. Klik → detail-modal met de onderliggende gevallen en
+  directe acties. Verschilt van het bestaande dashboard doordat het
+  actiegericht is (wat moet je *nu* oplossen?) i.p.v. rapportage-achtig.
+- **Zes signalen** in Ronde B:
+  1. Bonnen te laat (retourdatum verstreken, status niet completed).
+  2. Openstaande incomplete retouren (bon geretourneerd maar niet alle
+     items binnen).
+  3. Kwijt gemeld (nog niet afgehandeld door admin).
+  4. Kapot / in reparatie (nog niet afgehandeld door admin).
+  5. Voorraad laag (op of onder de drempel).
+  6. Mislukte e-mails (logs met actie `mail_failed`).
+- **Voorraaddrempel**: één instelbare **standaarddrempel voor alles**
+  (bv. `stock_threshold_default` in de settings), met een **optioneel eigen
+  drempelveld per materiaal** dat de standaard overschrijft. Reden: bij 167
+  materialen is per stuk instellen ondoenlijk, maar één vaste drempel is
+  ook onhandig — een voetbal met stock 20 en een zeldzaam item met stock 2
+  vragen om verschillende signalen. Standaard + uitzondering geeft het
+  beste van beide.
+- **Geen e-mail naar de admin bij deze signalen.** Alles loopt via het
+  dashboard. Reden: admins zijn in het hok wanneer ze de tool gebruiken —
+  daar horen de signalen ook op te vallen. Mail zou een tweede kanaal
+  worden dat we óók moeten onderhouden en kan snel wennen tot ruis. De
+  bestaande `mail_failed`-tile zorgt dat we falende mail wél in het zicht
+  houden.
+
 ## Wat we expliciet niet doen (nu)
 
 - Eigen desktop-app op de scan-laptop (browser in kioskmodus volstaat).

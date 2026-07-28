@@ -2,12 +2,19 @@
 // interpreteren. Belangrijk verschil met v1: `returned` en `picked_up` zijn
 // per bon-item booleans (0/1), niet langer een count. Een lijn is óf
 // volledig open, óf volledig retour/opgehaald.
+//
+// Ronde B: bon_items met removed_at_pickup=1 zijn soft-deleted — die stonden
+// wel op de reservering maar zijn bij ophalen niet meegenomen. Ze tellen
+// nergens meer mee (beschikbaarheid, retour, samenvatting) en blijven
+// uitsluitend bestaan voor de audit-trail in het admin bon-detail.
+const isActiveBonItem = (it) => it && it.removed_at_pickup !== 1;
 
 export function loanedQty(bons, materialId) {
   let total = 0;
   for (const b of bons) {
     if (b.status !== "active") continue;
     for (const it of b.items || []) {
+      if (!isActiveBonItem(it)) continue;
       if (it.material_id === materialId && !it.returned) total += it.quantity;
     }
   }
@@ -19,6 +26,7 @@ export function reservedQty(bons, materialId) {
   for (const b of bons) {
     if (b.status !== "reserved") continue;
     for (const it of b.items || []) {
+      if (!isActiveBonItem(it)) continue;
       if (it.material_id === materialId) total += it.quantity;
     }
   }
@@ -39,6 +47,7 @@ export function loanedSetQty(bons, setId) {
   for (const b of bons) {
     if (b.status !== "active") continue;
     for (const it of b.items || []) {
+      if (!isActiveBonItem(it)) continue;
       if (it.set_id === setId && !it.returned) total += it.quantity;
     }
   }
@@ -50,6 +59,7 @@ export function reservedSetQty(bons, setId) {
   for (const b of bons) {
     if (b.status !== "reserved") continue;
     for (const it of b.items || []) {
+      if (!isActiveBonItem(it)) continue;
       if (it.set_id === setId) total += it.quantity;
     }
   }
@@ -71,12 +81,18 @@ export function bonIsOverdue(b) {
 }
 
 export function bonRemaining(b) {
-  return (b.items || []).filter((it) => !it.returned);
+  return (b.items || []).filter((it) => isActiveBonItem(it) && !it.returned);
 }
 
 export function bonComplete(b) {
-  const items = b.items || [];
+  const items = (b.items || []).filter(isActiveBonItem);
   return items.length > 0 && items.every((it) => it.returned);
+}
+
+// Publiek: filter voor UI-lijsten die soft-deleted items moeten weglaten
+// (dus overal behalve het admin bon-detail).
+export function bonActiveItems(b) {
+  return (b.items || []).filter(isActiveBonItem);
 }
 
 // Toon-naam voor een bon_item: materialen hebben material_name, sets set_name.

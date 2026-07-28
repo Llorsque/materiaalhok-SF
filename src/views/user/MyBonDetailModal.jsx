@@ -2,7 +2,7 @@ import { Modal } from "../../components/Modal";
 import { BonBadge } from "../../components/BonBadge";
 import { KindBadge } from "../../components/KindBadge";
 import { fmtDate } from "../../utils/date";
-import { itemDisplayName } from "../../utils/bons";
+import { itemDisplayName, bonActiveItems } from "../../utils/bons";
 
 function itemStatus(bi) {
   if (bi.returned) return { label: "retour", color: "bg-emerald-100 text-emerald-700" };
@@ -12,7 +12,9 @@ function itemStatus(bi) {
 
 export function MyBonDetailModal({ bon, sets, userName, onClose }) {
   if (!bon) return null;
-  const items = bon.items || [];
+  // Voor de gebruiker verbergen we soft-deleted items — die staan alleen
+  // in het admin-detail als audit-regel.
+  const items = bonActiveItems(bon);
   return <Modal open={!!bon} onClose={onClose} title={bon.bon_number} wide>
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">

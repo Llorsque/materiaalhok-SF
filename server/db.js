@@ -101,4 +101,19 @@ if (bonsCols.length > 0 && !bonsCols.includes('reminder_sent_at')) {
   db.exec('ALTER TABLE bons ADD COLUMN reminder_sent_at TEXT');
 }
 
+// Ronde B — reservering/ophaal-flow: bon_items krijgen twee soft-delete-
+// vlaggen om de gescheiden momenten reservering en ophalen te ondersteunen.
+// Bestaande items zijn per definitie noch removed noch added → default 0.
+{
+  const cols = db.pragma('table_info(bon_items)').map((c) => c.name);
+  if (cols.length > 0) {
+    if (!cols.includes('removed_at_pickup')) {
+      db.exec('ALTER TABLE bon_items ADD COLUMN removed_at_pickup INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!cols.includes('added_at_pickup')) {
+      db.exec('ALTER TABLE bon_items ADD COLUMN added_at_pickup INTEGER NOT NULL DEFAULT 0');
+    }
+  }
+}
+
 module.exports = db;

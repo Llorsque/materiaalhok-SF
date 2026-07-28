@@ -7,6 +7,122 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+### Gewijzigd
+- **UserHome-layout**: de vier actietegels (Materiaal lenen, Reserveren,
+  Ophalen, Retourneren) staan nu altijd bovenaan, direct onder de header.
+  "Mijn actieve uitleningen" is verplaatst naar eronder. Alleen volgorde;
+  geen functionele wijzigingen.
+- **PickupFlow is nu een scan-flow**, consistent met retour en lenen. Per
+  gereserveerd item is een teller "X / Y gescand" zichtbaar; scannen
+  verhoogt de teller, plus/min-knoppen doen dat handmatig, en de knop
+  "Niet meenemen" markeert een item als bewust achtergelaten (soft-delete).
+  Afronden ("Ophalen bevestigen") kan pas als elk item ofwel is gescand
+  (deels of vol) ofwel als "niet meenemen" is gemarkeerd — een item met 0
+  scans en zonder markering blokkeert bevestigen met een duidelijke
+  melding welk item nog open staat. De hoofdscanner reageert op barcodes
+  van reserverings-items; scannen van iets dat er niet op staat toont een
+  hint om de "Extra materiaal"-sectie te gebruiken.
+- **Bulk gedeeltelijk meenemen wordt server-side afgehandeld**:
+  `POST /:id/pickup` accepteert nu naast `remove` en `add` ook een `keep`-
+  lijst met `[{ id, quantity }]`. Bij een `quantity` kleiner dan de
+  gereserveerde hoeveelheid splitst de backend het `bon_item` in twee
+  rijen — de originele rij krijgt `quantity=kept` en `picked_up=1`, en er
+  komt een schaduw-rij met `quantity=vrijgekomen` en `removed_at_pickup=1`
+  (`picked_up=0`). Alles in één transactie; de retour-, beschikbaarheids-
+  en mailtemplate-logica blijven ongewijzigd omdat soft-delete-rijen
+  nergens meetellen. Validatie:
+  - `keep[i].quantity` moet 1..origineel zijn — 0 wordt afgewezen met een
+    hint om `remove` te gebruiken.
+  - `keep` en `remove` mogen elkaar niet overlappen.
+  - Ontbreekt `keep` voor een item, dan blijft dat item volledig
+    meegenomen (backwards compatible met de v1.8.0 "kaal opnemen"-call).
+- **Beschikbaarheidscheck bij `add` gebeurt nu ná de kept-mutatie**, binnen
+  dezelfde transactie. Zo telt de gereduceerde eigen reservering correct
+  mee — een edge case in v1.8.0 waarbij "alles behouden + zelfde materiaal
+  toevoegen" tot oversubscribe kon leiden is daarmee weg. Bij een conflict
+  rolt de transactie volledig terug (409 met `details`, bon blijft
+  `reserved`).
+
+### Opgelost
+- **Reserveringstatus werd fout afgeleid uit de datum**: `computeStatus` in
+  `server/routes/bons.js` zette een reservering die vandaag (of eerder)
+  startte meteen op `'active'`. Dat botste met de v1.8.0-flow waarin een
+  reservering pas via `POST /:id/pickup` `'active'` mag worden. Vervangen
+  door `statusFromIntent(intent)`: de frontend stuurt bij `POST /api/bons`
+  nu expliciet `intent: 'reservation' | 'loan'` mee, en die intentie is
+  leidend voor de status. Ontbrekende `intent` geeft een 400 met
+  Nederlandse foutmelding.
+- **PUT `/api/bons/:id`** rekent geen status meer uit uit datums. Bestaande
+  status en `completed_at` blijven behouden; een admin die een reservering
+  verplaatst houdt daarmee een reservering. Voorheen kon een datum-
+  wijziging ongewild `'completed'` triggeren.
+- **Automatische `'completed'`** bij retrocreatie (return_date in het
+  verleden) is weg. `'completed'` wordt uitsluitend nog gezet door de
+  retour-flow wanneer alle items binnen zijn.
+- **`checkStock` blijft ongewijzigd** (`b.status IN ('active','reserved')`)
+  — reserveringen blokkeren nog steeds voorraad in hun periode.
+- **Bestaande bonnen in de DB** zijn niet aangeraakt: geen retro-migratie,
+  alleen nieuwe creates/updates volgen de nieuwe regels.
+
+## [1.8.0] - 2026-07-28
+
+Blok 1 van Ronde B: reservering en ophalen zijn nu twee losse momenten.
+Bij ophalen kan de gebruiker items uit de reservering weglaten en extra
+materiaal toevoegen, met live beschikbaarheidscheck.
+
+### Toegevoegd
+- **`PickupFlow.jsx`** — nieuwe user-flow voor "Ophalen". Selecteer een
+  reservering, vink af wat je *niet* meeneemt, voeg optioneel extra
+  materiaal toe via scan of zoeker (met live beschikbaarheidscheck die de
+  eigen reservering uitsluit), en bevestig. Toegevoegd materiaal wordt in
+  één transactie samen met de pickup weggeschreven.
+- **UserHome krijgt twee aparte tegels**: "Ophalen" (indigo) en
+  "Retourneren" (emerald), in plaats van de gecombineerde "Retour /
+  Ophalen"-tegel. Layout nu 4 kolommen (2×2 op mobile).
+- **`POST /api/bons/:id/pickup`** accepteert body
+  `{ remove: [bon_item_id], add: [{ kind, id, quantity }] }`:
+  - `remove` zet `removed_at_pickup=1` op de betrokken items (soft-delete);
+  - `add` verifieert beschikbaarheid via `checkStock` met `excludeBonId`
+    zodat de eigen reservering niet dubbel telt, en voegt nieuwe items in
+    met `added_at_pickup=1, picked_up=1`;
+  - alle mutaties in één transactie — bij een voorraadconflict wordt niets
+    weggeschreven en volgt 409 met concrete cijfers per item.
+- **Nieuwe kolommen op `bon_items`**: `removed_at_pickup` en
+  `added_at_pickup` (beide `INTEGER NOT NULL DEFAULT 0`, met
+  CHECK-constraint). Migratie voor bestaande DBs neemt de default over.
+- **`bon_pickup` log-actie** met leesbare NL-omschrijving, bv.
+  `"BON-2026-0007 opgehaald voor Jan Vrijwilliger: 1x Tennisbal — niet
+  meegenomen: 2x Pittenzakje — toegevoegd bij ophalen: 1x Kaatsbal"`.
+- **`BonDetailModal`** (admin) toont bij items het labeltje "toegevoegd
+  bij ophalen" en heeft onderaan een aparte "Niet meegenomen bij ophalen"-
+  sectie met de soft-deleted items — audit-weergave voor admins.
+
+### Gewijzigd
+- **Ophaalbevestiging** filtert de soft-deleted items uit de mail — de
+  gebruiker krijgt alleen de definitieve, meegenomen items te zien. De
+  mail maakt geen verschil tussen "stond op reservering" en "bij ophalen
+  toegevoegd".
+- **Beschikbaarheid** (`checkStock` server + `getAvailForItem` en
+  `loanedQty`/`reservedQty` frontend) sluit alle rijen met
+  `removed_at_pickup=1` uit. Soft-deleted items geven direct voorraad
+  vrij.
+- **Retour-flow** filtert soft-deleted items: die zijn nooit het hok uit
+  gegaan en verschijnen dus niet in de retour-vinklijst. `openCount` in de
+  retour-transactie kijkt daar ook aan voorbij.
+- **`ReturnFlow.jsx`** doet nu uitsluitend retour; de pickup-tak
+  (die eerder verstopt in `activeBon.status === 'reserved'` zat) is
+  verhuisd naar `PickupFlow`.
+- **`utils/bons.js`** krijgt een nieuwe helper `bonActiveItems(b)` voor
+  UI-lijsten die soft-deleted items moeten weglaten. `bonRemaining` en
+  `bonComplete` gebruiken 'm.
+- **API-client**: `pickupBon(id, { remove, add })` in plaats van
+  `pickupBon(id)`. Zonder tweede argument werkt 'ie achterwaarts
+  compatibel (kaal opnemen zoals gereserveerd).
+- **Ronde B-guarantee** in `PUT /api/bons/:id`: de handler blijft
+  admin-only (via bestaande `requireAdmin`). Een gebruiker die het toch
+  probeert krijgt 403 met "Alleen admins mogen deze actie uitvoeren."
+  Doc-comment in de code verwijst expliciet naar het besluit.
+
 ## [1.7.0] - 2026-07-28
 
 E-mailvoorkeuren per gebruiker en de retourherinnering — twee samenhangende

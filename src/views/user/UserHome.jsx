@@ -4,7 +4,7 @@ import { Modal } from "../../components/Modal";
 import { BonBadge } from "../../components/BonBadge";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { fmtDate } from "../../utils/date";
-import { bonIsOverdue, itemDisplayName } from "../../utils/bons";
+import { bonIsOverdue, itemDisplayName, bonActiveItems } from "../../utils/bons";
 import { MyBonDetailModal } from "./MyBonDetailModal";
 import { updateMyNotifications } from "../../api/client";
 
@@ -46,7 +46,7 @@ function itemLabel(it) {
 }
 
 function shortItems(bon, limit = 4) {
-  const items = bon.items || [];
+  const items = bonActiveItems(bon);
   const labels = items.slice(0, limit).map((it) => `${it.quantity}x ${itemLabel(it)}`);
   if (items.length > limit) labels.push(`+${items.length - limit} meer`);
   return labels.join(", ");
@@ -104,7 +104,7 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
           const userBons = bons.filter(b=>b.user_id===user.id).sort((a,b)=>(b.created_at||"").localeCompare(a.created_at||""));
           const active = userBons.filter(b=>b.status!=="completed");
           const completed = userBons.filter(b=>b.status==="completed");
-          const totalItems = userBons.reduce((s,b)=>s+(b.items||[]).reduce((t,i)=>t+i.quantity,0),0);
+          const totalItems = userBons.reduce((s,b)=>s+bonActiveItems(b).reduce((t,i)=>t+i.quantity,0),0);
           return <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-blue-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-blue-600">{userBons.length}</p><p className="text-xs text-gray-500">Bonnen</p></div>
@@ -160,7 +160,26 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
     <div className="max-w-4xl mx-auto w-full px-5 py-8 space-y-6">
       <ConnectionBanner loading={bonsLoading} error={bonsError} onRetry={refreshBons} resource="Bonnen"/>
 
-      {/* Mijn actieve uitleningen (nieuw) */}
+      {/* Vier hoofd-acties — sinds v1.8.0 zijn ophalen en retourneren
+          gescheiden zodat de gebruiker weet welke flow 'ie ingaat. Altijd
+          bovenaan de pagina, direct onder de header: dit is waarvoor
+          gebruikers de tool openen. */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <button onClick={()=>onModeChange("loan", false)} className="py-10 rounded-3xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udce4"}</span><span className="text-lg">Materiaal lenen</span>
+        </button>
+        <button onClick={()=>onModeChange("loan", true)} className="py-10 rounded-3xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udcc5"}</span><span className="text-lg">Reserveren</span>
+        </button>
+        <button onClick={()=>onModeChange("pickup", false)} className="py-10 rounded-3xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udce6"}</span><span className="text-lg">Ophalen</span>
+        </button>
+        <button onClick={()=>onModeChange("return", false)} className="py-10 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+          <span className="text-4xl block mb-2">{"\ud83d\udce5"}</span><span className="text-lg">Retourneren</span>
+        </button>
+      </div>
+
+      {/* Mijn actieve uitleningen — overzicht onder de acties. */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <p className="text-sm font-semibold text-gray-500 uppercase mb-3">Mijn actieve uitleningen{myBons.length>0?` (${myBons.length})`:""}</p>
         {myBons.length===0 ? <p className="text-sm text-gray-400">Geen actieve uitleningen</p> :
@@ -175,19 +194,6 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
             </button>)}
           </div>
         }
-      </div>
-
-      {/* Drie hoofd-acties */}
-      <div className="grid grid-cols-3 gap-4">
-        <button onClick={()=>onModeChange("loan", false)} className="py-10 rounded-3xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udce4"}</span><span className="text-lg">Materiaal lenen</span>
-        </button>
-        <button onClick={()=>onModeChange("loan", true)} className="py-10 rounded-3xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udcc5"}</span><span className="text-lg">Reserveren</span>
-        </button>
-        <button onClick={()=>onModeChange("return", false)} className="py-10 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udce5"}</span><span className="text-lg">Retour / Ophalen</span>
-        </button>
       </div>
 
       <MyBonDetailModal bon={selectedBon} sets={sets} userName={user.name} onClose={()=>setSelectedBonId(null)}/>

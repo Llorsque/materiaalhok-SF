@@ -199,7 +199,9 @@ export const getBon     = (id)       => request('GET',    `/api/bons/${id}`);
 export const createBon  = (data)     => request('POST',   '/api/bons', data);
 export const updateBon  = (id, data) => request('PUT',    `/api/bons/${id}`, data);
 export const deleteBon  = (id)       => request('DELETE', `/api/bons/${id}`);
-export const pickupBon  = (id)       => request('POST',   `/api/bons/${id}/pickup`);
+// changes: { remove?: [bon_item_id], add?: [{ kind:'material'|'set', id, quantity }] }
+// Weglaten = kaal opnemen zoals gereserveerd (achterwaarts compatibel).
+export const pickupBon  = (id, changes) => request('POST', `/api/bons/${id}/pickup`, changes || {});
 // items mag undefined zijn (complete retour) of een array {id, returned}.
 export const returnBon  = (id, items) =>
   request('POST', `/api/bons/${id}/return`, items ? { items } : undefined);

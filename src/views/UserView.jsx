@@ -2,6 +2,7 @@ import { useState } from "react";
 import { UserHome } from "./user/UserHome";
 import { LoanFlow } from "./user/LoanFlow";
 import { ReturnFlow } from "./user/ReturnFlow";
+import { PickupFlow } from "./user/PickupFlow";
 
 export function UserView({ eq, materialsLoading, materialsError, refreshMaterials, sets, bons, bonsLoading, bonsError, setBonsError, refreshBons, addLog, branding, onLogout, user, onProfileUpdate }) {
   const [mode, setMode] = useState(null);
@@ -30,6 +31,9 @@ export function UserView({ eq, materialsLoading, materialsError, refreshMaterial
   }
   if (mode === "return") {
     return <ReturnFlow eq={eq} sets={sets} materialsLoading={materialsLoading} materialsError={materialsError} refreshMaterials={refreshMaterials} bons={bons} refreshBons={refreshBons} setBonsError={setBonsError} addLog={addLog} user={user} onCancel={handleCancel} onDone={handleDone}/>;
+  }
+  if (mode === "pickup") {
+    return <PickupFlow eq={eq} sets={sets} materialsLoading={materialsLoading} materialsError={materialsError} refreshMaterials={refreshMaterials} bons={bons} refreshBons={refreshBons} setBonsError={setBonsError} addLog={addLog} user={user} onCancel={handleCancel} onDone={handleDone}/>;
   }
   return <UserHome user={user} branding={branding} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} onLogout={onLogout} onModeChange={handleModeChange} done={done} sets={sets} onProfileUpdate={onProfileUpdate}/>;
 }

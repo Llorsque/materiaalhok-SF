@@ -225,7 +225,9 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     const yearBons = bons.filter((b) => (b.start_date || "") >= oneYearAgo);
     let count = 0;
     const borrowers = {};
+    // Soft-deleted items (Ronde B) tellen niet mee — die zijn nooit meegenomen.
     yearBons.forEach((b) => (b.items || []).forEach((bi) => {
+      if (bi.removed_at_pickup === 1) return;
       if (bi.material_id === itemId) {
         count += bi.quantity;
         const key = b.user_name || "-";

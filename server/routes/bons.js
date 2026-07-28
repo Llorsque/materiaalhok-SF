@@ -40,13 +40,15 @@ function isWeekendDate(d) {
   return day === 0 || day === 6;
 }
 
-function computeStatus(startStr, returnStr) {
-  const now = new Date();
-  const start = new Date(startStr);
-  const ret = new Date(returnStr);
-  if (start > now) return 'reserved';
-  if (ret < now) return 'completed';
-  return 'active';
+// Intentie → status. De frontend weet of het een reservering of een directe
+// uitlening is (twee gescheiden knoppen); die intentie is leidend, niet de
+// datum. Reserveringen blijven 'reserved' tot ze via POST /:id/pickup zijn
+// opgehaald, ook als de startdatum al is aangebroken. 'completed' wordt
+// uitsluitend via de retour-flow gezet.
+function statusFromIntent(intent) {
+  if (intent === 'reservation') return 'reserved';
+  if (intent === 'loan')        return 'active';
+  return null;
 }
 
 function currentDutchYear() {
@@ -108,6 +110,7 @@ function checkStock(items, period, excludeBonId = null) {
       JOIN bons b ON b.id = bi.bon_id
       WHERE bi.${idCol} = ?
         AND bi.returned = 0
+        AND bi.removed_at_pickup = 0
         AND b.status IN ('active', 'reserved')
         AND b.start_date <= ?
         AND b.return_date >= ?
@@ -286,6 +289,17 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: "veld 'notes' moet een string of null zijn" });
   }
 
+  // Intent — leidend voor status. 'reservation' → 'reserved' (blijft ook
+  // 'reserved' na start_date, ophalen gaat via POST /:id/pickup). 'loan' →
+  // meteen 'active'. Verplicht sinds v1.8.0; oude clients die dit veld nog
+  // niet meesturen krijgen een duidelijke 400.
+  const status = statusFromIntent(body.intent);
+  if (!status) {
+    return res.status(400).json({
+      error: "veld 'intent' moet 'reservation' of 'loan' zijn",
+    });
+  }
+
   const conflicts = checkStock(body.items, {
     start_date: body.start_date,
     return_date: body.return_date,
@@ -295,8 +309,8 @@ router.post('/', (req, res) => {
   }
 
   const now = nowDutchISO();
-  const status = computeStatus(body.start_date, body.return_date);
-  const completedAt = status === 'completed' ? now : null;
+  // completed_at wordt uitsluitend gezet door de retour-flow; nooit bij create.
+  const completedAt = null;
   // Alleen zetten als de admin namens iemand anders inschiet. Als de admin
   // ooit toch voor zichzelf zou proberen te boeken is dat hierboven al
   // afgevangen — deze regel is puur voor de administratie-trail.
@@ -377,6 +391,13 @@ router.post('/', (req, res) => {
   res.status(201).json(created);
 });
 
+// PUT /:id blijft admin-only. Ronde B (BESLUITEN.md): de retourdatum ligt
+// na de reservering vast voor de gebruiker; wie later terug wil, maakt een
+// nieuwe reservering. Een admin mag 'm in uitzonderingsgevallen nog
+// verschuiven — daarom staat de datumcheck nog gewoon open in deze handler.
+// Omdat requireAdmin ervoor staat, krijgt een gewone gebruiker die dit
+// endpoint aanroept al een 403 met "Alleen admins mogen deze actie
+// uitvoeren." — precies de garantie die Ronde B vraagt.
 router.put('/:id', requireAdmin, (req, res) => {
   const existing = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'bon niet gevonden' });
@@ -426,11 +447,12 @@ router.put('/:id', requireAdmin, (req, res) => {
     notes = body.notes;
   }
 
-  const status = computeStatus(start_date, return_date);
-  const now = nowDutchISO();
-  let completed_at = existing.completed_at;
-  if (status === 'completed' && !completed_at) completed_at = now;
-  if (status !== 'completed') completed_at = null;
+  // Status en completed_at worden NIET meer afgeleid uit de datums. Datums
+  // zijn puur planning; de statusovergangen gebeuren via de pickup- en
+  // retour-endpoints. Een admin die een gereserveerde bon een andere
+  // startdatum geeft, houdt daarmee gewoon een reservering.
+  const status       = existing.status;
+  const completed_at = existing.completed_at;
 
   db.prepare(`
     UPDATE bons SET
@@ -467,6 +489,21 @@ router.delete('/:id', requireAdmin, (req, res) => {
   res.json({ deleted: true });
 });
 
+// Ophalen — Ronde B (v1.8.0): reservering wordt definitieve bon.
+// Body:
+//   remove: [bon_item_id]                          — hele item soft-deleten
+//   keep:   [{ id: bon_item_id, quantity: N }]     — meegenomen aantal per item
+//   add:    [{ kind, id, quantity }]               — nieuw materiaal toevoegen
+//
+// keep is nieuw in de scan-flow: bij een bulk-item waar de gebruiker minder
+// scant dan gereserveerd, splitst de backend het item op. De originele rij
+// krijgt het gescande aantal (picked_up=1) en er komt een schaduw-rij bij
+// met het restant (removed_at_pickup=1, picked_up=0). Zo blijft de audit-
+// trail volledig en werken retour, beschikbaarheid en mail-templates
+// onveranderd (soft-delete-rijen tellen nergens mee).
+//
+// Ontbreekt keep voor een item, dan blijft dat item onveranderd staan als
+// "volledig meegenomen" — backwards compatible met de "kaal opnemen"-call.
 router.post('/:id/pickup', (req, res) => {
   const bon = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
   if (!assertOwnBonOrAdmin(req, res, bon)) return;
@@ -476,16 +513,180 @@ router.post('/:id/pickup', (req, res) => {
     });
   }
 
-  const tx = db.transaction(() => {
-    db.prepare('UPDATE bons SET status = ? WHERE id = ?').run('active', bon.id);
-    db.prepare('UPDATE bon_items SET picked_up = 1 WHERE bon_id = ?').run(bon.id);
-  });
-  tx();
+  const body = req.body || {};
+  const removeIds = Array.isArray(body.remove) ? body.remove : [];
+  const keepRaw   = Array.isArray(body.keep)   ? body.keep   : [];
+  const addRaw    = Array.isArray(body.add)    ? body.add    : [];
+
+  const currentItems = db.prepare(
+    'SELECT id, material_id, set_id, quantity, removed_at_pickup FROM bon_items WHERE bon_id = ?'
+  ).all(bon.id);
+  const currentById = new Map(currentItems.map((r) => [r.id, r]));
+
+  // -- Valideer remove --------------------------------------------------
+  const removeSet = new Set();
+  for (const [idx, id] of removeIds.entries()) {
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: `remove[${idx}]: id moet een integer zijn` });
+    }
+    const row = currentById.get(id);
+    if (!row) {
+      return res.status(400).json({ error: `remove[${idx}]: id ${id} hoort niet bij bon ${bon.id}` });
+    }
+    if (row.removed_at_pickup === 1) {
+      return res.status(400).json({ error: `remove[${idx}]: id ${id} is al eerder verwijderd bij ophalen` });
+    }
+    removeSet.add(id);
+  }
+
+  // -- Valideer keep -----------------------------------------------------
+  // Iedere entry: id op bon, niet in remove, quantity 1..originele quantity.
+  const keepMap = new Map(); // id → gewenste quantity
+  for (const [idx, entry] of keepRaw.entries()) {
+    if (!entry || !Number.isInteger(entry.id)) {
+      return res.status(400).json({ error: `keep[${idx}]: 'id' moet een integer zijn` });
+    }
+    const row = currentById.get(entry.id);
+    if (!row) {
+      return res.status(400).json({ error: `keep[${idx}]: id ${entry.id} hoort niet bij bon ${bon.id}` });
+    }
+    if (row.removed_at_pickup === 1) {
+      return res.status(400).json({ error: `keep[${idx}]: id ${entry.id} is al soft-deleted` });
+    }
+    if (removeSet.has(entry.id)) {
+      return res.status(400).json({ error: `keep[${idx}]: id ${entry.id} staat ook in remove — kies één` });
+    }
+    if (!Number.isInteger(entry.quantity) || entry.quantity <= 0) {
+      return res.status(400).json({
+        error: `keep[${idx}]: 'quantity' moet een positief geheel getal zijn — gebruik remove voor 0 meenemen`,
+      });
+    }
+    if (entry.quantity > row.quantity) {
+      return res.status(400).json({
+        error: `keep[${idx}]: gevraagde ${entry.quantity} is meer dan gereserveerd (${row.quantity})`,
+      });
+    }
+    if (keepMap.has(entry.id)) {
+      return res.status(400).json({ error: `keep[${idx}]: id ${entry.id} komt dubbel voor` });
+    }
+    keepMap.set(entry.id, entry.quantity);
+  }
+
+  // -- Valideer + normaliseer add ---------------------------------------
+  const normalizedAdd = [];
+  for (const [idx, item] of addRaw.entries()) {
+    if (!item || (item.kind !== 'material' && item.kind !== 'set')) {
+      return res.status(400).json({ error: `add[${idx}]: 'kind' moet 'material' of 'set' zijn` });
+    }
+    if (!Number.isInteger(item.id)) {
+      return res.status(400).json({ error: `add[${idx}]: 'id' moet een integer zijn` });
+    }
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      return res.status(400).json({ error: `add[${idx}]: 'quantity' moet een positief geheel getal zijn` });
+    }
+    normalizedAdd.push({
+      material_id: item.kind === 'material' ? item.id : null,
+      set_id:      item.kind === 'set'      ? item.id : null,
+      quantity:    item.quantity,
+    });
+  }
+
+  // -- Mutatie + beschikbaarheidscheck in één transactie ---------------
+  // We doen eerst remove/split zodat de eigen reservering al is verlaagd
+  // naar de kept-hoeveelheden. Daarna checkStock zonder excludeBonId:
+  // resterende reservering (kept) telt nu correct mee bij het bepalen van
+  // hoeveel er nog toegevoegd mag worden. Voorheen (v1.8.0) gebruikten we
+  // excludeBonId, wat bij "alles behouden + zelfde materiaal toevoegen"
+  // een oversubscribe kon toestaan.
+  let stockConflicts = null;
+  try {
+    const tx = db.transaction(() => {
+      // 1) Soft-delete de items die de gebruiker expliciet "niet meenemen"
+      //    heeft gemarkeerd.
+      if (removeIds.length > 0) {
+        const placeholders = removeIds.map(() => '?').join(',');
+        db.prepare(
+          `UPDATE bon_items SET removed_at_pickup = 1, picked_up = 0 WHERE id IN (${placeholders})`
+        ).run(...removeIds);
+      }
+
+      // 2) Splits partiële bulk-items en pas de kept-quantities aan.
+      //    - Originele rij: quantity=kept, picked_up=1
+      //    - Schaduw-rij:   quantity=vrijgekomen, removed_at_pickup=1, picked_up=0
+      const updateQty = db.prepare(
+        `UPDATE bon_items SET quantity = ?, picked_up = 1 WHERE id = ?`
+      );
+      const insertFreed = db.prepare(
+        `INSERT INTO bon_items (bon_id, material_id, set_id, quantity, picked_up, removed_at_pickup)
+         VALUES (?, ?, ?, ?, 0, 1)`,
+      );
+      for (const row of currentItems) {
+        if (row.removed_at_pickup === 1) continue;
+        if (removeSet.has(row.id)) continue;
+        const requested = keepMap.get(row.id);
+        if (requested === undefined || requested === row.quantity) continue;
+        updateQty.run(requested, row.id);
+        insertFreed.run(bon.id, row.material_id, row.set_id, row.quantity - requested);
+      }
+
+      // 3) Alle nog-niet-verwijderde items zijn nu opgehaald.
+      db.prepare(
+        `UPDATE bon_items SET picked_up = 1 WHERE bon_id = ? AND removed_at_pickup = 0`
+      ).run(bon.id);
+
+      // 4) NU pas de beschikbaarheidscheck voor toegevoegde items. Deze bon
+      //    telt nu met de gereduceerde kept-hoeveelheden mee — een correcte
+      //    weergave van "wat is er nog voor anderen én voor onze extra add".
+      if (normalizedAdd.length > 0) {
+        stockConflicts = checkStock(
+          normalizedAdd,
+          { start_date: bon.start_date, return_date: bon.return_date },
+        );
+        if (stockConflicts.length > 0) {
+          // Gooi een sentinel-fout zodat de transactie automatisch rolt.
+          const err = new Error('__STOCK_CONFLICT__');
+          err.code = '__STOCK_CONFLICT__';
+          throw err;
+        }
+
+        // 5) Toegevoegde items: added_at_pickup=1, direct opgehaald.
+        const stmt = db.prepare(
+          `INSERT INTO bon_items (bon_id, material_id, set_id, quantity, picked_up, added_at_pickup)
+           VALUES (?, ?, ?, ?, 1, 1)`,
+        );
+        for (const a of normalizedAdd) {
+          stmt.run(bon.id, a.material_id, a.set_id, a.quantity);
+        }
+      }
+      db.prepare('UPDATE bons SET status = ? WHERE id = ?').run('active', bon.id);
+    });
+    tx();
+  } catch (err) {
+    if (err.code === '__STOCK_CONFLICT__') {
+      return res.status(409).json({
+        error: 'onvoldoende voorraad voor toegevoegd materiaal',
+        details: stockConflicts,
+      });
+    }
+    return res.status(500).json({ error: `Ophalen mislukt: ${err.message}` });
+  }
 
   const updated = loadBonWithItems(bon.id);
+  const items = updated.items || [];
+  const kept    = items.filter((i) => i.removed_at_pickup === 0);
+  const removed = items.filter((i) => i.removed_at_pickup === 1);
+  const added   = items.filter((i) => i.added_at_pickup    === 1 && i.removed_at_pickup === 0);
 
-  // Ophaalbevestiging. Zelfde patroon als bij bon-create: fire and forget,
-  // sendMail vangt fouten zelf af.
+  // Log — vermeld expliciet wat er is toegevoegd of weggelaten t.o.v. de
+  // oorspronkelijke reservering, zodat de audit-regel op zich al leesbaar is.
+  const parts = [
+    `${updated.bon_number} opgehaald voor ${updated.user_name || 'onbekende gebruiker'}: ${formatBonItems(kept)}`,
+  ];
+  if (removed.length > 0) parts.push(`niet meegenomen: ${formatBonItems(removed)}`);
+  if (added.length   > 0) parts.push(`toegevoegd bij ophalen: ${formatBonItems(added)}`);
+  logAction('bon_pickup', parts.join(' — '), req.user.id);
+
+  // -- Ophaalbevestiging -------------------------------------------------
   const borrower = db.prepare(
     `SELECT email, notify_pickup FROM users WHERE id = ?`
   ).get(updated.user_id);
@@ -496,7 +697,10 @@ router.post('/:id/pickup', (req, res) => {
   } else if (borrower.notify_pickup !== 1) {
     logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
   } else {
-    const tpl = bonConfirmation(updated);
+    // De mail toont alleen de definitieve, meegenomen items — soft-deleted
+    // regels zijn puur voor de audit-trail in admin-detail.
+    const bonForMail = { ...updated, items: kept };
+    const tpl = bonConfirmation(bonForMail);
     sendMail({
       to: email,
       subject: tpl.subject,
@@ -520,8 +724,11 @@ router.post('/:id/return', (req, res) => {
     });
   }
 
+  // Soft-deleted items (removed_at_pickup=1) tellen niet mee voor retour —
+  // die zijn nooit meegegaan uit het hok en hoeven ook niet terug.
   const allItemIds = new Set(
-    db.prepare('SELECT id FROM bon_items WHERE bon_id = ?').all(bon.id).map((r) => r.id),
+    db.prepare('SELECT id FROM bon_items WHERE bon_id = ? AND removed_at_pickup = 0')
+      .all(bon.id).map((r) => r.id),
   );
 
   const body = req.body || {};
@@ -567,7 +774,7 @@ router.post('/:id/return', (req, res) => {
       db.prepare(`UPDATE bon_items SET returned = 1 WHERE id IN (${placeholders})`).run(...idsToMark);
     }
     const { c: openCount } = db.prepare(
-      'SELECT COUNT(*) AS c FROM bon_items WHERE bon_id = ? AND returned = 0',
+      'SELECT COUNT(*) AS c FROM bon_items WHERE bon_id = ? AND returned = 0 AND removed_at_pickup = 0',
     ).get(bon.id);
     if (openCount === 0) {
       db.prepare('UPDATE bons SET status = ?, completed_at = ? WHERE id = ?')

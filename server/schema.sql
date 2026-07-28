@@ -61,13 +61,20 @@ CREATE TABLE IF NOT EXISTS bons (
 );
 
 CREATE TABLE IF NOT EXISTS bon_items (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  bon_id      INTEGER NOT NULL,
-  material_id INTEGER,
-  set_id      INTEGER,
-  quantity    INTEGER NOT NULL,
-  returned    INTEGER NOT NULL DEFAULT 0 CHECK (returned IN (0, 1)),
-  picked_up   INTEGER NOT NULL DEFAULT 0 CHECK (picked_up IN (0, 1)),
+  id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+  bon_id              INTEGER NOT NULL,
+  material_id         INTEGER,
+  set_id              INTEGER,
+  quantity            INTEGER NOT NULL,
+  returned            INTEGER NOT NULL DEFAULT 0 CHECK (returned IN (0, 1)),
+  picked_up           INTEGER NOT NULL DEFAULT 0 CHECK (picked_up IN (0, 1)),
+  -- Soft-delete-vlag: 1 = stond op de reservering maar is bij ophalen niet
+  -- meegenomen. Telt nergens meer mee (beschikbaarheid, retour, mail) en
+  -- blijft alleen bestaan voor de audit-trail in admin-detail.
+  removed_at_pickup   INTEGER NOT NULL DEFAULT 0 CHECK (removed_at_pickup IN (0, 1)),
+  -- 1 = pas bij ophalen aan de bon toegevoegd (stond niet op de oorspronkelijke
+  -- reservering). Zichtbaar in admin-detail, niet in de mail.
+  added_at_pickup     INTEGER NOT NULL DEFAULT 0 CHECK (added_at_pickup IN (0, 1)),
   FOREIGN KEY (bon_id)      REFERENCES bons(id)      ON DELETE CASCADE,
   FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE RESTRICT,
   FOREIGN KEY (set_id)      REFERENCES sets(id)      ON DELETE RESTRICT,
