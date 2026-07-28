@@ -135,6 +135,14 @@ export default function App() {
     if (user?.role === "admin") refreshLogs();
   }, [refreshLogs, user]);
   const handleLogin = (u) => { setSessionExpired(false); setUser(u); session.set("mhok-user", u); };
+  const handleUserPatch = useCallback((patch) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      session.set("mhok-user", next);
+      return next;
+    });
+  }, []);
   const handleLogout = () => {
     // Server best-effort informeren; client-side sowieso uitloggen zodat een
     // haperende backend geen "kan niet uitloggen"-situatie oplevert.
@@ -166,5 +174,5 @@ export default function App() {
   if (!ok) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Laden...</p></div>;
   if (!user) return <LoginView onLogin={handleLogin} branding={branding} usersLoading={usersLoading} usersError={usersError} refreshUsers={refreshUsers} sessionExpired={sessionExpired} onDismissSessionExpired={()=>setSessionExpired(false)}/>;
   if (user.role === "admin") return <AdminView eq={eq} setEq={setEq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} users={users} setUsers={setUsers} usersLoading={usersLoading} usersError={usersError} setUsersError={setUsersError} refreshUsers={refreshUsers} sets={sets} refreshSets={refreshSets} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} setBonsError={setBonsError} refreshBons={refreshBons} logs={logs} addLog={addLog} branding={branding} setBranding={setBranding} onLogout={handleLogout}/>;
-  return <UserView eq={eq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} sets={sets} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} setBonsError={setBonsError} refreshBons={refreshBons} addLog={addLog} branding={branding} onLogout={handleLogout} user={user}/>;
+  return <UserView eq={eq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} sets={sets} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} setBonsError={setBonsError} refreshBons={refreshBons} addLog={addLog} branding={branding} onLogout={handleLogout} user={user} onProfileUpdate={handleUserPatch}/>;
 }

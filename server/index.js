@@ -41,6 +41,9 @@ app.use('/api/backup', backupRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/logs', logsRouter);
 
+const { startReminderScheduler } = require('./mail/scheduler');
+
 app.listen(PORT, () => {
   console.log(`Server luistert op http://localhost:${PORT}`);
+  startReminderScheduler();
 });

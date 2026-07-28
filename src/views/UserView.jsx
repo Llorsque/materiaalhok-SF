@@ -3,7 +3,7 @@ import { UserHome } from "./user/UserHome";
 import { LoanFlow } from "./user/LoanFlow";
 import { ReturnFlow } from "./user/ReturnFlow";
 
-export function UserView({ eq, materialsLoading, materialsError, refreshMaterials, sets, bons, bonsLoading, bonsError, setBonsError, refreshBons, addLog, branding, onLogout, user }) {
+export function UserView({ eq, materialsLoading, materialsError, refreshMaterials, sets, bons, bonsLoading, bonsError, setBonsError, refreshBons, addLog, branding, onLogout, user, onProfileUpdate }) {
   const [mode, setMode] = useState(null);
   const [isReservation, setIsReservation] = useState(false);
   const [done, setDone] = useState(null);
@@ -31,5 +31,5 @@ export function UserView({ eq, materialsLoading, materialsError, refreshMaterial
   if (mode === "return") {
     return <ReturnFlow eq={eq} sets={sets} materialsLoading={materialsLoading} materialsError={materialsError} refreshMaterials={refreshMaterials} bons={bons} refreshBons={refreshBons} setBonsError={setBonsError} addLog={addLog} user={user} onCancel={handleCancel} onDone={handleDone}/>;
   }
-  return <UserHome user={user} branding={branding} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} onLogout={onLogout} onModeChange={handleModeChange} done={done} sets={sets}/>;
+  return <UserHome user={user} branding={branding} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} onLogout={onLogout} onModeChange={handleModeChange} done={done} sets={sets} onProfileUpdate={onProfileUpdate}/>;
 }

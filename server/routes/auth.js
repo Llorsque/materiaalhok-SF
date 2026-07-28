@@ -103,8 +103,43 @@ router.post('/logout', (req, res) => {
 
 // Testroute voor het token-mechanisme. Zodra stap 2 klaar is en overal
 // requireAuth op staat, blijft dit endpoint bruikbaar als "wie ben ik?".
+// Ook mail-voorkeuren komen mee zodat het profielscherm 'm direct kan tonen.
 router.get('/me', requireAuth, (req, res) => {
-  res.json(req.user);
+  const row = db.prepare(
+    `SELECT id, name, email, role, login_barcode,
+            notify_reservation, notify_pickup, notify_reminder
+     FROM users WHERE id = ?`
+  ).get(req.user.id);
+  if (!row) return res.status(404).json({ error: 'gebruiker niet gevonden' });
+  res.json(row);
+});
+
+// Zelf-endpoint voor mail-voorkeuren. Elke ingelogde gebruiker mag zijn
+// eigen voorkeuren zetten; admins kunnen die van anderen zetten via de
+// gebruikersbeheer-routes op /api/users/:id.
+const NOTIFY_KEYS = ['notify_reservation', 'notify_pickup', 'notify_reminder'];
+router.put('/me/notifications', requireAuth, (req, res) => {
+  const body = req.body || {};
+  const patch = {};
+  for (const key of NOTIFY_KEYS) {
+    if (body[key] === undefined) continue;
+    const v = body[key];
+    if (v !== 0 && v !== 1 && v !== true && v !== false) {
+      return res.status(400).json({ error: `veld '${key}' moet 0, 1, true of false zijn` });
+    }
+    patch[key] = v === true || v === 1 ? 1 : 0;
+  }
+  if (Object.keys(patch).length === 0) {
+    return res.status(400).json({ error: 'geen voorkeuren opgegeven' });
+  }
+  const sets = Object.keys(patch).map((k) => `${k} = @${k}`).join(', ');
+  db.prepare(`UPDATE users SET ${sets} WHERE id = @id`).run({ ...patch, id: req.user.id });
+  const updated = db.prepare(
+    `SELECT id, name, email, role, login_barcode,
+            notify_reservation, notify_pickup, notify_reminder
+     FROM users WHERE id = ?`
+  ).get(req.user.id);
+  res.json(updated);
 });
 
 module.exports = router;

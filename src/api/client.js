@@ -126,6 +126,7 @@ async function loginRequest(path, body) {
 export const login          = (email, password) => loginRequest('/api/login',      { email, password });
 export const loginByBarcode = (login_barcode)   => loginRequest('/api/login/scan', { login_barcode });
 export const getMe          = ()                => request('GET', '/api/me');
+export const updateMyNotifications = (prefs)    => request('PUT', '/api/me/notifications', prefs);
 
 // Logout probeert de server-side sessie op te ruimen maar wist het token
 // hoe dan ook. Als de server niet bereikbaar is willen we alsnog uitloggen

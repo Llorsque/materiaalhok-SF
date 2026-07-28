@@ -27,6 +27,8 @@ function stripPasswordHash(user) {
   return rest;
 }
 
+const NOTIFY_FIELDS = ['notify_reservation', 'notify_pickup', 'notify_reminder'];
+
 function validateInput(input, existing) {
   const isCreate = !existing;
   const out = {};
@@ -86,6 +88,21 @@ function validateInput(input, existing) {
     out.login_barcode = existing.login_barcode;
   }
 
+  for (const field of NOTIFY_FIELDS) {
+    if (input[field] !== undefined) {
+      // Frontend stuurt vaak booleans; accepteren en normaliseren naar 0/1.
+      const v = input[field];
+      if (v !== 0 && v !== 1 && v !== true && v !== false) {
+        return { error: `veld '${field}' moet 0, 1, true of false zijn` };
+      }
+      out[field] = v === true || v === 1 ? 1 : 0;
+    } else if (isCreate) {
+      out[field] = 1;
+    } else {
+      out[field] = existing[field];
+    }
+  }
+
   return { value: out };
 }
 
@@ -112,9 +129,11 @@ router.post('/', (req, res) => {
   try {
     info = db.prepare(`
       INSERT INTO users
-        (name, email, password_hash, role, login_barcode, created_at)
+        (name, email, password_hash, role, login_barcode, created_at,
+         notify_reservation, notify_pickup, notify_reminder)
       VALUES
-        (@name, @email, @password_hash, @role, @login_barcode, @created_at)
+        (@name, @email, @password_hash, @role, @login_barcode, @created_at,
+         @notify_reservation, @notify_pickup, @notify_reminder)
     `).run({ ...value, created_at: now });
   } catch (err) {
     if (handleUniqueError(err, res)) return;
@@ -147,7 +166,10 @@ router.put('/:id', (req, res) => {
     db.prepare(`
       UPDATE users SET
         name = @name, email = @email, password_hash = @password_hash,
-        role = @role, login_barcode = @login_barcode
+        role = @role, login_barcode = @login_barcode,
+        notify_reservation = @notify_reservation,
+        notify_pickup      = @notify_pickup,
+        notify_reminder    = @notify_reminder
       WHERE id = @id
     `).run({ ...value, id: existing.id });
   } catch (err) {

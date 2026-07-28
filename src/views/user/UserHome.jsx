@@ -6,6 +6,39 @@ import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { fmtDate } from "../../utils/date";
 import { bonIsOverdue, itemDisplayName } from "../../utils/bons";
 import { MyBonDetailModal } from "./MyBonDetailModal";
+import { updateMyNotifications } from "../../api/client";
+
+const NOTIFY_OPTIONS = [
+  {
+    key: "notify_reservation",
+    title: "Reserveringsbevestiging",
+    description: "Mail zodra je een reservering aanmaakt, met de datums en items op een rij.",
+  },
+  {
+    key: "notify_pickup",
+    title: "Ophaalbevestiging",
+    description: "Mail wanneer je je materiaal daadwerkelijk uit het hok haalt.",
+  },
+  {
+    key: "notify_reminder",
+    title: "Retourherinnering",
+    description: "Vriendelijke reminder op de laatste werkdag vóór de retourdatum.",
+  },
+];
+
+function Toggle({ checked, disabled, onChange, id }) {
+  return <button
+    type="button"
+    id={id}
+    role="switch"
+    aria-checked={checked}
+    disabled={disabled}
+    onClick={() => onChange(!checked)}
+    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${checked ? "bg-blue-600" : "bg-gray-300"} disabled:opacity-40`}
+  >
+    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}/>
+  </button>;
+}
 
 function itemLabel(it) {
   const name = itemDisplayName(it);
@@ -19,10 +52,33 @@ function shortItems(bon, limit = 4) {
   return labels.join(", ");
 }
 
-export function UserHome({ user, branding, bons, bonsLoading, bonsError, refreshBons, onLogout, onModeChange, done, sets }) {
+export function UserHome({ user, branding, bons, bonsLoading, bonsError, refreshBons, onLogout, onModeChange, done, sets, onProfileUpdate }) {
   const [showProfile, setShowProfile] = useState(false);
   const [selectedBonId, setSelectedBonId] = useState(null);
   const selectedBon = selectedBonId != null ? bons.find((b) => b.id === selectedBonId) : null;
+  const [notifyBusy, setNotifyBusy] = useState(null); // welke toggle-key nu bezig is
+  const [notifyError, setNotifyError] = useState(null);
+
+  // Vult ontbrekende voorkeuren op met 1 (aan) — bestaande gebruikers uit
+  // v1.6.0 hebben de nieuwe kolommen wél maar de sessionStorage-user is
+  // gemaakt vóór ze bestonden, dus verdedig defensief.
+  const currentPref = (key) => (user && user[key] != null ? Number(user[key]) : 1);
+
+  const toggleNotify = async (key, next) => {
+    setNotifyError(null);
+    setNotifyBusy(key);
+    // Optimistisch: direct de UI updaten, terugdraaien als de call faalt.
+    const previous = currentPref(key);
+    if (onProfileUpdate) onProfileUpdate({ [key]: next ? 1 : 0 });
+    try {
+      await updateMyNotifications({ [key]: next ? 1 : 0 });
+    } catch (err) {
+      setNotifyError(err.message || "Bijwerken mislukt");
+      if (onProfileUpdate) onProfileUpdate({ [key]: previous });
+    } finally {
+      setNotifyBusy(null);
+    }
+  };
 
   const myBons = bons.filter((b) => b.user_id === user.id && b.status !== "completed");
   const otherActiveBons = bons.filter((b) => b.user_id !== user.id && b.status === "active");
@@ -77,6 +133,23 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
             {userBons.length===0 && <p className="text-center text-gray-400 py-4">Nog geen bonnen</p>}
           </div>;
         })()}
+
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase mb-3">E-mailvoorkeuren</p>
+          <div className="space-y-3">
+            {NOTIFY_OPTIONS.map((opt) => {
+              const checked = currentPref(opt.key) === 1;
+              return <div key={opt.key} className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <div className="min-w-0">
+                  <label htmlFor={`toggle-${opt.key}`} className="text-sm font-semibold text-gray-800 cursor-pointer">{opt.title}</label>
+                  <p className="text-xs text-gray-500 mt-0.5">{opt.description}</p>
+                </div>
+                <Toggle id={`toggle-${opt.key}`} checked={checked} disabled={notifyBusy === opt.key} onChange={(v) => toggleNotify(opt.key, v)}/>
+              </div>;
+            })}
+          </div>
+          {notifyError && <p className="text-xs text-red-600 mt-2">{notifyError}</p>}
+        </div>
 
         <button onClick={onLogout} className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm hover:bg-gray-200">Uitloggen</button>
       </div>

@@ -83,6 +83,9 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
         email: editUser.email.trim(),
         role: editUser.role,
         login_barcode: editUser.login_barcode || null,
+        notify_reservation: editUser.notify_reservation ? 1 : 0,
+        notify_pickup:      editUser.notify_pickup      ? 1 : 0,
+        notify_reminder:    editUser.notify_reminder    ? 1 : 0,
       };
       // Alleen meesturen als gebruiker expliciet een nieuw wachtwoord intikt.
       if (editUser.password && editUser.password.trim()) {
@@ -230,6 +233,17 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
         <div><label className={lc}>Nieuw wachtwoord <span className="text-gray-400 font-normal">(laat leeg om ongewijzigd te houden)</span></label><input className={ic} value={editUser.password||""} onChange={e=>setEditUser(p=>({...p,password:e.target.value}))} placeholder="Minimaal 6 tekens"/></div>
         <div><label className={lc}>Badge-code</label><div className="flex gap-2"><input value={editUser.login_barcode||""} disabled className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-500 font-mono"/><button onClick={()=>setEditUser(p=>({...p,login_barcode:genLoginCode()}))} className="px-3 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200">Nieuwe code</button></div></div>
         <div><label className={lc}>Rol</label><select className={ic} value={editUser.role} onChange={e=>setEditUser(p=>({...p,role:e.target.value}))}><option value="user">Gebruiker</option><option value="admin">Beheerder</option></select></div>
+        <div className="pt-1">
+          <p className="text-xs font-semibold text-gray-500 uppercase mb-2">E-mailvoorkeuren</p>
+          {[
+            ["notify_reservation", "Reserveringsbevestiging"],
+            ["notify_pickup", "Ophaalbevestiging"],
+            ["notify_reminder", "Retourherinnering"],
+          ].map(([key, label]) => <label key={key} className="flex items-center gap-3 py-1.5 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked={!!editUser[key]} onChange={e=>setEditUser(p=>({...p, [key]: e.target.checked ? 1 : 0}))}/>
+            <span className="text-sm text-gray-700">{label}</span>
+          </label>)}
+        </div>
         <div className="flex gap-3 pt-2">
           <button onClick={saveUser} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Opslaan</button>
           <button onClick={()=>setEditUser(null)} className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50">Annuleren</button>

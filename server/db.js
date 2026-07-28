@@ -61,11 +61,44 @@ if (bonsCols.length > 0 && !bonsCols.includes('created_by_admin_id')) {
 }
 
 // Herinneringen-opt-out per gebruiker. Bestaande accounts krijgen 1 (aan) als
-// default: opt-out, geen opt-in. Bevestigingsmails blijven altijd gaan, zie
-// BESLUITEN.md.
-const usersCols = db.pragma('table_info(users)').map((c) => c.name);
-if (usersCols.length > 0 && !usersCols.includes('email_reminders')) {
-  db.exec('ALTER TABLE users ADD COLUMN email_reminders INTEGER NOT NULL DEFAULT 1');
+// default. Bevestigingsmails blijven altijd gaan, zie BESLUITEN.md.
+//
+// Migratie-verhaal:
+//   v1.6.0 → v1.7.0: de grofmazige email_reminders wordt vervangen door drie
+//   aparte kolommen (notify_reservation / notify_pickup / notify_reminder).
+//   Bestaande waarde wordt naar alle drie de nieuwe kolommen gekopieerd
+//   zodat gebruikers niet ineens andere voorkeuren hebben.
+{
+  const cols = db.pragma('table_info(users)').map((c) => c.name);
+  const addIfMissing = (name) => {
+    if (!cols.includes(name)) {
+      db.exec(`ALTER TABLE users ADD COLUMN ${name} INTEGER NOT NULL DEFAULT 1`);
+    }
+  };
+  if (cols.length > 0) {
+    const hadOld = cols.includes('email_reminders');
+    addIfMissing('notify_reservation');
+    addIfMissing('notify_pickup');
+    addIfMissing('notify_reminder');
+    if (hadOld) {
+      // Neem de oude waarde over voor iedere rij en droppen daarna de oude
+      // kolom. SQLite 3.35+ ondersteunt DROP COLUMN; we draaien op 3.53.
+      db.exec(`
+        UPDATE users
+           SET notify_reservation = email_reminders,
+               notify_pickup      = email_reminders,
+               notify_reminder    = email_reminders
+      `);
+      db.exec('ALTER TABLE users DROP COLUMN email_reminders');
+    }
+  }
+}
+
+// Retourherinnering-vlag op bons: NULL zolang 'ie niet verstuurd is, ISO-
+// timestamp van verzending zodra dat wél gebeurd is. Zo weten we in elke
+// scheduler-cyclus welke bonnen nog een herinnering nodig hebben.
+if (bonsCols.length > 0 && !bonsCols.includes('reminder_sent_at')) {
+  db.exec('ALTER TABLE bons ADD COLUMN reminder_sent_at TEXT');
 }
 
 module.exports = db;

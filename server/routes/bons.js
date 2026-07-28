@@ -344,13 +344,23 @@ router.post('/', (req, res) => {
     : `${created.bon_number} aangemaakt voor ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`;
   logAction('bon_create', detail, req.user.id);
 
-  // Bevestigingsmail — fire and forget. Sendmail is intern fout-tolerant en
-  // logt zelf naar de logs-tabel; we willen de HTTP-respons niet blokkeren op
-  // een trage SMTP-server, en al helemaal niet laten falen als de mail hapert.
-  const borrower = db.prepare('SELECT email FROM users WHERE id = ?').get(created.user_id);
+  // Bevestigingsmail — fire and forget. Reserveringen vallen onder
+  // notify_reservation, directe uitleningen onder notify_pickup (het is dan
+  // in één handeling aangemaakt én opgehaald). sendMail is intern fout-
+  // tolerant en logt zelf.
+  const isReservation = created.status === 'reserved';
+  const prefKey = isReservation ? 'notify_reservation' : 'notify_pickup';
+  const kindLabel = isReservation ? 'Reserveringsbevestiging' : 'Ophaalbevestiging';
+  const borrower = db.prepare(
+    `SELECT email, notify_reservation, notify_pickup FROM users WHERE id = ?`
+  ).get(created.user_id);
   const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
   if (!email) {
-    logAction('mail_skipped', `Bevestigingsmail voor ${created.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
+    logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
+  // Aanhakingspunt: externe huurders (ronde B) omzeilen deze check straks;
+  // voor hen gaan reservering-, ophaal- en herinneringsmail altijd.
+  } else if (borrower[prefKey] !== 1) {
+    logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
   } else {
     const tpl = bonConfirmation(created);
     sendMail({
@@ -360,7 +370,6 @@ router.post('/', (req, res) => {
       text: tpl.text,
       context: created.bon_number,
     }).catch((err) => {
-      // sendMail vangt zelf al af, maar dit is de laatste vangnet-lijn.
       console.error(`[bons] onverwachte mailfout voor ${created.bon_number}: ${err.message}`);
     });
   }
@@ -473,7 +482,33 @@ router.post('/:id/pickup', (req, res) => {
   });
   tx();
 
-  res.json(loadBonWithItems(bon.id));
+  const updated = loadBonWithItems(bon.id);
+
+  // Ophaalbevestiging. Zelfde patroon als bij bon-create: fire and forget,
+  // sendMail vangt fouten zelf af.
+  const borrower = db.prepare(
+    `SELECT email, notify_pickup FROM users WHERE id = ?`
+  ).get(updated.user_id);
+  const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
+  if (!email) {
+    logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
+  // Aanhakingspunt externe huurders (ronde B): pref-check overslaan.
+  } else if (borrower.notify_pickup !== 1) {
+    logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
+  } else {
+    const tpl = bonConfirmation(updated);
+    sendMail({
+      to: email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      context: `${updated.bon_number} opgehaald`,
+    }).catch((err) => {
+      console.error(`[bons] onverwachte mailfout bij pickup ${updated.bon_number}: ${err.message}`);
+    });
+  }
+
+  res.json(updated);
 });
 
 router.post('/:id/return', (req, res) => {

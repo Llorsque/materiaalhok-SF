@@ -144,6 +144,62 @@ function bonConfirmation(bon) {
 }
 
 // --------------------------------------------------------------------------
+// Retourherinnering
+//
+// catchup = true betekent dat we deze mail te laat sturen (bv. omdat de
+// laptop op de eigenlijke herinnerdag uitstond). De tekst zegt dan
+// "binnenkort" i.p.v. de weekdag te noemen, zodat 'ie niet raar aanvoelt.
+
+function returnReminder(bon, { catchup = false } = {}) {
+  const subject = `Herinnering: retour ${bon.bon_number}`;
+
+  const items = Array.isArray(bon.items) ? bon.items : [];
+  const itemsListHtml = items.map((it) => `<li style="margin:2px 0;">${esc(itemLabel(it))}</li>`).join('');
+  const itemsListText = items.map((it) => `- ${itemLabel(it)}`).join('\n');
+
+  const retourStr = formatDateNL(bon.return_date);
+  const introHtml = catchup
+    ? `<p>Hoi ${esc(bon.user_name || '')},</p>
+       <p>Kleine herinnering: het materiaal op bon <strong>${esc(bon.bon_number)}</strong> moet binnenkort weer terug in het materiaalhok. Uiterlijk op <strong>${esc(retourStr)}</strong>.</p>`
+    : `<p>Hoi ${esc(bon.user_name || '')},</p>
+       <p>Kleine herinnering: het materiaal op bon <strong>${esc(bon.bon_number)}</strong> moet <strong>${esc(retourStr)}</strong> weer terug in het materiaalhok.</p>`;
+
+  const introText = catchup
+    ? `Kleine herinnering: het materiaal op bon ${bon.bon_number} moet binnenkort weer terug in het materiaalhok. Uiterlijk op ${retourStr}.`
+    : `Kleine herinnering: het materiaal op bon ${bon.bon_number} moet ${retourStr} weer terug in het materiaalhok.`;
+
+  const bodyHtml = `
+    ${introHtml}
+    <p style="font-weight:600;margin:16px 0 6px;">Wat je nog moet inleveren:</p>
+    <ul style="margin:0 0 16px 20px;padding:0;">${itemsListHtml}</ul>
+    <p>Alvast bedankt voor het op tijd terugbrengen — dat scheelt de volgende gebruiker een hoop gedoe.</p>
+    <p>Kom je iets tegen dat niet klopt of lukt terugbrengen niet? Loop even langs het materiaalhok.</p>
+    <p style="margin-top:20px;">Groet,<br>${esc(BRAND_NAME)}</p>
+  `;
+
+  const text = [
+    `Hoi ${bon.user_name || ''},`,
+    '',
+    introText,
+    '',
+    'Wat je nog moet inleveren:',
+    itemsListText,
+    '',
+    'Alvast bedankt voor het op tijd terugbrengen — dat scheelt de volgende gebruiker een hoop gedoe.',
+    'Kom je iets tegen dat niet klopt of lukt terugbrengen niet? Loop even langs het materiaalhok.',
+    '',
+    'Groet,',
+    BRAND_NAME,
+  ].join('\n');
+
+  return {
+    subject,
+    html: wrap({ preheader: `Retour ${bon.bon_number} — uiterlijk ${retourStr}`, bodyHtml }),
+    text,
+  };
+}
+
+// --------------------------------------------------------------------------
 // Testmail
 
 function mailTest() {
@@ -172,4 +228,4 @@ function mailTest() {
   };
 }
 
-module.exports = { bonConfirmation, mailTest, BRAND_NAME };
+module.exports = { bonConfirmation, returnReminder, mailTest, BRAND_NAME };

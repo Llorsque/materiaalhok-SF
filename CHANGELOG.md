@@ -7,6 +7,55 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-07-28
+
+E-mailvoorkeuren per gebruiker en de retourherinnering — twee samenhangende
+onderdelen die op het e-mailfundament uit v1.6.0 leunen.
+
+### Toegevoegd
+- **Drie aparte e-mailvoorkeuren per gebruiker** (`notify_reservation`,
+  `notify_pickup`, `notify_reminder`) in plaats van de grofmazige
+  `email_reminders`. Frontend toont drie toggles in het profielscherm van
+  de gebruiker met korte uitleg per mail; admin kan ze ook zetten via de
+  gebruikersbeheer-tab.
+- **Reserveringsbevestiging** en **ophaalbevestiging** zijn nu twee aparte
+  mails: reserveringen (`POST /api/bons` met status `reserved`) vallen
+  onder `notify_reservation`; direct-lenen (`POST /api/bons` met status
+  `active`) en het ophalen van een reservering (`POST /api/bons/:id/pickup`)
+  vallen onder `notify_pickup`.
+- **Retourherinnering** op de laatste werkdag vóór de retourdatum. Nieuwe
+  scheduler in `server/mail/scheduler.js` draait elke 30 minuten (plus
+  eenmaal bij startup), respecteert het verzendvenster 08:00–18:00 op
+  werkdagen, en markeert bonnen na succesvolle verzending in
+  `bons.reminder_sent_at` zodat er nooit dubbel herinnerd wordt. Bij een
+  gemiste herinnerdag (laptop uit) wordt alsnog een catch-up-mail
+  gestuurd met tekst "je materiaal moet binnenkort terug".
+- Nieuw e-mailsjabloon `returnReminder(bon, { catchup })` met HTML +
+  platte-tekst-variant.
+- Nieuw endpoint `PUT /api/me/notifications` voor ingelogde gebruikers om
+  hun eigen voorkeuren te zetten. `GET /api/me` geeft de voorkeuren ook
+  terug.
+
+### Gewijzigd
+- Database-migratie: `users.email_reminders` (v1.6.0) is vervangen door
+  drie kolommen (`notify_reservation`, `notify_pickup`, `notify_reminder`).
+  De oude waarde is naar alle drie de nieuwe kolommen gekopieerd zodat
+  niemand ineens andere voorkeuren heeft. Daarna is de oude kolom gedropt
+  (SQLite 3.35+, aanwezig op 3.53).
+- Bons-tabel heeft een nieuwe kolom `reminder_sent_at TEXT` (nullable) met
+  lichte migratie voor bestaande DBs.
+- Response van `POST /api/users` en `PUT /api/users/:id` accepteert de drie
+  voorkeuren; admin kan ze bij een andere gebruiker aanpassen.
+- Frontend-user-object (`sessionStorage`) wordt bij het toggelen van een
+  voorkeur direct bijgewerkt via een nieuwe callback `onProfileUpdate`,
+  zodat de UI en de sessie synchroon blijven.
+
+### Aanhakingspunt (nog niet gebouwd)
+- **Externe huurders (ronde B)** krijgen straks alle drie de mails altijd,
+  ongeacht voorkeuren. In `server/routes/bons.js` en
+  `server/mail/scheduler.js` staan expliciete comments waar de check moet
+  worden overgeslagen zodra de externe-huurder-entiteit bestaat.
+
 ## [1.6.0] - 2026-07-23
 
 E-mailfundament: bevestigingsmails na aanmaken van een bon plus alle
