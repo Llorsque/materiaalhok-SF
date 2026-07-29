@@ -7,6 +7,58 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-07-29
+
+Admin-dashboard opnieuw ingericht als one-pager landingspagina, plus een
+notificatiebel rechtsboven in de admin-header. De elf tabbladen blijven
+onaangeraakt.
+
+### Toegevoegd
+- **Nieuw `DashboardTab`** — one-pager met drie overzichtsblokken naast
+  elkaar (op wide screens; stacken op mobile):
+  1. **Eerstvolgende reserveringen** (`status='reserved'`, gesorteerd op
+     ophaaldatum, eerste 5 zichtbaar, "bekijk alle" naar Bonnen-tab
+     gefilterd op `reserved`).
+  2. **Retour binnen 24 uur** (actieve bonnen met `return_date`
+     binnen nu + 24u; retourdatum + tijd getoond).
+  3. **Actieve bonnen** (`status='active'`, gesorteerd op retour, eerste
+     5 zichtbaar, "bekijk alle" naar Bonnen-tab gefilterd op `active`).
+  Elke regel opent bij klik het bestaande bon-detail-modal. Lege staten
+  zijn rustig ("Geen reserveringen" / "Niets binnen 24 uur").
+- **Snelknop "Nieuwe bon aanmaken"** op het dashboard (opent
+  `AdminBonFlow`). Gebouwd via nieuwe component `NewBonButton` die een
+  `options`-array accepteert: met één optie rendert 'ie als kale knop,
+  met meerdere als dropdown. **Aanhaakpunt** (met code-comment) voor de
+  Ronde B externe-huurder-optie — die hoeft straks alleen als tweede
+  entry toegevoegd te worden.
+- **Notificatiebel rechtsboven in de admin-header** (`NotificationBell`).
+  Toont een teller (rood bij minimaal één rode melding, anders amber) en
+  een dropdown gegroepeerd per type:
+  - Geen recente backup / laatste backup gefaald (rood/amber, via
+    bestaande `getBackupStatus`).
+  - Bonnen te laat (rood; klik → bon-detail).
+  - Kwijt / schade gemeld (amber; klik → Schade-tab).
+  - Incomplete retouren (amber; klik → bon-detail): actieve bonnen met
+    zowel `returned=1` als `returned=0` items (soft-deleted uitgezonderd).
+  Lege staat: "Geen meldingen — alles onder controle."
+- **Compacte cijferregel** op het dashboard (voorraad · vrij), klikbaar
+  voor een pop-up met alle statistieken (voorraad, beschikbaar,
+  materialen, sets, actieve bonnen, reserveringen, waarde). Verplaatst
+  vanuit de oude prominente stats-rij.
+
+### Gewijzigd
+- **`AppHeader`** accepteert een nieuwe optionele `notificationSlot`-prop
+  (React node); wordt gerenderd tussen de "+"-knop en het profielicoon.
+  UserView geeft 'm niet mee — de bel is admin-only.
+- **`AdminView`** haalt bij mount `getBackupStatus` op en berekent
+  `notifications` uit bons, damageReports en backupStatus. Nieuwe
+  helpers `openNewBonFlow` en `goToBonsWithFilter` centraliseren de
+  navigatie tussen dashboard en tabbladen.
+- **Verwijderd uit dashboard**: prominente 6-cijfers-rij, verlopen-
+  bonnen-banner (nu in de bel), lijst "Actieve bonnen" onderin, "Recente
+  activiteit"-blok. Actieve bonnen zitten nu in overzichtsblok 3;
+  recente activiteit blijft beschikbaar in het Logboek-tabblad.
+
 ## [1.9.0] - 2026-07-28
 
 Blok 2 van Ronde B: kwijt/kapot melden bij retour, met directe

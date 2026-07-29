@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AppHeader } from "../components/AppHeader";
 import { Modal } from "../components/Modal";
 import { ConnectionBanner } from "../components/ConnectionBanner";
 import { BackupBanner } from "../components/BackupBanner";
+import { NotificationBell } from "../components/NotificationBell";
 import { unavailableQty, bonIsOverdue } from "../utils/bons";
 import { encodeCode128B, nextMaterialBarcode, nextSetBarcode } from "../utils/barcode";
-import { createMaterial, updateMaterial, deleteMaterial, createSet, updateSet, deleteSet, updateBon, deleteBon, returnBon } from "../api/client";
+import { createMaterial, updateMaterial, deleteMaterial, createSet, updateSet, deleteSet, updateBon, deleteBon, returnBon, getBackupStatus } from "../api/client";
 import { AdminForm } from "./admin/AdminForm";
 import { SetForm } from "./admin/SetForm";
 import { DashboardTab } from "./admin/DashboardTab";
@@ -46,6 +47,12 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   // de admin ongestoord door de leenflow kan lopen namens een gebruiker.
   const [newBonMode, setNewBonMode] = useState(false);
   const [newBonToast, setNewBonToast] = useState(null);
+  // Backup-status voor de notificatiebel. We fetchen 'm hier zodat het
+  // belletje op elk tabblad up-to-date is; BackupBanner blijft ook z'n
+  // eigen fetch doen — dat is een kleine dubbeling maar houdt de banner
+  // stand-alone bruikbaar.
+  const [backupStatus, setBackupStatus] = useState(null);
+  useEffect(() => { getBackupStatus().then(setBackupStatus).catch(() => setBackupStatus(null)); }, []);
 
   const totalStock = useMemo(()=>eq.reduce((s,e)=>s+e.stock,0),[eq]);
   const totalUnavail = useMemo(()=>eq.reduce((s,e)=>s+unavailableQty(bons,e.id),0),[eq,bons]);
@@ -241,6 +248,74 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   const openDamageCount = (damageReports || []).filter((r) => r.status === "open").length;
   const tabs=[["dashboard","Dashboard"],["bons","Bonnen"],["items","Materiaal"],["sets","Sets"],["damage","Schade / verlies"],["insights","Inzichten"],["log","Logboek"],["barcodes","Barcodes"],["users","Gebruikers"],["import","Import"],["settings","Instellingen"]];
 
+  // -- Notificaties voor het belletje in de header ----------------------
+  // Elke categorie is een aparte bron; het belletje groepeert ze zelf.
+  // Klik navigeert direct naar het juiste tabblad of opent het bon-detail.
+  const notifications = useMemo(() => {
+    const list = [];
+
+    // Backup: alleen als stale of gefaald (BackupBanner-logica gespiegeld).
+    if (backupStatus && (backupStatus.isStale || !backupStatus.success)) {
+      const failed = !backupStatus.success;
+      list.push({
+        id: "backup",
+        type: "backup",
+        severity: failed ? "red" : "amber",
+        title: failed ? "De laatste backup is gefaald" : "Geen recente backup",
+        subtitle: backupStatus.lastBackup
+          ? `Laatst: ${new Date(backupStatus.lastBackup).toLocaleString("nl-NL")}`
+          : "Nog geen backup gemaakt op deze laptop",
+        onClick: () => setTab("settings"),
+      });
+    }
+
+    // Bonnen te laat.
+    for (const b of overdueBons) {
+      list.push({
+        id: `overdue-${b.id}`,
+        type: "overdue",
+        severity: "red",
+        title: `${b.bon_number} — ${b.user_name || "onbekende gebruiker"}`,
+        subtitle: `Retour was ${new Date(b.return_date).toLocaleDateString("nl-NL", { day: "2-digit", month: "short" })}`,
+        onClick: () => setBonDetail(b),
+      });
+    }
+
+    // Openstaande kwijt/schade-meldingen.
+    for (const r of (damageReports || [])) {
+      if (r.status !== "open") continue;
+      const name = r.material_name || r.set_name || "item";
+      list.push({
+        id: `damage-${r.id}`,
+        type: "damage",
+        severity: "amber",
+        title: `${r.quantity}x ${name} — ${r.reason === "lost" ? "kwijt" : "kapot"}`,
+        subtitle: r.bon_number ? `Gemeld op ${r.bon_number}` : "Geen bon gekoppeld",
+        onClick: () => setTab("damage"),
+      });
+    }
+
+    // Incomplete retouren: actieve bonnen met een mix van retour en open items.
+    for (const b of bons) {
+      if (b.status !== "active") continue;
+      const items = (b.items || []).filter((bi) => bi.removed_at_pickup !== 1);
+      const anyReturned = items.some((bi) => bi.returned === 1);
+      const anyOpen     = items.some((bi) => bi.returned === 0);
+      if (anyReturned && anyOpen) {
+        list.push({
+          id: `incomplete-${b.id}`,
+          type: "incomplete",
+          severity: "amber",
+          title: `${b.bon_number} — ${b.user_name || "onbekende gebruiker"}`,
+          subtitle: "Gedeeltelijk retour, niet alles binnen",
+          onClick: () => setBonDetail(b),
+        });
+      }
+    }
+
+    return list;
+  }, [backupStatus, overdueBons, damageReports, bons]);
+
   // Wanneer de admin een bon aanmaakt namens iemand, nemen we het hele scherm
   // over met AdminBonFlow. Dat spiegelt hoe UserView tussen home en LoanFlow
   // wisselt — geen tab-inhoud + flow tegelijkertijd op één pagina.
@@ -260,8 +335,15 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     />;
   }
 
+  const goToBonsWithFilter = (filter) => { setBonFilter(filter); setTab("bons"); };
+  const openNewBonFlow = () => { setNewBonToast(null); setNewBonMode(true); };
+
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
-    <AppHeader branding={branding} role="admin" onLogout={onLogout} onAdd={() => tab === "sets" ? setNewSetOpen(true) : setAddOpen(true)}>
+    <AppHeader
+      branding={branding} role="admin" onLogout={onLogout}
+      onAdd={() => tab === "sets" ? setNewSetOpen(true) : setAddOpen(true)}
+      notificationSlot={<NotificationBell notifications={notifications}/>}
+    >
       <div className="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto">
         {tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap ${tab===k?"border-blue-600 text-blue-600":"border-transparent text-gray-500 hover:text-gray-700"}`}>{l}{k==="bons"&&openBons.length>0?` (${openBons.length})`:""}{k==="damage"&&openDamageCount>0?` (${openDamageCount})`:""}</button>)}
       </div>
@@ -270,10 +352,21 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     <div className="max-w-6xl mx-auto px-4 py-6">
       <BackupBanner/>
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
-      {tab==="dashboard"&&<DashboardTab bons={bons} totalStock={totalStock} totalUnavail={totalUnavail} totalValue={totalValue} materialCount={eq.length} setCount={sets.length} activeBons={activeBons} overdueBons={overdueBons} reservedBons={reservedBons} recentLogs={recentLogs} onBonClick={setBonDetail}/>}
+      {tab==="dashboard"&&<DashboardTab
+        bons={bons}
+        totalStock={totalStock}
+        totalUnavail={totalUnavail}
+        totalValue={totalValue}
+        materialCount={eq.length}
+        setCount={sets.length}
+        reservedBons={reservedBons}
+        onBonClick={setBonDetail}
+        onOpenNewBonFlow={openNewBonFlow}
+        onGoToBonsWithFilter={goToBonsWithFilter}
+      />}
       {tab==="bons"&&<>
         {newBonToast && <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3 mb-3 text-sm text-emerald-800 flex items-center justify-between gap-3"><span>{newBonToast.text}</span><button onClick={()=>setNewBonToast(null)} className="text-emerald-700 hover:text-emerald-900 font-bold" aria-label="Sluiten">{"\u00d7"}</button></div>}
-        <BonsTab bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} reservedBons={reservedBons} overdueBons={overdueBons} bonFilter={bonFilter} setBonFilter={setBonFilter} onBonClick={setBonDetail} onNewBon={()=>{ setNewBonToast(null); setNewBonMode(true); }}/>
+        <BonsTab bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} reservedBons={reservedBons} overdueBons={overdueBons} bonFilter={bonFilter} setBonFilter={setBonFilter} onBonClick={setBonDetail} onNewBon={openNewBonFlow}/>
       </>}
       {tab==="items"&&<ItemsTab eq={eq} bons={bons} q={q} setQ={setQ} cat={cat} setCat={setCat} onItemClick={setDetail} adminScan={adminScan} setAdminScan={setAdminScan} adminScanMsg={adminScanMsg} setAdminScanMsg={setAdminScanMsg}/>}
       {tab==="sets"&&<>
