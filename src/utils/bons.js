@@ -110,3 +110,54 @@ export function itemDisplayName(it) {
 export function genLoginCode() {
   return "USR" + String(Math.floor(Math.random() * 99999) + 10000);
 }
+
+// ── Externe verhuur ────────────────────────────────────────────────────────
+// Helpers rond externe bonnen (v1.15.0). Interne bonnen vallen buiten deze
+// checks; ze zijn nooit "wacht op betaling" en hebben geen fase-tekst.
+//
+// De fase-tekst spiegelt wat BonDetailModal toont, zodat het dashboard en
+// de bel dezelfde taal gebruiken als het detail. Losstaande logica is
+// bewust vermeden: eventuele wijzigingen aan de fasering wilden we op één
+// plek doen.
+
+export function isExternalOpen(b) {
+  return !!(b && b.is_external && b.status !== "completed");
+}
+
+// Alle niet-soft-deleted items binnen? Basis voor "materiaal retour"-checks.
+function externalAllReturned(b) {
+  const items = (b.items || []).filter(isActiveBonItem);
+  return items.length > 0 && items.every((it) => it.returned === 1);
+}
+
+// Kernwaarschuwing van de sub-roadmap: materiaal is binnen maar de admin
+// moet nog een betaling verwerken. Blokkeert de bon van 'completed'.
+export function isExternalWaitingOnPayment(b) {
+  if (!b || !b.is_external) return false;
+  if (b.status !== "active") return false;
+  if (b.payment_status !== "open") return false;
+  return externalAllReturned(b);
+}
+
+// Korte, spreektaal-fase-omschrijving voor een externe bon. Retourneert een
+// lege string voor niet-externe bonnen of bonnen zonder relevante fase.
+export function externalPhaseLabel(b) {
+  if (!b || !b.is_external) return "";
+  const payOpen = b.payment_status === "open";
+  const payPaid = b.payment_status === "paid";
+  const allBack = externalAllReturned(b);
+  if (b.status === "completed") return "Afgehandeld";
+  if (b.status === "reserved") {
+    if (payPaid) return "Betaald, wacht op ophalen";
+    if (payOpen) return "Wacht op ophalen en betaling";
+    return "Wacht op ophalen";
+  }
+  if (b.status === "active") {
+    if (allBack && payOpen) return "Materiaal retour, wacht op betaling";
+    if (allBack && payPaid) return "Materiaal retour, wordt afgerond";
+    if (!allBack && payPaid) return "Betaald, wacht op retour";
+    if (!allBack && payOpen) return "Wacht op retour en betaling";
+    return "Materiaal uit";
+  }
+  return "";
+}

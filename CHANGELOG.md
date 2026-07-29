@@ -7,6 +7,41 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-07-29
+
+Externe verhuur — stap 4 (laatste) van de sub-roadmap: dashboardtile en
+notificatiesignaal voor lopende externe verhuur. De admin ziet nu in
+één oogopslag welke externe bonnen nog lopen, welke fase ze zitten, en
+of er nog een betaling te verwerken is.
+
+### Toegevoegd
+- **Vierde dashboard-tile "Externe verhuur"** (`DashboardTab`). Toont
+  alle externe bonnen met `status !== 'completed'`. Sortering: bonnen
+  die op betaling wachten (materiaal binnen, `payment_status='open'`)
+  bovenaan; daaronder de rest op `start_date` oplopend. Wacht-op-
+  betaling-rijen krijgen een amber accent (achtergrond +
+  waarschuwings-linker-rand) zodat ze opvallen. Elke rij toont
+  organisatienaam, fase, bonnummer en huurbedrag (of "geen bedrag").
+  Klik opent het bestaande bon-detail. Lege staat: "Geen lopende
+  externe verhuur".
+- **Notificatiesignaal `external_payment`** (`NotificationBell`).
+  Nieuwe groep tussen "Bonnen te laat" en "Kwijt/schade gemeld",
+  icoon 💰, label "Externe verhuur wacht op betaling". Klik navigeert
+  direct naar de betreffende bon. Subtitle vermeldt het openstaande
+  bedrag in Nederlandse notatie.
+- **Helpers in `src/utils/bons.js`**: `isExternalOpen(b)`,
+  `isExternalWaitingOnPayment(b)`, `externalPhaseLabel(b)`. Dezelfde
+  fase-tekst als BonDetailModal, zodat dashboard, bel en detail
+  identieke taal spreken. `BonDetailModal` blijft z'n eigen inline-
+  logica gebruiken (was er al vóór v1.15.0); wijzigingen kunnen in
+  een volgende versie geconsolideerd worden.
+
+### Gewijzigd
+- **Dashboard-grid van 3 naar 4 kolommen op xl.** Layout is nu
+  `grid-cols-1 lg:grid-cols-2 xl:grid-cols-4` — op mobiel stacken,
+  op tablet 2×2, op wide screens 4-op-een-rij. Bestaande drie tiles
+  onveranderd.
+
 ## [1.14.1] - 2026-07-29
 
 Vervolg op v1.14.0: externe bonnen konden na aanmaken niet worden

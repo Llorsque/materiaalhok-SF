@@ -4,7 +4,7 @@ import { Modal } from "../components/Modal";
 import { ConnectionBanner } from "../components/ConnectionBanner";
 import { BackupBanner } from "../components/BackupBanner";
 import { NotificationBell } from "../components/NotificationBell";
-import { unavailableQty, bonIsOverdue } from "../utils/bons";
+import { unavailableQty, bonIsOverdue, isExternalWaitingOnPayment } from "../utils/bons";
 import { encodeCode128B, nextMaterialBarcode, nextSetBarcode } from "../utils/barcode";
 import { createMaterial, updateMaterial, deleteMaterial, createSet, updateSet, deleteSet, updateBon, deleteBon, returnBon, getBackupStatus, markBonPaid, getBon } from "../api/client";
 import { AdminForm } from "./admin/AdminForm";
@@ -332,6 +332,24 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
           onClick: () => setBonDetail(b),
         });
       }
+    }
+
+    // v1.15.0: externe verhuur waarvan het materiaal binnen is maar de
+    // betaling nog niet — de bon blijft daardoor 'active' hangen en de
+    // admin moet actie ondernemen (markeer als betaald).
+    for (const b of bons) {
+      if (!isExternalWaitingOnPayment(b)) continue;
+      const price = typeof b.rental_price === "number" ? b.rental_price : Number(b.rental_price) || 0;
+      list.push({
+        id: `external-payment-${b.id}`,
+        type: "external_payment",
+        severity: "amber",
+        title: `${b.bon_number} — ${b.external_org || "externe huurder"}`,
+        subtitle: price > 0
+          ? `Materiaal retour, ${new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(price)} nog te ontvangen`
+          : "Materiaal retour, betaling openstaand",
+        onClick: () => setBonDetail(b),
+      });
     }
 
     return list;

@@ -14,12 +14,13 @@ import { useEffect, useRef, useState } from "react";
 // }]
 
 const GROUP_META = {
-  backup:     { label: "Geen recente backup", icon: "\ud83d\uddc4\ufe0f" },
-  overdue:    { label: "Bonnen te laat",       icon: "\u23f0" },
-  damage:     { label: "Kwijt / schade gemeld", icon: "\u26a0\ufe0f" },
-  incomplete: { label: "Incomplete retouren",   icon: "\ud83d\udce6" },
+  backup:            { label: "Geen recente backup",        icon: "\ud83d\uddc4\ufe0f" },
+  overdue:           { label: "Bonnen te laat",              icon: "\u23f0" },
+  external_payment:  { label: "Externe verhuur wacht op betaling", icon: "\ud83d\udcb0" },
+  damage:            { label: "Kwijt / schade gemeld",       icon: "\u26a0\ufe0f" },
+  incomplete:        { label: "Incomplete retouren",         icon: "\ud83d\udce6" },
 };
-const GROUP_ORDER = ["backup", "overdue", "damage", "incomplete"];
+const GROUP_ORDER = ["backup", "overdue", "external_payment", "damage", "incomplete"];
 
 export function NotificationBell({ notifications }) {
   const [open, setOpen] = useState(false);

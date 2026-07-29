@@ -3,7 +3,7 @@ import { Modal } from "../../components/Modal";
 import { NewBonButton } from "../../components/NewBonButton";
 import { fmt } from "../../utils/format";
 import { fmtDate, fmtDT } from "../../utils/date";
-import { bonIsOverdue } from "../../utils/bons";
+import { bonIsOverdue, isExternalOpen, isExternalWaitingOnPayment, externalPhaseLabel } from "../../utils/bons";
 
 // One-pager. Drie overzichtsblokken naast elkaar op wide screens; op mobile
 // stacken. Snelknop "Nieuwe bon aanmaken" boven de blokken. De cijferstats
@@ -56,6 +56,19 @@ export function DashboardTab({
       .sort((a, b) => (a.return_date || "").localeCompare(b.return_date || ""));
   }, [bons]);
 
+  // Lopende externe verhuur. "Wacht op betaling" bovenaan (dat is het
+  // signaal dat de admin niet mag vergeten), daarna op start_date oplopend
+  // — dezelfde volgorde als de reserveringen-tile.
+  const openExternal = useMemo(() => {
+    const list = (bons || []).filter(isExternalOpen);
+    return list.sort((a, b) => {
+      const aw = isExternalWaitingOnPayment(a);
+      const bw = isExternalWaitingOnPayment(b);
+      if (aw !== bw) return aw ? -1 : 1;
+      return (a.start_date || "").localeCompare(b.start_date || "");
+    });
+  }, [bons]);
+
   return <div className="space-y-6">
     {/* Snelknop-rij: nieuwe bon links, compacte stats-tile rechts */}
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -89,8 +102,9 @@ export function DashboardTab({
       </button>
     </div>
 
-    {/* Drie overzichtsblokken naast elkaar op ≥ lg; anders 2/1 kolommen. */}
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    {/* Vier overzichtsblokken (v1.15.0: externe verhuur erbij). Op xl vier
+        naast elkaar, op lg twee kolommen (2×2), op mobile stacken. */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
       {/* 1) Eerstvolgende reserveringen */}
       <OverviewCard
         title="Eerstvolgende reserveringen"
@@ -150,6 +164,18 @@ export function DashboardTab({
           />;
         })}
       </OverviewCard>
+
+      {/* 4) Externe verhuur (v1.15.0) */}
+      <OverviewCard
+        title="Externe verhuur"
+        icon={"\ud83c\udfe2"}
+        accent="external"
+        count={openExternal.length}
+        empty="Geen lopende externe verhuur"
+        seeAll={null}
+      >
+        {openExternal.slice(0, MAX_ROWS).map((b) => <ExternalBonRow key={b.id} bon={b} onClick={() => onBonClick(b)}/>)}
+      </OverviewCard>
     </div>
 
     {/* Cijferpop-up */}
@@ -171,9 +197,10 @@ export function DashboardTab({
 
 function OverviewCard({ title, icon, accent, count, empty, seeAll, children }) {
   const accentClass = {
-    purple: "bg-purple-50 text-purple-700",
-    amber:  "bg-amber-50 text-amber-700",
-    blue:   "bg-blue-50 text-blue-700",
+    purple:   "bg-purple-50 text-purple-700",
+    amber:    "bg-amber-50 text-amber-700",
+    blue:     "bg-blue-50 text-blue-700",
+    external: "bg-purple-50 text-purple-700",
   }[accent] || "bg-gray-50 text-gray-700";
   const items = [].concat(children).filter(Boolean);
   return <section className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
@@ -207,6 +234,34 @@ function BonRow({ onClick, left, rightMono }) {
   >
     <div className="min-w-0 flex-1">{left}</div>
     <span className="font-mono text-xs font-bold text-blue-600 flex-shrink-0">{rightMono}</span>
+  </button>;
+}
+
+// Eigen rij voor de externe-verhuur-tile. Grotere waarschuwing wanneer een
+// bon op betaling wacht: linker rand + amber achtergrond. Bedrag hangt
+// onder het bonnummer aan de rechterkant.
+function ExternalBonRow({ bon, onClick }) {
+  const waiting = isExternalWaitingOnPayment(bon);
+  const phase   = externalPhaseLabel(bon);
+  const price   = typeof bon.rental_price === "number" ? bon.rental_price : Number(bon.rental_price) || 0;
+  const rowBg   = waiting ? "bg-amber-50 hover:bg-amber-100" : "hover:bg-gray-50";
+  const borderL = waiting ? "border-l-4 border-l-amber-500" : "";
+  const phaseText = waiting ? "text-amber-800 font-semibold" : "text-gray-500";
+  return <button
+    type="button"
+    onClick={onClick}
+    className={`w-full px-5 py-3 flex items-center justify-between gap-3 text-left ${rowBg} ${borderL}`}
+  >
+    <div className="min-w-0 flex-1">
+      <p className="text-sm font-semibold text-gray-900 truncate">{bon.external_org || "\u2014"}</p>
+      <p className={`text-xs truncate ${phaseText}`}>
+        {waiting && <span className="mr-1">{"\u26a0\ufe0f"}</span>}{phase}
+      </p>
+    </div>
+    <div className="text-right flex-shrink-0">
+      <span className="font-mono text-xs font-bold text-blue-600 block">{bon.bon_number}</span>
+      <span className={`text-xs ${price > 0 ? "text-gray-700 font-medium" : "text-gray-400"}`}>{price > 0 ? fmt(price) : "geen bedrag"}</span>
+    </div>
   </button>;
 }
 
