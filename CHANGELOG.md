@@ -7,6 +7,28 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-07-29
+
+### Gewijzigd
+- **Excel-import gebruikt nu `exceljs` in plaats van `xlsx` (SheetJS)** —
+  `server/routes/import.js` volledig herschreven bovenop dezelfde
+  ontwerpkeuzes: dezelfde drie tabbladen (`Losse materialen`, `Sets`, en
+  `Nog op te lossen` die genegeerd wordt), dezelfde kolomnamen, dezelfde
+  rij-tolerante validatie, dezelfde preview-en-bevestig-flow, en het
+  API-contract van `POST /api/import/preview` en `POST /api/import/execute`
+  is identiek. Route-handlers zijn `async` geworden vanwege exceljs'
+  promise-API. Nieuwe helper `cellValue()` normaliseert exceljs' rich-text-,
+  hyperlink- en formule-cellen naar simpele JS-waarden zodat de
+  validatielaag ongewijzigd blijft. Rij-iteratie via `worksheet.eachRow({
+  includeEmpty: false })` zodat het echte Excel-rijnummer in de foutmelding
+  klopt, ook wanneer er lege rijen tussen gevulde rijen zitten.
+
+### Opgelost
+- **`xlsx` (SheetJS) high-severity npm audit weg**: prototype pollution +
+  ReDoS zonder patch — was de laatste blokkade richting Cloudflare-exposure.
+  `npm audit` in `server/` toont geen xlsx/SheetJS-, prototype-pollution-
+  of ReDoS-findings meer. Vermelding in `BEKENDE-BUGS.md` verwijderd.
+
 ## [1.10.0] - 2026-07-29
 
 Admin-dashboard opnieuw ingericht als one-pager landingspagina, plus een

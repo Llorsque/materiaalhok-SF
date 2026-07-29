@@ -3,10 +3,16 @@
 //   POST /execute  → preview opnieuw doen, daarna in één transactie wegschrijven
 //
 // Ontwerpkeuzes staan in BESLUITEN.md ("Iteratie 6 — import-strategie").
+//
+// Sinds v1.11.0: leest met exceljs (was xlsx/SheetJS). SheetJS had een open
+// high-severity npm audit (prototype pollution + ReDoS) zonder fix, en dat
+// moest weg vóór de tool via Cloudflare bereikbaar wordt. Het gedrag is
+// gelijk gehouden: zelfde tabbladen, kolomnamen, validatie, foutrapportage
+// en API-contract.
 
 const express = require('express');
 const multer = require('multer');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const db = require('../db');
 const { nowDutchISO, generateBarcode, logAction } = require('../utils');
 const { requireAdmin } = require('../middleware/auth');
@@ -52,62 +58,125 @@ function parseIntStrict(v) {
   return null;
 }
 
+// Normaliseert een exceljs-celwaarde naar een simpele JS-waarde (string,
+// number, boolean, Date of null). exceljs kan structuren teruggeven voor
+// rich text, hyperlinks, formules en errors — die pakken we hier uit,
+// zodat de rest van de validatie identiek werkt aan de oude SheetJS-pad.
+function cellValue(cell) {
+  if (!cell) return null;
+  const v = cell.value;
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number' || typeof v === 'boolean' || typeof v === 'string') return v;
+  if (v instanceof Date) return v;
+  if (typeof v === 'object') {
+    if (Array.isArray(v.richText)) {
+      return v.richText.map((r) => r && r.text ? r.text : '').join('');
+    }
+    if ('hyperlink' in v || 'text' in v) {
+      // Voor hyperlink-cellen geeft SheetJS de zichtbare tekst terug in
+      // raw-modus; exceljs slaat die op als `.text` naast `.hyperlink`.
+      return v.text != null ? v.text : (v.hyperlink != null ? v.hyperlink : null);
+    }
+    if ('formula' in v) {
+      const r = v.result;
+      if (r === null || r === undefined) return null;
+      if (typeof r === 'object' && 'error' in r) return null;
+      return r;
+    }
+    if ('error' in v) return null;
+    return null;
+  }
+  return null;
+}
+
 // Leest een werkboek uit een Buffer en geeft {error} of {workbook}.
-function readWorkbook(buffer) {
+// Async i.v.m. exceljs' promise-API.
+async function readWorkbook(buffer) {
   try {
-    const wb = XLSX.read(buffer, { type: 'buffer' });
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buffer);
     return { workbook: wb };
   } catch (err) {
     return { error: `kon Excel-bestand niet lezen: ${err.message}` };
   }
 }
 
-// Geeft een array van objecten waarin de keys de kolomtitels zijn (eerste rij).
-// __rowNum__ wordt door SheetJS aan elk object gehangen (0-indexed positie in
-// het sheet); we converteren naar 1-indexed met +1 voor de header en +1 voor
-// menselijke nummering = +2 t.o.v. de data-index.
-function sheetRows(workbook, name) {
-  const sheet = workbook.Sheets[name];
-  if (!sheet) return null;
-  return XLSX.utils.sheet_to_json(sheet, { defval: null, raw: true });
+// Kolomkoppen uit rij 1: gebruikt voor de structuurcheck ("mist kolom X").
+// Lege header-cellen worden overgeslagen — SheetJS deed dat ook.
+function sheetHeaders(worksheet) {
+  if (!worksheet) return [];
+  const headers = [];
+  const headerRow = worksheet.getRow(1);
+  headerRow.eachCell({ includeEmpty: false }, (cell) => {
+    const v = cellValue(cell);
+    if (v !== null && v !== undefined) {
+      const s = String(v).trim();
+      if (s !== '') headers.push(s);
+    }
+  });
+  return headers;
 }
 
-// Haalt de daadwerkelijke kolomnamen uit het sheet (eerste rij), zodat we
-// "ontbrekende kolom"-fouten kunnen geven die rechtstreeks verwijzen naar de
-// verwachte naam.
-function sheetHeaders(workbook, name) {
-  const sheet = workbook.Sheets[name];
-  if (!sheet || !sheet['!ref']) return [];
-  const range = XLSX.utils.decode_range(sheet['!ref']);
-  const headers = [];
-  for (let c = range.s.c; c <= range.e.c; c++) {
-    const cell = sheet[XLSX.utils.encode_cell({ r: range.s.r, c })];
-    if (cell && cell.v !== undefined && cell.v !== null) {
-      headers.push(String(cell.v).trim());
+// Vervangt SheetJS's sheet_to_json({ defval: null, raw: true }): loopt over
+// de datarijen en bouwt per rij een object { kolomnaam: waarde | null }.
+// Volledig lege rijen worden overgeslagen — SheetJS gedroeg zich zo. Elke
+// rij krijgt een `__rowNum`-veld dat 1-indexed het Excel-rijnummer bevat,
+// zodat foutmeldingen doorverwijzen naar wat de gebruiker in Excel ziet.
+function sheetRows(worksheet) {
+  if (!worksheet) return null;
+
+  // Header-mapping: kolomindex (1-indexed) → veldnaam. Lege header = niet mee.
+  const headers = {};
+  const headerRow = worksheet.getRow(1);
+  headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+    const v = cellValue(cell);
+    if (v === null || v === undefined) return;
+    const s = String(v).trim();
+    if (s !== '') headers[colNumber] = s;
+  });
+
+  const rows = [];
+  // eachRow met { includeEmpty: false } geeft ons het echte rijnummer terug
+  // en slaat volledig lege rijen over — ook als die tussen twee gevulde
+  // rijen zitten. Een naïeve for-loop op `rowCount` zou daar op struikelen.
+  worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return; // header-rij zelf niet als data behandelen
+
+    const obj = {};
+    let anyValue = false;
+    for (const [colStr, key] of Object.entries(headers)) {
+      const col = parseInt(colStr, 10);
+      const cell = row.getCell(col);
+      const v = cellValue(cell);
+      obj[key] = v === undefined ? null : v;
+      if (v !== null && v !== undefined && v !== '') anyValue = true;
     }
-  }
-  return headers;
+    if (!anyValue) return;
+
+    obj.__rowNum = rowNumber;
+    rows.push(obj);
+  });
+  return rows;
 }
 
 function checkStructure(workbook) {
   const errors = [];
-
   for (const [sheetName, expectedCols] of [
     [SHEET_MATERIALS, MATERIAL_COLUMNS],
     [SHEET_SETS, SET_COLUMNS],
   ]) {
-    if (!workbook.Sheets[sheetName]) {
+    const ws = workbook.getWorksheet(sheetName);
+    if (!ws) {
       errors.push(`tabblad '${sheetName}' ontbreekt`);
       continue;
     }
-    const headers = sheetHeaders(workbook, sheetName);
+    const headers = sheetHeaders(ws);
     for (const col of expectedCols) {
       if (!headers.includes(col)) {
         errors.push(`tabblad '${sheetName}' mist kolom '${col}'`);
       }
     }
   }
-
   return errors;
 }
 
@@ -149,40 +218,34 @@ function validateRow(row, nameField, stockField, rowNum) {
 // Bouwt het preview-object: aantallen + foutregels. Materiaal-type wordt
 // genormaliseerd: 'uniek' of 'bulk', alles anders → 'bulk' (de DB-default).
 function buildPreview(workbook) {
-  const matRowsRaw = sheetRows(workbook, SHEET_MATERIALS) || [];
-  const setRowsRaw = sheetRows(workbook, SHEET_SETS) || [];
+  const matWs = workbook.getWorksheet(SHEET_MATERIALS);
+  const setWs = workbook.getWorksheet(SHEET_SETS);
+  const matRowsRaw = matWs ? (sheetRows(matWs) || []) : [];
+  const setRowsRaw = setWs ? (sheetRows(setWs) || []) : [];
 
   const errors = [];
   const validMaterials = [];
   const validSets = [];
 
-  matRowsRaw.forEach((row, idx) => {
-    const rowNum = (row.__rowNum__ !== undefined ? row.__rowNum__ + 1 : idx + 2);
-    const { value, errors: rowErrors } = validateRow(row, 'Naam', 'Aantal', rowNum);
-    if (rowErrors) {
-      errors.push(...rowErrors);
-    } else {
-      validMaterials.push(value);
-    }
+  matRowsRaw.forEach((row) => {
+    const { value, errors: rowErrors } = validateRow(row, 'Naam', 'Aantal', row.__rowNum);
+    if (rowErrors) errors.push(...rowErrors);
+    else validMaterials.push(value);
   });
 
-  setRowsRaw.forEach((row, idx) => {
-    const rowNum = (row.__rowNum__ !== undefined ? row.__rowNum__ + 1 : idx + 2);
-    const { value, errors: rowErrors } = validateRow(row, 'Set-naam', 'Aantal sets', rowNum);
-    if (rowErrors) {
-      errors.push(...rowErrors);
-    } else {
-      validSets.push(value);
-    }
+  setRowsRaw.forEach((row) => {
+    const { value, errors: rowErrors } = validateRow(row, 'Set-naam', 'Aantal sets', row.__rowNum);
+    if (rowErrors) errors.push(...rowErrors);
+    else validSets.push(value);
   });
 
   return { validMaterials, validSets, errors };
 }
 
-router.post('/preview', upload.single('file'), (req, res) => {
+router.post('/preview', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'geen bestand ontvangen (veldnaam moet "file" zijn)' });
 
-  const { workbook, error } = readWorkbook(req.file.buffer);
+  const { workbook, error } = await readWorkbook(req.file.buffer);
   if (error) return res.status(400).json({ error });
 
   const structuralErrors = checkStructure(workbook);
@@ -198,14 +261,14 @@ router.post('/preview', upload.single('file'), (req, res) => {
     skippedRows: errors.length,
     rowErrors: errors.slice(0, MAX_REPORTED_ERRORS),
     rowErrorsTruncated: errors.length > MAX_REPORTED_ERRORS,
-    ignoredSheetFound: !!workbook.Sheets[SHEET_IGNORED],
+    ignoredSheetFound: !!workbook.getWorksheet(SHEET_IGNORED),
   });
 });
 
-router.post('/execute', upload.single('file'), (req, res) => {
+router.post('/execute', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'geen bestand ontvangen (veldnaam moet "file" zijn)' });
 
-  const { workbook, error } = readWorkbook(req.file.buffer);
+  const { workbook, error } = await readWorkbook(req.file.buffer);
   if (error) return res.status(400).json({ error });
 
   const structuralErrors = checkStructure(workbook);

@@ -4,14 +4,6 @@ Dingen die nu niet werken zoals verwacht maar die niet acuut hoeven worden opgel
 Bedoeld als geheugensteun zodat we ze niet vergeten als we in een latere iteratie
 aan het relevante onderdeel werken.
 
-## API beveiliging
-
-- **xlsx-pakket heeft een open high-severity npm audit** (prototype pollution +
-  ReDoS in SheetJS) zonder fix in de npm-versie. Acceptabel voor lokale
-  single-laptop-context, maar moet vóór iteratie 7 (Cloudflare-exposure) weg.
-  Mogelijke oplossingen: overstap naar SheetJS Pro/CDN-versie of overstap naar
-  exceljs-package.
-
 ## UX verbeterpunten
 
 - **In Chrome-kiosk-modus op de Windows-laptop in het hok is de Windows-taakbalk
