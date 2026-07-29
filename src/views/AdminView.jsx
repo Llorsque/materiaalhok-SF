@@ -23,6 +23,7 @@ import { ItemDetailModal } from "./admin/ItemDetailModal";
 import { SetDetailModal } from "./admin/SetDetailModal";
 import { BonDetailModal } from "./admin/BonDetailModal";
 import { AdminBonFlow } from "./admin/AdminBonFlow";
+import { ExternalBonFlow } from "./admin/ExternalBonFlow";
 import { DamageTab } from "./admin/DamageTab";
 
 export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, users, setUsers, usersLoading, usersError, setUsersError, refreshUsers, sets, refreshSets, bons, bonsLoading, bonsError, setBonsError, refreshBons, logs, addLog, damageReports, damageLoading, damageError, refreshDamage, branding, setBranding, onLogout }) {
@@ -44,6 +45,9 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   // Wanneer true: neemt de hele admin-view over met de AdminBonFlow, zodat
   // de admin ongestoord door de leenflow kan lopen namens een gebruiker.
   const [newBonMode, setNewBonMode] = useState(false);
+  // v1.12.0: aparte modus voor externe verhuur. Gebruikt ExternalBonFlow ipv
+  // AdminBonFlow — huurdergegevens + bedragen invullen ipv gebruiker kiezen.
+  const [newExternalBonMode, setNewExternalBonMode] = useState(false);
   const [newBonToast, setNewBonToast] = useState(null);
   // Backup-status voor de notificatiebel. We fetchen 'm hier zodat het
   // belletje op elk tabblad up-to-date is; BackupBanner blijft ook z'n
@@ -273,7 +277,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
         id: `overdue-${b.id}`,
         type: "overdue",
         severity: "red",
-        title: `${b.bon_number} — ${b.user_name || "onbekende gebruiker"}`,
+        title: `${b.bon_number} — ${(b.is_external ? b.external_org : b.user_name) || "onbekende gebruiker"}`,
         subtitle: `Retour was ${new Date(b.return_date).toLocaleDateString("nl-NL", { day: "2-digit", month: "short" })}`,
         onClick: () => setBonDetail(b),
       });
@@ -304,7 +308,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
           id: `incomplete-${b.id}`,
           type: "incomplete",
           severity: "amber",
-          title: `${b.bon_number} — ${b.user_name || "onbekende gebruiker"}`,
+          title: `${b.bon_number} — ${(b.is_external ? b.external_org : b.user_name) || "onbekende gebruiker"}`,
           subtitle: "Gedeeltelijk retour, niet alles binnen",
           onClick: () => setBonDetail(b),
         });
@@ -333,8 +337,24 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     />;
   }
 
+  if (newExternalBonMode) {
+    return <ExternalBonFlow
+      eq={eq}
+      materialsLoading={materialsLoading}
+      materialsError={materialsError}
+      refreshMaterials={refreshMaterials}
+      sets={sets}
+      bons={bons}
+      refreshBons={refreshBons}
+      setBonsError={setBonsError}
+      onCancel={() => setNewExternalBonMode(false)}
+      onDone={(res) => { setNewExternalBonMode(false); setNewBonToast(res); addLog(); }}
+    />;
+  }
+
   const goToBonsWithFilter = (filter) => { setBonFilter(filter); setTab("bons"); };
   const openNewBonFlow = () => { setNewBonToast(null); setNewBonMode(true); };
+  const openNewExternalBonFlow = () => { setNewBonToast(null); setNewExternalBonMode(true); };
 
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
     <AppHeader
@@ -360,6 +380,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
         reservedBons={reservedBons}
         onBonClick={setBonDetail}
         onOpenNewBonFlow={openNewBonFlow}
+        onOpenNewExternalBonFlow={openNewExternalBonFlow}
         onGoToBonsWithFilter={goToBonsWithFilter}
       />}
       {tab==="bons"&&<>

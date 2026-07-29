@@ -53,7 +53,10 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS bons (
   id                     INTEGER PRIMARY KEY AUTOINCREMENT,
   bon_number             TEXT    NOT NULL UNIQUE,
-  user_id                INTEGER NOT NULL,
+  -- v1.12.0 externe verhuur: user_id is nullable geworden. Een bon is óf
+  -- intern (user_id gevuld, externe velden NULL) óf extern (user_id NULL,
+  -- external_org gevuld). Zie CHECK onderin de tabel.
+  user_id                INTEGER,
   start_date             TEXT,
   return_date            TEXT,
   status                 TEXT    NOT NULL CHECK (status IN ('active', 'reserved', 'completed')),
@@ -62,8 +65,28 @@ CREATE TABLE IF NOT EXISTS bons (
   completed_at           TEXT,
   created_by_admin_id    INTEGER,
   reminder_sent_at       TEXT,
+  -- Externe verhuur (v1.12.0). Alleen gevuld bij een externe bon; blijven
+  -- NULL voor interne bonnen. external_org fungeert als sentinel voor de
+  -- CHECK verderop: als 'ie gevuld is, hoort de bon extern te zijn.
+  external_org           TEXT,
+  external_contact       TEXT,
+  external_phone         TEXT,
+  external_email         TEXT,
+  rental_price           REAL    NOT NULL DEFAULT 0,
+  deposit                REAL    NOT NULL DEFAULT 0,
+  -- NULL bij interne bon of bij externe bon met prijs 0. 'open' zodra een
+  -- externe bon met bedrag > 0 wordt aangemaakt; 'paid' pas nadat een admin
+  -- de betaling markeert (stap 3 van de sub-roadmap).
+  payment_status         TEXT    CHECK (payment_status IS NULL OR payment_status IN ('open', 'paid')),
   FOREIGN KEY (user_id)             REFERENCES users(id) ON DELETE RESTRICT,
-  FOREIGN KEY (created_by_admin_id) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (created_by_admin_id) REFERENCES users(id) ON DELETE SET NULL,
+  -- Intern-vs-extern: exact één van beide "identiteiten" moet gevuld zijn.
+  -- external_org fungeert als sentinel voor "dit is een externe bon".
+  CHECK (
+    (user_id IS NOT NULL AND external_org IS NULL)
+    OR
+    (user_id IS NULL AND external_org IS NOT NULL)
+  )
 );
 
 CREATE TABLE IF NOT EXISTS bon_items (

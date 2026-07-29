@@ -60,6 +60,98 @@ if (bonsCols.length > 0 && !bonsCols.includes('created_by_admin_id')) {
   db.exec('ALTER TABLE bons ADD COLUMN created_by_admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL');
 }
 
+// v1.12.0 externe verhuur: kolommen op bons voor externe huurder-data en
+// bedragen. Idempotent: alleen toevoegen wat nog niet bestaat.
+{
+  const cols = db.pragma('table_info(bons)').map((c) => c.name);
+  if (cols.length > 0) {
+    if (!cols.includes('external_org'))     db.exec('ALTER TABLE bons ADD COLUMN external_org TEXT');
+    if (!cols.includes('external_contact')) db.exec('ALTER TABLE bons ADD COLUMN external_contact TEXT');
+    if (!cols.includes('external_phone'))   db.exec('ALTER TABLE bons ADD COLUMN external_phone TEXT');
+    if (!cols.includes('external_email'))   db.exec('ALTER TABLE bons ADD COLUMN external_email TEXT');
+    if (!cols.includes('rental_price'))     db.exec('ALTER TABLE bons ADD COLUMN rental_price REAL NOT NULL DEFAULT 0');
+    if (!cols.includes('deposit'))          db.exec('ALTER TABLE bons ADD COLUMN deposit REAL NOT NULL DEFAULT 0');
+    if (!cols.includes('payment_status'))   db.exec('ALTER TABLE bons ADD COLUMN payment_status TEXT');
+  }
+}
+
+// v1.12.0 externe verhuur: user_id op bons moet nullable worden, en de
+// intern-vs-extern CHECK moet erop staan. SQLite kan NOT NULL niet direct
+// weghalen — we detecteren of dat nodig is en herbouwen de tabel dan
+// eenmalig. Bestaande bonnen zijn per definitie intern (user_id gevuld,
+// externe kolommen NULL) en voldoen dus aan de nieuwe CHECK.
+{
+  const info = db.pragma('table_info(bons)');
+  const userIdCol = info.find((c) => c.name === 'user_id');
+  const needsRebuild = userIdCol && userIdCol.notnull === 1;
+  if (needsRebuild) {
+    // Herbouw binnen één transactie zonder foreign_keys, zodat de CASCADE-
+    // gevoelige tabellen (bon_items, damage_reports) tijdens de rename
+    // niet klappen. Sessies/logs raken bons niet met een FK, dus veilig.
+    db.pragma('foreign_keys = OFF');
+    db.exec('BEGIN');
+    try {
+      db.exec(`
+        CREATE TABLE bons_new (
+          id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+          bon_number             TEXT    NOT NULL UNIQUE,
+          user_id                INTEGER,
+          start_date             TEXT,
+          return_date            TEXT,
+          status                 TEXT    NOT NULL CHECK (status IN ('active', 'reserved', 'completed')),
+          notes                  TEXT,
+          created_at             TEXT    NOT NULL,
+          completed_at           TEXT,
+          created_by_admin_id    INTEGER,
+          reminder_sent_at       TEXT,
+          external_org           TEXT,
+          external_contact       TEXT,
+          external_phone         TEXT,
+          external_email         TEXT,
+          rental_price           REAL    NOT NULL DEFAULT 0,
+          deposit                REAL    NOT NULL DEFAULT 0,
+          payment_status         TEXT    CHECK (payment_status IS NULL OR payment_status IN ('open', 'paid')),
+          FOREIGN KEY (user_id)             REFERENCES users(id) ON DELETE RESTRICT,
+          FOREIGN KEY (created_by_admin_id) REFERENCES users(id) ON DELETE SET NULL,
+          CHECK (
+            (user_id IS NOT NULL AND external_org IS NULL)
+            OR
+            (user_id IS NULL AND external_org IS NOT NULL)
+          )
+        )
+      `);
+      db.exec(`
+        INSERT INTO bons_new (
+          id, bon_number, user_id, start_date, return_date, status, notes,
+          created_at, completed_at, created_by_admin_id, reminder_sent_at,
+          external_org, external_contact, external_phone, external_email,
+          rental_price, deposit, payment_status
+        )
+        SELECT
+          id, bon_number, user_id, start_date, return_date, status, notes,
+          created_at, completed_at, created_by_admin_id, reminder_sent_at,
+          external_org, external_contact, external_phone, external_email,
+          rental_price, deposit, payment_status
+        FROM bons
+      `);
+      db.exec('DROP TABLE bons');
+      db.exec('ALTER TABLE bons_new RENAME TO bons');
+      // Indexen opnieuw zetten — CREATE IF NOT EXISTS in schema.sql heeft
+      // ze na de rename niet meer, dus de volgende schema.exec zou ze
+      // aanmaken, maar we willen niet vertrouwen op volgorde: hier expliciet.
+      db.exec('CREATE INDEX IF NOT EXISTS idx_bons_bon_number ON bons (bon_number)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_bons_user_id    ON bons (user_id)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_bons_status     ON bons (status)');
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      db.pragma('foreign_keys = ON');
+      throw err;
+    }
+    db.pragma('foreign_keys = ON');
+  }
+}
+
 // Herinneringen-opt-out per gebruiker. Bestaande accounts krijgen 1 (aan) als
 // default. Bevestigingsmails blijven altijd gaan, zie BESLUITEN.md.
 //

@@ -3,6 +3,7 @@ import { Modal } from "../../components/Modal";
 import { BonBadge } from "../../components/BonBadge";
 import { fmtDate, isWeekend } from "../../utils/date";
 import { itemDisplayName } from "../../utils/bons";
+import { fmt } from "../../utils/format";
 
 export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpdateBon, onItemReturn, onDeleteBon }) {
   const [dateError, setDateError] = useState(null);
@@ -17,18 +18,49 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
     setDateError(null);
     onUpdateBon(bonDetail.id, { [field]: value });
   };
+  const isExternal = bonDetail && (bonDetail.is_external === 1 || bonDetail.is_external === true);
   return <Modal open={!!bonDetail} onClose={()=>{setBonDetail(null);setDateError(null);}} title={bonDetail?`Bon ${bonDetail.bon_number}`:""} wide>
     {bonDetail&&<div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">{"\ud83d\udc64"} {bonDetail.user_name || "-"}</p>
+          {isExternal
+            ? <p className="text-sm text-gray-500">{"\ud83c\udfe2"} {bonDetail.external_org || "Externe huurder"}</p>
+            : <p className="text-sm text-gray-500">{"\ud83d\udc64"} {bonDetail.user_name || "-"}</p>}
           <p className="text-sm text-gray-500">{fmtDate(bonDetail.start_date)} {"\u2192"} {fmtDate(bonDetail.return_date)}</p>
-          {bonDetail.created_by_admin_id && <p className="text-xs text-amber-700 mt-1">
+          {!isExternal && bonDetail.created_by_admin_id && <p className="text-xs text-amber-700 mt-1">
             <span className="text-amber-500 font-bold">*</span> Aangemaakt door {bonDetail.created_by_admin_name || "een admin"} namens {bonDetail.user_name || "gebruiker"}
           </p>}
+          {isExternal && bonDetail.created_by_admin_name && <p className="text-xs text-purple-700 mt-1">
+            Aangemaakt door {bonDetail.created_by_admin_name}
+          </p>}
         </div>
-        <BonBadge bon={bonDetail}/>
+        <div className="flex items-center gap-2">
+          {isExternal && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[11px] font-semibold">Extern</span>}
+          <BonBadge bon={bonDetail}/>
+        </div>
       </div>
+
+      {isExternal && <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 space-y-2">
+        <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide">Huurdergegevens</p>
+        {bonDetail.external_contact && <p className="text-sm text-gray-800">{"\ud83d\udc64"} {bonDetail.external_contact}</p>}
+        {bonDetail.external_email   && <p className="text-sm text-gray-800">{"\u2709\ufe0f"} {bonDetail.external_email}</p>}
+        {bonDetail.external_phone   && <p className="text-sm text-gray-800">{"\ud83d\udcde"} {bonDetail.external_phone}</p>}
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <div className="bg-white rounded-lg px-3 py-2">
+            <p className="text-[11px] text-gray-500">Huurprijs</p>
+            <p className="text-sm font-semibold text-gray-900">{fmt(bonDetail.rental_price)}</p>
+          </div>
+          <div className="bg-white rounded-lg px-3 py-2">
+            <p className="text-[11px] text-gray-500">Borg</p>
+            <p className="text-sm font-semibold text-gray-900">{fmt(bonDetail.deposit)}</p>
+          </div>
+        </div>
+        {bonDetail.payment_status && <div className="pt-1">
+          {bonDetail.payment_status === "paid"
+            ? <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">{"\u2705"} Betaald</span>
+            : <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">{"\u23f3"} Openstaand</span>}
+        </div>}
+      </div>}
 
       {/* Actieve items — meegenomen, deels retour, of nog open */}
       {(() => {

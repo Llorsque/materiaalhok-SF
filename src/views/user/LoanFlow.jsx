@@ -11,7 +11,12 @@ import { KindBadge } from "../../components/KindBadge";
 
 const cartKey = (kind, id) => `${kind}:${id}`;
 
-export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterials, sets, bons, refreshBons, setBonsError, user, isReservation, onCancel, onDone }) {
+// `user` is verplicht voor interne bonnen (dan zit user_id in de payload).
+// Voor externe bonnen laat de aanroeper `user` weg en levert een
+// `createBonOverride(basePayload) => finalPayload` die user_id vervangt door
+// het `external` blok. `confirmExtras` is een optionele React-node die
+// bovenaan de bevestigstap komt (bv. huurder + bedragen tonen).
+export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterials, sets, bons, refreshBons, setBonsError, user, isReservation, onCancel, onDone, createBonOverride, confirmExtras }) {
   const [cart, setCart] = useState([]);
   const [endDate, setEndDate] = useState("");
   const [startDate, setStartDate] = useState(today());
@@ -148,8 +153,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     setSubmitError(null);
     setSubmitting(true);
     try {
-      const created = await createBon({
-        user_id: user.id,
+      const basePayload = {
         // Intentie is leidend voor de status op de backend. Een reservering
         // blijft 'reserved' tot de PickupFlow 'm ophaalt, ook als de start-
         // datum vandaag is; een directe uitlening wordt meteen 'active'.
@@ -161,7 +165,10 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
             ? { set_id: c.itemId, quantity: c.qty }
             : { material_id: c.itemId, quantity: c.qty }
         )),
-      });
+      };
+      if (user) basePayload.user_id = user.id;
+      const payload = createBonOverride ? createBonOverride(basePayload) : basePayload;
+      const created = await createBon(payload);
       await refreshBons();
       onDone({
         action: isReservation ? "reservation" : "loan",
@@ -303,6 +310,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
 
     {/* CONFIRM STEP */}
     {loanStep===confirmStep && <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
+      {confirmExtras}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h3 className="font-bold text-gray-900 text-lg mb-4">{isReservation ? "\ud83d\udcc5 Reservering overzicht" : "\ud83d\uddd2 Bon overzicht"}</h3>
         <div className="space-y-3">

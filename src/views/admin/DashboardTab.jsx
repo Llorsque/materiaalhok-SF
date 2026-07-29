@@ -22,6 +22,7 @@ export function DashboardTab({
   reservedBons,
   onBonClick,
   onOpenNewBonFlow,
+  onOpenNewExternalBonFlow,
   onGoToBonsWithFilter,
 }) {
   const [statsOpen, setStatsOpen] = useState(false);
@@ -59,13 +60,17 @@ export function DashboardTab({
     {/* Snelknop-rij: nieuwe bon links, compacte stats-tile rechts */}
     <div className="flex flex-wrap items-center justify-between gap-3">
       <NewBonButton options={[
-        // Ronde B aanhaakpunt: hier komt straks 'namens externe huurder' bij.
-        // Zodra dat er is, wordt dit vanzelf een dropdown-menu.
         {
           key: "intern",
-          label: "Nieuwe bon aanmaken",
-          description: "Namens een interne gebruiker",
+          label: "Voor interne gebruiker",
+          description: "Namens iemand met een account",
           onSelect: onOpenNewBonFlow,
+        },
+        {
+          key: "extern",
+          label: "Voor externe huurder",
+          description: "Verhuur aan een externe organisatie",
+          onSelect: onOpenNewExternalBonFlow,
         },
       ]}/>
 
@@ -98,7 +103,7 @@ export function DashboardTab({
         {upcomingReservations.slice(0, MAX_ROWS).map((b) => <BonRow key={b.id}
           onClick={() => onBonClick(b)}
           left={<>
-            <p className="text-sm font-semibold text-gray-900 truncate">{b.user_name || "\u2014"}</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
             <p className="text-xs text-gray-500 truncate">Ophalen {fmtDate(b.start_date)}</p>
           </>}
           rightMono={b.bon_number}
@@ -117,7 +122,7 @@ export function DashboardTab({
         {dueSoon.map((b) => <BonRow key={b.id}
           onClick={() => onBonClick(b)}
           left={<>
-            <p className="text-sm font-semibold text-gray-900 truncate">{b.user_name || "\u2014"}</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
             <p className="text-xs text-amber-700 truncate">Retour {fmtDT(b.return_date)}</p>
           </>}
           rightMono={b.bon_number}
@@ -138,7 +143,7 @@ export function DashboardTab({
           return <BonRow key={b.id}
             onClick={() => onBonClick(b)}
             left={<>
-              <p className="text-sm font-semibold text-gray-900 truncate">{b.user_name || "\u2014"}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
               <p className={`text-xs truncate ${overdue ? "text-red-700 font-medium" : "text-gray-500"}`}>Retour {fmtDate(b.return_date)}{overdue ? " — te laat" : ""}</p>
             </>}
             rightMono={b.bon_number}

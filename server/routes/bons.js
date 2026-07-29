@@ -148,9 +148,14 @@ function checkStock(items, period, excludeBonId = null) {
   return conflicts;
 }
 
+// is_external is een afgeleide vlag (1/0) op basis van user_id. De frontend
+// gebruikt 'm om labels en betaal-info te tonen zonder zelf hoeven te
+// checken op user_id IS NULL. Externe kolommen (external_*, rental_price,
+// deposit, payment_status) komen via b.* mee.
 function loadBonWithItems(id) {
   const bon = db.prepare(`
-    SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name
+    SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name,
+           CASE WHEN b.user_id IS NULL THEN 1 ELSE 0 END AS is_external
     FROM bons b
     LEFT JOIN users u ON u.id = b.user_id
     LEFT JOIN users a ON a.id = b.created_by_admin_id
@@ -181,21 +186,26 @@ function isAdmin(req) { return req.user && req.user.role === 'admin'; }
 
 router.get('/', (req, res) => {
   const admin = isAdmin(req);
+  // Nieuwste bovenaan (id monotoon, functioneel gelijk aan created_at DESC).
+  // Plekken die een specifieke volgorde nodig hebben (dashboard-blokken,
+  // UserHome) sorteren zelf; die zijn ongevoelig voor de default.
   const bons = admin
     ? db.prepare(`
-        SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name
+        SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name,
+               CASE WHEN b.user_id IS NULL THEN 1 ELSE 0 END AS is_external
         FROM bons b
         LEFT JOIN users u ON u.id = b.user_id
         LEFT JOIN users a ON a.id = b.created_by_admin_id
-        ORDER BY b.id
+        ORDER BY b.id DESC
       `).all()
     : db.prepare(`
-        SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name
+        SELECT b.*, u.name AS user_name, a.name AS created_by_admin_name,
+               CASE WHEN b.user_id IS NULL THEN 1 ELSE 0 END AS is_external
         FROM bons b
         LEFT JOIN users u ON u.id = b.user_id
         LEFT JOIN users a ON a.id = b.created_by_admin_id
         WHERE b.user_id = ?
-        ORDER BY b.id
+        ORDER BY b.id DESC
       `).all(req.user.id);
 
   if (bons.length === 0) return res.json([]);
@@ -241,27 +251,79 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
   const body = req.body || {};
   const actorIsAdmin = isAdmin(req);
+  const externalRaw = body.external;
+  const isExternal = externalRaw != null && typeof externalRaw === 'object';
 
-  // Gewone gebruikers mogen alleen voor zichzelf bonnen aanmaken; we
-  // overschrijven bewust de user_id in de body zodat een kwaadwillende
-  // frontend geen bon op iemand anders' naam kan boeken. Admins mogen
-  // namens iedere gebruiker met rol 'user' een bon inschieten — maar
-  // uitdrukkelijk niet voor zichzelf of voor een andere admin, want
-  // admin en gebruiker hebben gescheiden portalen.
-  if (!actorIsAdmin) {
-    body.user_id = req.user.id;
-  }
+  // v1.12.0 externe verhuur — takken splitsen. Bij een externe bon:
+  // - alleen een admin mag 'm aanmaken;
+  // - user_id blijft NULL en wordt uit de body genegeerd;
+  // - status is altijd 'reserved' (weiger 'loan' met duidelijke melding);
+  // - org + email zijn verplicht, contact/phone optioneel;
+  // - rental_price en deposit zijn getallen ≥ 0 (default 0);
+  // - payment_status is 'open' bij prijs > 0, anders NULL.
+  let external = null;
+  if (isExternal) {
+    if (!actorIsAdmin) {
+      return res.status(403).json({ error: 'Alleen admins mogen een externe reservering aanmaken.' });
+    }
+    if (body.intent !== 'reservation') {
+      return res.status(400).json({
+        error: 'Externe verhuur gaat altijd via een reservering. Kies "reserveren" in plaats van direct uitlenen.',
+      });
+    }
+    const org = typeof externalRaw.org === 'string' ? externalRaw.org.trim() : '';
+    if (!org) {
+      return res.status(400).json({ error: "Organisatienaam is verplicht bij een externe reservering." });
+    }
+    const email = typeof externalRaw.email === 'string' ? externalRaw.email.trim() : '';
+    if (!email) {
+      return res.status(400).json({ error: "E-mailadres is verplicht bij een externe reservering." });
+    }
+    const contact = typeof externalRaw.contact === 'string' ? externalRaw.contact.trim() : '';
+    const phone   = typeof externalRaw.phone   === 'string' ? externalRaw.phone.trim()   : '';
+    const rentalPrice = externalRaw.rental_price == null ? 0 : Number(externalRaw.rental_price);
+    const deposit     = externalRaw.deposit     == null ? 0 : Number(externalRaw.deposit);
+    if (!Number.isFinite(rentalPrice) || rentalPrice < 0) {
+      return res.status(400).json({ error: "Huurprijs moet 0 of hoger zijn." });
+    }
+    if (!Number.isFinite(deposit) || deposit < 0) {
+      return res.status(400).json({ error: "Borg moet 0 of hoger zijn." });
+    }
+    external = {
+      org,
+      contact: contact || null,
+      phone:   phone   || null,
+      email,
+      rental_price: rentalPrice,
+      deposit,
+      payment_status: rentalPrice > 0 ? 'open' : null,
+    };
+    // Bij een externe bon negeren we user_id volledig (was mogelijk per
+    // ongeluk meegestuurd door een oude client) en slaan de user-checks
+    // hieronder over.
+    body.user_id = null;
+  } else {
+    // Gewone gebruikers mogen alleen voor zichzelf bonnen aanmaken; we
+    // overschrijven bewust de user_id in de body zodat een kwaadwillende
+    // frontend geen bon op iemand anders' naam kan boeken. Admins mogen
+    // namens iedere gebruiker met rol 'user' een bon inschieten — maar
+    // uitdrukkelijk niet voor zichzelf of voor een andere admin, want
+    // admin en gebruiker hebben gescheiden portalen.
+    if (!actorIsAdmin) {
+      body.user_id = req.user.id;
+    }
 
-  if (!Number.isInteger(body.user_id)) {
-    return res.status(400).json({ error: "veld 'user_id' is verplicht (integer)" });
-  }
-  const user = db.prepare('SELECT id, role FROM users WHERE id = ?').get(body.user_id);
-  if (!user) return res.status(400).json({ error: 'user_id verwijst naar een onbekende gebruiker' });
+    if (!Number.isInteger(body.user_id)) {
+      return res.status(400).json({ error: "veld 'user_id' is verplicht (integer)" });
+    }
+    const user = db.prepare('SELECT id, role FROM users WHERE id = ?').get(body.user_id);
+    if (!user) return res.status(400).json({ error: 'user_id verwijst naar een onbekende gebruiker' });
 
-  if (actorIsAdmin && user.role !== 'user') {
-    return res.status(400).json({
-      error: "Een admin kan alleen een bon aanmaken namens een gebruiker met de rol 'gebruiker' — niet voor zichzelf of voor een andere admin.",
-    });
+    if (actorIsAdmin && user.role !== 'user') {
+      return res.status(400).json({
+        error: "Een admin kan alleen een bon aanmaken namens een gebruiker met de rol 'gebruiker' — niet voor zichzelf of voor een andere admin.",
+      });
+    }
   }
 
   if (!parseDate(body.start_date)) {
@@ -335,9 +397,11 @@ router.post('/', (req, res) => {
       const bonNumber = generateBonNumber();
       const info = db.prepare(`
         INSERT INTO bons
-          (bon_number, user_id, start_date, return_date, status, notes, created_at, completed_at, created_by_admin_id)
+          (bon_number, user_id, start_date, return_date, status, notes, created_at, completed_at, created_by_admin_id,
+           external_org, external_contact, external_phone, external_email, rental_price, deposit, payment_status)
         VALUES
-          (@bon_number, @user_id, @start_date, @return_date, @status, @notes, @created_at, @completed_at, @created_by_admin_id)
+          (@bon_number, @user_id, @start_date, @return_date, @status, @notes, @created_at, @completed_at, @created_by_admin_id,
+           @external_org, @external_contact, @external_phone, @external_email, @rental_price, @deposit, @payment_status)
       `).run({
         bon_number: bonNumber,
         user_id: body.user_id,
@@ -348,6 +412,16 @@ router.post('/', (req, res) => {
         created_at: now,
         completed_at: completedAt,
         created_by_admin_id: createdByAdminId,
+        external_org:     external ? external.org     : null,
+        external_contact: external ? external.contact : null,
+        external_phone:   external ? external.phone   : null,
+        external_email:   external ? external.email   : null,
+        // De DB-kolommen hebben NOT NULL DEFAULT 0; bij een interne bon
+        // schrijven we expliciet 0 zodat de intent duidelijk is en er
+        // geen SQL-defaults nodig zijn buiten de kolomdefinitie om.
+        rental_price:   external ? external.rental_price   : 0,
+        deposit:        external ? external.deposit        : 0,
+        payment_status: external ? external.payment_status : null,
       });
 
       const insertItem = db.prepare(
@@ -366,39 +440,47 @@ router.post('/', (req, res) => {
 
   const created = loadBonWithItems(createdId);
   const itemsStr = formatBonItems(created.items);
-  const detail = created.created_by_admin_id
-    ? `${created.bon_number} aangemaakt door ${req.user.name} namens ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`
-    : `${created.bon_number} aangemaakt voor ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`;
+  let detail;
+  if (created.is_external) {
+    detail = `Externe reservering ${created.bon_number} aangemaakt voor ${created.external_org} door ${req.user.name}: ${itemsStr}`;
+  } else if (created.created_by_admin_id) {
+    detail = `${created.bon_number} aangemaakt door ${req.user.name} namens ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`;
+  } else {
+    detail = `${created.bon_number} aangemaakt voor ${created.user_name || 'onbekende gebruiker'}: ${itemsStr}`;
+  }
   logAction('bon_create', detail, req.user.id);
 
   // Bevestigingsmail — fire and forget. Reserveringen vallen onder
   // notify_reservation, directe uitleningen onder notify_pickup (het is dan
   // in één handeling aangemaakt én opgehaald). sendMail is intern fout-
   // tolerant en logt zelf.
-  const isReservation = created.status === 'reserved';
-  const prefKey = isReservation ? 'notify_reservation' : 'notify_pickup';
-  const kindLabel = isReservation ? 'Reserveringsbevestiging' : 'Ophaalbevestiging';
-  const borrower = db.prepare(
-    `SELECT email, notify_reservation, notify_pickup FROM users WHERE id = ?`
-  ).get(created.user_id);
-  const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
-  if (!email) {
-    logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
-  // Aanhakingspunt: externe huurders (ronde B) omzeilen deze check straks;
-  // voor hen gaan reservering-, ophaal- en herinneringsmail altijd.
-  } else if (borrower[prefKey] !== 1) {
-    logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
-  } else {
-    const tpl = bonConfirmation(created);
-    sendMail({
-      to: email,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      context: created.bon_number,
-    }).catch((err) => {
-      console.error(`[bons] onverwachte mailfout voor ${created.bon_number}: ${err.message}`);
-    });
+  //
+  // Externe bonnen slaan we in stap 1 bewust over — mails komen in stap 2
+  // van de sub-roadmap. De bon wordt dus stil aangemaakt.
+  if (!created.is_external) {
+    const isReservation = created.status === 'reserved';
+    const prefKey = isReservation ? 'notify_reservation' : 'notify_pickup';
+    const kindLabel = isReservation ? 'Reserveringsbevestiging' : 'Ophaalbevestiging';
+    const borrower = db.prepare(
+      `SELECT email, notify_reservation, notify_pickup FROM users WHERE id = ?`
+    ).get(created.user_id);
+    const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
+    if (!email) {
+      logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
+    } else if (borrower[prefKey] !== 1) {
+      logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
+    } else {
+      const tpl = bonConfirmation(created);
+      sendMail({
+        to: email,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        context: created.bon_number,
+      }).catch((err) => {
+        console.error(`[bons] onverwachte mailfout voor ${created.bon_number}: ${err.message}`);
+      });
+    }
   }
 
   res.status(201).json(created);
@@ -692,37 +774,42 @@ router.post('/:id/pickup', (req, res) => {
 
   // Log — vermeld expliciet wat er is toegevoegd of weggelaten t.o.v. de
   // oorspronkelijke reservering, zodat de audit-regel op zich al leesbaar is.
+  const displayFor = updated.is_external
+    ? updated.external_org
+    : (updated.user_name || 'onbekende gebruiker');
   const parts = [
-    `${updated.bon_number} opgehaald voor ${updated.user_name || 'onbekende gebruiker'}: ${formatBonItems(kept)}`,
+    `${updated.bon_number} opgehaald voor ${displayFor}: ${formatBonItems(kept)}`,
   ];
   if (removed.length > 0) parts.push(`niet meegenomen: ${formatBonItems(removed)}`);
   if (added.length   > 0) parts.push(`toegevoegd bij ophalen: ${formatBonItems(added)}`);
   logAction('bon_pickup', parts.join(' — '), req.user.id);
 
   // -- Ophaalbevestiging -------------------------------------------------
-  const borrower = db.prepare(
-    `SELECT email, notify_pickup FROM users WHERE id = ?`
-  ).get(updated.user_id);
-  const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
-  if (!email) {
-    logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
-  // Aanhakingspunt externe huurders (ronde B): pref-check overslaan.
-  } else if (borrower.notify_pickup !== 1) {
-    logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
-  } else {
-    // De mail toont alleen de definitieve, meegenomen items — soft-deleted
-    // regels zijn puur voor de audit-trail in admin-detail.
-    const bonForMail = { ...updated, items: kept };
-    const tpl = bonConfirmation(bonForMail);
-    sendMail({
-      to: email,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      context: `${updated.bon_number} opgehaald`,
-    }).catch((err) => {
-      console.error(`[bons] onverwachte mailfout bij pickup ${updated.bon_number}: ${err.message}`);
-    });
+  // Externe bonnen: geen mail in stap 1; volgt in stap 2 van de sub-roadmap.
+  if (!updated.is_external) {
+    const borrower = db.prepare(
+      `SELECT email, notify_pickup FROM users WHERE id = ?`
+    ).get(updated.user_id);
+    const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
+    if (!email) {
+      logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
+    } else if (borrower.notify_pickup !== 1) {
+      logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
+    } else {
+      // De mail toont alleen de definitieve, meegenomen items — soft-deleted
+      // regels zijn puur voor de audit-trail in admin-detail.
+      const bonForMail = { ...updated, items: kept };
+      const tpl = bonConfirmation(bonForMail);
+      sendMail({
+        to: email,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        context: `${updated.bon_number} opgehaald`,
+      }).catch((err) => {
+        console.error(`[bons] onverwachte mailfout bij pickup ${updated.bon_number}: ${err.message}`);
+      });
+    }
   }
 
   res.json(updated);
@@ -949,9 +1036,12 @@ router.post('/:id/return', (req, res) => {
   const result = loadBonWithItems(bon.id);
   if (returnLogParts.length > 0) {
     const suffix = bonCompleted ? ' (bon voltooid)' : '';
+    const displayFor = result.is_external
+      ? result.external_org
+      : (result.user_name || 'onbekende gebruiker');
     logAction(
       'bon_return',
-      `Retour ${result.bon_number} voor ${result.user_name || 'onbekende gebruiker'}: ${returnLogParts.join(', ')} geretourneerd${suffix}`,
+      `Retour ${result.bon_number} voor ${displayFor}: ${returnLogParts.join(', ')} geretourneerd${suffix}`,
       req.user.id,
     );
   }

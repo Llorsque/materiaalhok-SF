@@ -7,6 +7,83 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+### Gewijzigd
+- **Admin bonnen-overzicht: nieuwste bovenaan.** `GET /api/bons`
+  sorteert nu `ORDER BY b.id DESC` (id is monotoon, functioneel gelijk
+  aan created_at DESC). BonsTab neemt die default over. Dashboard-
+  blokken en UserHome sorteren zelf op andere velden en zijn dus
+  ongevoelig voor de wijziging.
+- **ExternalBonFlow: bedragen pas in de bevestigstap.** Huurprijs en
+  borg worden niet meer vóór de materiaalkeuze gevraagd, maar in de
+  bevestigstap — nadat materiaal en periode bekend zijn kan de admin
+  een passende prijs bepalen. De huurdergegevens (org/contact/tel/mail)
+  blijven wel vooraan omdat ze de bon identificeren. Volgorde is nu:
+  huurdergegevens → periode → materiaal → bedragen + bevestigen.
+
+## [1.12.0] - 2026-07-23
+
+Externe verhuur — stap 1 van vier: datamodel en het aanmaken van een
+externe reservering. Mails (stap 2), betaal-afhandeling (stap 3) en de
+dashboard-tegel (stap 4) volgen in latere releases.
+
+### Toegevoegd
+- **Externe reservering aanmaken.** Op het dashboard is de "Nieuwe bon
+  aanmaken"-knop een dropdown met twee opties: "Voor interne gebruiker"
+  (bestaande AdminBonFlow) en "Voor externe huurder" (nieuwe
+  ExternalBonFlow). Externe verhuur is altijd een reservering; direct
+  uitlenen bestaat niet voor externen (backend weigert dat).
+- **Nieuwe component `src/views/admin/ExternalBonFlow.jsx`**. Vraagt
+  eerst huurder-info uit (organisatie *, contactpersoon, telefoon,
+  e-mail *) en bedragen (huurprijs, borg — standaard 0, handmatig) en
+  laat daarna dezelfde LoanFlow lopen als voor interne bonnen. De
+  bedragen worden getoond in de bevestigstap.
+- **`LoanFlow` accepteert twee nieuwe optionele props**: `createBonOverride
+  (basePayload) => finalPayload` (om user_id te vervangen door een
+  `external` blok) en `confirmExtras` (React-node bovenaan de
+  bevestigstap). `user` is nu optioneel — als het weggelaten is, komt er
+  geen `user_id` in de payload.
+- **`BonCard` toont een "Extern"-label** en de organisatienaam ipv
+  gebruikersnaam wanneer `bon.is_external === 1`.
+- **`BonDetailModal` toont een huurderblok** met contact, e-mail,
+  telefoon, huurprijs, borg en betaalstatus wanneer de bon extern is.
+  Betaalknop komt in stap 3.
+
+### Gewijzigd
+- **Datamodel `bons`**. Zeven nieuwe kolommen (allemaal nullable behalve
+  de bedragen, die zijn `NOT NULL DEFAULT 0`): `external_org`,
+  `external_contact`, `external_phone`, `external_email`, `rental_price`,
+  `deposit`, `payment_status`. `user_id` is nu nullable geworden. Een
+  intern-vs-extern CHECK-constraint dwingt af dat er precies één van
+  beide identiteiten is gevuld: `(user_id IS NOT NULL AND external_org
+  IS NULL) OR (user_id IS NULL AND external_org IS NOT NULL)`.
+- **Migratie in `server/db.js`**. Nieuwe kolommen worden idempotent
+  toegevoegd met `ALTER TABLE ADD COLUMN`. Voor de `NOT NULL` op
+  `user_id` moet SQLite een tabel-recreate doen (kan niet in-place); de
+  migratie detecteert dat via `PRAGMA table_info` en herbouwt `bons`
+  eenmalig binnen een transactie, met behoud van indexen. Bestaande
+  bonnen zijn per definitie intern en voldoen aan de nieuwe CHECK.
+- **`POST /api/bons` heeft een externe tak**. Wanneer het request-body
+  een `external` object bevat: alleen admins mogen dit aanroepen; intent
+  moet "reservation" zijn; `org` en `email` zijn verplicht; `rental_price`
+  en `deposit` moeten ≥ 0 zijn; `payment_status` wordt `'open'` bij
+  prijs > 0, anders `NULL`. `user_id` blijft NULL. Interne bonnen zijn
+  ongewijzigd — bestaande frontend-calls blijven werken.
+- **`loadBonWithItems` en `GET /api/bons`** leveren een afgeleide
+  `is_external` (1/0) mee zodat de frontend geen `user_id IS NULL` hoeft
+  te testen. De externe kolommen komen via `SELECT b.*` mee.
+- **Log-messages voor externe bonnen**. `bon_create`: "Externe
+  reservering BON-... aangemaakt voor {org} door {admin}: {items}".
+  `bon_pickup` en `bon_return` gebruiken `external_org` als
+  weergavenaam ipv "onbekende gebruiker".
+- **Bevestigings-, ophaal- en herinneringsmail worden overgeslagen voor
+  externe bonnen**. Die volgen in stap 2 van de sub-roadmap.
+
+### Niet in deze stap
+- Automatische e-mail naar de externe huurder (stap 2).
+- Betaalknop en `completed`-logica die pas kan als de betaling
+  binnen is (stap 3).
+- Dashboard-tegel "Externe verhuur openstaand" (stap 4).
+
 ## [1.11.1] - 2026-07-29
 
 ### Gewijzigd
