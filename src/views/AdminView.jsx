@@ -6,7 +6,7 @@ import { BackupBanner } from "../components/BackupBanner";
 import { NotificationBell } from "../components/NotificationBell";
 import { unavailableQty, bonIsOverdue } from "../utils/bons";
 import { encodeCode128B, nextMaterialBarcode, nextSetBarcode } from "../utils/barcode";
-import { createMaterial, updateMaterial, deleteMaterial, createSet, updateSet, deleteSet, updateBon, deleteBon, returnBon, getBackupStatus } from "../api/client";
+import { createMaterial, updateMaterial, deleteMaterial, createSet, updateSet, deleteSet, updateBon, deleteBon, returnBon, getBackupStatus, markBonPaid, getBon } from "../api/client";
 import { AdminForm } from "./admin/AdminForm";
 import { SetForm } from "./admin/SetForm";
 import { DashboardTab } from "./admin/DashboardTab";
@@ -24,6 +24,8 @@ import { SetDetailModal } from "./admin/SetDetailModal";
 import { BonDetailModal } from "./admin/BonDetailModal";
 import { AdminBonFlow } from "./admin/AdminBonFlow";
 import { ExternalBonFlow } from "./admin/ExternalBonFlow";
+import { PickupFlow } from "./user/PickupFlow";
+import { ReturnFlow } from "./user/ReturnFlow";
 import { DamageTab } from "./admin/DamageTab";
 
 export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, users, setUsers, usersLoading, usersError, setUsersError, refreshUsers, sets, refreshSets, bons, bonsLoading, bonsError, setBonsError, refreshBons, logs, addLog, damageReports, damageLoading, damageError, refreshDamage, branding, setBranding, onLogout }) {
@@ -48,6 +50,13 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   // v1.12.0: aparte modus voor externe verhuur. Gebruikt ExternalBonFlow ipv
   // AdminBonFlow — huurdergegevens + bedragen invullen ipv gebruiker kiezen.
   const [newExternalBonMode, setNewExternalBonMode] = useState(false);
+  // v1.14.1: admin voert de scan-flow voor ophalen/retourneren van externe
+  // bonnen uit vanuit BonDetailModal. Deze twee slots houden de gekozen bon
+  // vast en triggeren de full-screen overname (zelfde patroon als
+  // newBonMode). Bij afronden ronden we bons opnieuw op en heropenen we het
+  // detail op de bijgewerkte bon.
+  const [pickupExternBon, setPickupExternBon] = useState(null);
+  const [returnExternBon, setReturnExternBon] = useState(null);
   const [newBonToast, setNewBonToast] = useState(null);
   // Backup-status voor de notificatiebel. We fetchen 'm hier zodat het
   // belletje op elk tabblad up-to-date is; BackupBanner blijft ook z'n
@@ -212,6 +221,16 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     }
   };
 
+  const handleMarkPaid = async (bonId) => {
+    try {
+      const updated = await markBonPaid(bonId);
+      await refreshBons();
+      setBonDetail(updated);
+    } catch (err) {
+      setBonsError(err);
+    }
+  };
+
   const handleBonDelete = async (bon) => {
     if (!confirm(`Bon ${bon.bon_number} verwijderen?`)) return;
     try {
@@ -352,6 +371,54 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     />;
   }
 
+  // v1.14.1: admin voert de bestaande PickupFlow uit voor een externe bon
+  // vanuit het bon-detail. `presetBon` slaat de bon-lijst-stap over.
+  // Bij afronden refreshen we en heropenen we het detail op de bijgewerkte
+  // bon zodat de admin meteen de betaalstap of retourknop ziet.
+  const finishAdminBonFlow = async (id, clearMode) => {
+    clearMode();
+    await refreshBons();
+    // Haal de bon vers op zodat het detail-modal direct met de nieuwe
+    // status opent (bons-state kan door de closure nog stale zijn).
+    try {
+      const fresh = await getBon(id);
+      setBonDetail(fresh);
+    } catch {
+      setBonDetail(null);
+    }
+  };
+
+  if (pickupExternBon) {
+    return <PickupFlow
+      eq={eq}
+      sets={sets}
+      materialsLoading={materialsLoading}
+      materialsError={materialsError}
+      refreshMaterials={refreshMaterials}
+      bons={bons}
+      refreshBons={refreshBons}
+      setBonsError={setBonsError}
+      presetBon={pickupExternBon}
+      onCancel={() => { const b = pickupExternBon; setPickupExternBon(null); setBonDetail(b); }}
+      onDone={() => finishAdminBonFlow(pickupExternBon.id, () => setPickupExternBon(null))}
+    />;
+  }
+  if (returnExternBon) {
+    return <ReturnFlow
+      eq={eq}
+      sets={sets}
+      materialsLoading={materialsLoading}
+      materialsError={materialsError}
+      refreshMaterials={refreshMaterials}
+      bons={bons}
+      refreshBons={refreshBons}
+      setBonsError={setBonsError}
+      presetBon={returnExternBon}
+      onCancel={() => { const b = returnExternBon; setReturnExternBon(null); setBonDetail(b); }}
+      onDone={() => finishAdminBonFlow(returnExternBon.id, () => setReturnExternBon(null))}
+    />;
+  }
+
   const goToBonsWithFilter = (filter) => { setBonFilter(filter); setTab("bons"); };
   const openNewBonFlow = () => { setNewBonToast(null); setNewBonMode(true); };
   const openNewExternalBonFlow = () => { setNewBonToast(null); setNewExternalBonMode(true); };
@@ -409,6 +476,16 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
 
     <ItemDetailModal detail={detail} setDetail={setDetail} bons={bons} eq={eq} addLog={addLog} getItemStats={getItemStats} onPrint={handlePrint} onEdit={setEdit} onDelete={del} onOpenBon={setBonDetail} onRegenBarcode={regenBarcode} damageReports={damageReports} onOpenDamage={() => setTab("damage")}/>
     <SetDetailModal detail={activeSet} setDetail={setActiveSet} bons={bons} onEdit={setEditSet} onDelete={delSet} onPrint={handlePrint} onRegenBarcode={regenSetBarcode} onOpenBon={setBonDetail}/>
-    <BonDetailModal bonDetail={bonDetail} setBonDetail={setBonDetail} onForceComplete={forceCompleteBon} onUpdateBon={handleBonUpdate} onItemReturn={handleBonItemReturn} onDeleteBon={handleBonDelete}/>
+    <BonDetailModal
+      bonDetail={bonDetail}
+      setBonDetail={setBonDetail}
+      onForceComplete={forceCompleteBon}
+      onUpdateBon={handleBonUpdate}
+      onItemReturn={handleBonItemReturn}
+      onDeleteBon={handleBonDelete}
+      onMarkPaid={handleMarkPaid}
+      onOpenPickupFlow={(bon) => { setBonDetail(null); setPickupExternBon(bon); }}
+      onOpenReturnFlow={(bon) => { setBonDetail(null); setReturnExternBon(bon); }}
+    />
   </div>;
 }

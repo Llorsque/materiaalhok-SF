@@ -7,6 +7,92 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-07-29
+
+Vervolg op v1.14.0: externe bonnen konden na aanmaken niet worden
+opgehaald of geretourneerd omdat die flows alleen in het
+gebruikersportaal zaten en een externe huurder geen account heeft.
+Admins bedienen de scan-flows nu voor externe bonnen vanuit het
+bon-detail. Interne bonnen en het gebruikersportaal blijven
+ongewijzigd.
+
+### Toegevoegd
+- **`PickupFlow` en `ReturnFlow` accepteren een optionele `presetBon`
+  prop.** Wanneer die is gezet, slaan de flows hun bon-keuzelijst
+  (filter op `user.id`) over en starten meteen in de scan/confirm-view
+  voor die bon. De "Terug"-knop in de confirm-view roept `onCancel` aan
+  (in plaats van naar de lijst te navigeren). `user` is optioneel in
+  preset-modus. Gedrag in het gebruikersportaal is identiek: zonder
+  `presetBon` blijft alles zoals voorheen.
+- **BonDetailModal-knoppen voor externe bonnen.**
+  - `status='reserved'` toont "📦 Ophalen" (roept `onOpenPickupFlow(bon)`).
+  - `status='active'` met openstaande items toont "📥 Retourneren"
+    (roept `onOpenReturnFlow(bon)`).
+  - `status='completed'` of geen openstaande items → geen knop.
+  Interne bonnen krijgen deze knoppen niet: die worden via het
+  gebruikersportaal bediend.
+- **AdminView-modus `pickupExternBon` / `returnExternBon`.** Zelfde
+  full-screen-overname-patroon als `newBonMode` en
+  `newExternalBonMode`. Bij afronden ronden we `refreshBons()` af en
+  halen de bijgewerkte bon via `getBon(id)` op, zodat het detail-modal
+  meteen met de nieuwe status (bv. "wacht op betaling") opent.
+
+### Gewijzigd
+- **Autorisatie ongewijzigd, verified.** `assertOwnBonOrAdmin` liet
+  admins al door voor iedere bon; voor niet-admins blijft de
+  404-response staan (ook voor externe bonnen: `bon.user_id !== req.user.id`
+  is waar zodra `user_id` NULL is). Geen backend-wijziging nodig.
+
+### Niet in deze stap
+- Dashboard-tegel "Externe verhuur openstaand" (stap 4 van de
+  sub-roadmap).
+
+## [1.14.0] - 2026-07-29
+
+Externe verhuur — stap 3 van vier: betaalstatus en aangepaste afhandel-
+logica. Een externe bon met een huurprijs > 0 is pas 'completed' als
+zowel al het materiaal retour is als de betaling binnen. De admin heeft
+een aparte "Markeer als betaald"-actie in het bon-detail.
+
+### Toegevoegd
+- **Nieuw endpoint `PATCH /api/bons/:id/payment`** (admin-only). Body
+  `{ payment_status: 'paid' }`. Alleen geldig voor externe bonnen met
+  huidige betaalstatus 'open'. Zet de betaalstatus op 'paid'; als
+  tegelijk al het materiaal retour is en de bon 'active' staat, wordt
+  'ie meteen 'completed' met `completed_at` gezet. Log: altijd
+  `payment_received`, plus `bon_completed` wanneer de bon door de
+  betaling afgerond wordt.
+- **API-client `markBonPaid(id)`**. Roept bovenstaand endpoint aan.
+- **BonDetailModal-fase-tekst voor externe bonnen met betaalstatus**.
+  Toont in één regel wat er nog moet gebeuren: "Wacht op ophalen en
+  betaling", "Wacht op retour en betaling", "Materiaal retour, wacht
+  op betaling", "Betaald, wacht op materiaal retour", of "Afgehandeld".
+  Interne bonnen en externe bonnen zonder bedrag houden hun bestaande
+  status als bron van waarheid.
+- **Betaalblok in BonDetailModal**. Voor externe bonnen met
+  `payment_status='open'`: prominente knop "Markeer als betaald" met
+  bevestigstap. Tekst legt uit of de bon meteen wordt afgerond of nog
+  wacht op materiaal retour. Na betaald: knop weg, badge "Betaald".
+
+### Gewijzigd
+- **Retour-handler sluit externe bon met openstaande betaling NIET
+  af.** In de mutatie-transactie is de completed-check nu:
+  `openCount === 0 && !paymentPending`, waarbij `paymentPending` waar
+  is als `payment_status === 'open'`. Interne bonnen en externe bonnen
+  met `payment_status = NULL` (rental_price=0) volgen ongewijzigd de
+  bestaande logica.
+- **Log-message bij retour van externe bon met openstaande betaling**:
+  de bekende `(bon voltooid)` suffix wordt vervangen door
+  `(materiaal binnen, wacht op betaling)` zodat de audit-trail direct
+  duidelijk maakt waarom de bon nog niet gesloten is.
+- **"Forceer compleet" verborgen bij externe bon met openstaande
+  betaling.** De knop zou anders retour zonder betaling proberen te
+  forceren en toch niet afronden — verwarrend. Admin moet nu eerst de
+  betaling markeren.
+
+### Niet in deze stap
+- Dashboard-tegel "Externe verhuur openstaand" (stap 4).
+
 ## [1.13.0] - 2026-07-29
 
 Externe verhuur — stap 2 van vier: mails voor externe huurders. De

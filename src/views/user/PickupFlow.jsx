@@ -12,8 +12,14 @@ const bonItemKind = (bi) => (bi.set_id != null ? "set" : "material");
 const isActiveItem = (bi) => bi && bi.removed_at_pickup !== 1;
 const cartKey = (kind, id) => `${kind}:${id}`;
 
-export function PickupFlow({ eq, sets, materialsLoading, materialsError, refreshMaterials, bons, refreshBons, setBonsError, user, onCancel, onDone }) {
-  const [activeBon, setActiveBon] = useState(null);
+// `presetBon` (v1.14.1): als deze prop staat, slaan we de bon-keuze over en
+// starten direct in de scan/confirm-view voor die specifieke bon. Zo kan de
+// admin dezelfde flow openen vanuit BonDetailModal voor een externe bon.
+// De back-pijl in de confirm-view roept dan onCancel aan (geen lijst-terug).
+// `user` is optioneel wanneer presetBon aanwezig is; de bon-lijst wordt in
+// preset-modus toch niet getoond.
+export function PickupFlow({ eq, sets, materialsLoading, materialsError, refreshMaterials, bons, refreshBons, setBonsError, user, onCancel, onDone, presetBon = null }) {
+  const [activeBon, setActiveBon] = useState(presetBon);
   // scannedCounts: bon_item_id → aantal keer als "meegenomen" geteld.
   const [scannedCounts, setScannedCounts] = useState(() => new Map());
   // bon_item_ids die de gebruiker als "niet meenemen" heeft gemarkeerd.
@@ -42,7 +48,10 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null); // { message, conflicts?, blocked? }
 
-  const myReservations = bons.filter((b) => b.user_id === user.id && b.status === "reserved");
+  // In preset-modus tonen we de bon-lijst niet, dus user mag afwezig zijn.
+  const myReservations = presetBon
+    ? []
+    : bons.filter((b) => b.user_id === user?.id && b.status === "reserved");
 
   // Reset alle bewerkingsstate zodra er een andere reservering gekozen wordt.
   useEffect(() => {
@@ -385,9 +394,12 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
   </div>;
 
   // ── OPHALEN — scannen en bevestigen ────────────────────────────────────
+  // Preset-modus (admin): terug sluit de flow af; user-modus: terug naar
+  // de eigen reserveringslijst.
+  const onBack = () => { if (presetBon) onCancel(); else setActiveBon(null); };
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
     <div className="bg-white border-b border-gray-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-      <button onClick={() => setActiveBon(null)} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
+      <button onClick={onBack} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
       <h2 className="text-lg font-bold text-gray-900">Ophalen {activeBon.bon_number}</h2><div className="w-16"/>
     </div></div>
 

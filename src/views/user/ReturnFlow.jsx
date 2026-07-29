@@ -12,8 +12,12 @@ const isActiveItem = (bi) => bi && bi.removed_at_pickup !== 1;
 // Optelsom mag niet meer zijn dan de openstaande quantity van de regel.
 function emptyCounts() { return { returned: 0, lost: 0, broken: 0 }; }
 
-export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refreshMaterials, bons, refreshBons, setBonsError, user, onCancel, onDone }) {
-  const [activeBon, setActiveBon] = useState(null);
+// `presetBon` (v1.14.1): admin kan de flow openen op een specifieke externe
+// bon vanuit BonDetailModal. In preset-modus wordt de bon-lijst overgeslagen
+// en gaat back-pijl naar onCancel (terug naar de admin-context) i.p.v. de
+// lijst. `user` is optioneel wanneer presetBon aanwezig is.
+export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refreshMaterials, bons, refreshBons, setBonsError, user, onCancel, onDone, presetBon = null }) {
+  const [activeBon, setActiveBon] = useState(presetBon);
   // Map<bon_item_id, {returned, lost, broken}>
   const [counts, setCounts] = useState(() => new Map());
   const [scanInput, setScanInput] = useState("");
@@ -25,8 +29,10 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
   const scanValue = useRef("");
 
   // Alleen actieve bonnen zijn terugbrengbaar — reserveringen worden eerst
-  // opgehaald via de PickupFlow.
-  const myBons = bons.filter((b) => b.user_id === user.id && b.status === "active");
+  // opgehaald via de PickupFlow. In preset-modus tonen we de lijst niet.
+  const myBons = presetBon
+    ? []
+    : bons.filter((b) => b.user_id === user?.id && b.status === "active");
 
   useEffect(() => { setCounts(new Map()); setSubmitError(null); }, [activeBon?.id]);
 
@@ -177,9 +183,10 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
     </div>
   </div>;
 
+  const onBack = () => { if (presetBon) onCancel(); else setActiveBon(null); };
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 pb-40">
     <div className="bg-white border-b border-gray-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-      <button onClick={()=>setActiveBon(null)} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
+      <button onClick={onBack} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
       <h2 className="text-lg font-bold text-gray-900">Retour {activeBon.bon_number}</h2><div className="w-16"/>
     </div></div>
     <div className="max-w-lg mx-auto px-4 py-6 space-y-4">

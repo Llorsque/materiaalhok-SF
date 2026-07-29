@@ -208,6 +208,8 @@ export const deleteBon  = (id)       => request('DELETE', `/api/bons/${id}`);
 // changes: { remove?: [bon_item_id], add?: [{ kind:'material'|'set', id, quantity }] }
 // Weglaten = kaal opnemen zoals gereserveerd (achterwaarts compatibel).
 export const pickupBon  = (id, changes) => request('POST', `/api/bons/${id}/pickup`, changes || {});
+// Alleen voor externe bonnen met payment_status='open' (v1.14.0).
+export const markBonPaid = (id) => request('PATCH', `/api/bons/${id}/payment`, { payment_status: 'paid' });
 // items mag undefined zijn (achterwaarts compatibel: alles retour) of een
 // array van { id, condition: 'returned'|'lost'|'broken', quantity }. Meerdere
 // entries voor hetzelfde bon_item mogen; de backend splitst per conditie.

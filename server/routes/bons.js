@@ -605,6 +605,69 @@ router.delete('/:id', requireAdmin, (req, res) => {
   res.json({ deleted: true });
 });
 
+// v1.14.0: markeer een externe bon met openstaande betaling als betaald.
+// Alleen admins; alleen geldig voor externe bonnen met payment_status='open'.
+// Als tegelijk al het materiaal retour is, ronden we de bon meteen af
+// ('completed' + completed_at). Anders blijft 'ie lopen tot het materiaal
+// alsnog terugkomt (de retour-flow ziet dan 'paid' en sluit 'm alsnog).
+router.patch('/:id/payment', requireAdmin, (req, res) => {
+  const bon = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
+  if (!bon) return res.status(404).json({ error: 'bon niet gevonden' });
+
+  const body = req.body || {};
+  if (body.payment_status !== 'paid') {
+    return res.status(400).json({
+      error: "veld 'payment_status' moet 'paid' zijn — andere transities zijn niet toegestaan",
+    });
+  }
+  if (bon.user_id != null) {
+    return res.status(400).json({ error: 'Betaalstatus is alleen van toepassing op externe bonnen.' });
+  }
+  if (bon.payment_status !== 'open') {
+    return res.status(409).json({
+      error: `Deze bon heeft geen openstaande betaling (huidige betaalstatus: ${bon.payment_status ?? 'geen'}).`,
+    });
+  }
+  if (bon.status === 'completed') {
+    // Defense in depth: een 'completed' bon zou geen 'open' payment mogen
+    // hebben, maar mocht het toch voorkomen dan weigeren we hier netjes.
+    return res.status(409).json({ error: 'Deze bon is al afgerond.' });
+  }
+
+  const now = nowDutchISO();
+  let bonCompleted = false;
+  const tx = db.transaction(() => {
+    db.prepare('UPDATE bons SET payment_status = ? WHERE id = ?').run('paid', bon.id);
+    // Materiaal al volledig binnen én de bon staat in 'active' (dus opgehaald)?
+    // Dan is de betaling de laatste ontbrekende puzzelstukje.
+    const { c: openCount } = db.prepare(
+      'SELECT COUNT(*) AS c FROM bon_items WHERE bon_id = ? AND returned = 0 AND removed_at_pickup = 0',
+    ).get(bon.id);
+    if (openCount === 0 && bon.status === 'active') {
+      db.prepare('UPDATE bons SET status = ?, completed_at = ? WHERE id = ?')
+        .run('completed', now, bon.id);
+      bonCompleted = true;
+    }
+  });
+  tx();
+
+  const updated = loadBonWithItems(bon.id);
+  const orgLabel = updated.external_org || 'externe huurder';
+  logAction(
+    'payment_received',
+    `Betaling ontvangen voor ${updated.bon_number} (${orgLabel})`,
+    req.user.id,
+  );
+  if (bonCompleted) {
+    logAction(
+      'bon_completed',
+      `${updated.bon_number} afgerond (${orgLabel}) — materiaal was retour, betaling nu binnen`,
+      req.user.id,
+    );
+  }
+  res.json(updated);
+});
+
 // Ophalen — Ronde B (v1.8.0): reservering wordt definitieve bon.
 // Body:
 //   remove: [bon_item_id]                          — hele item soft-deleten
@@ -1057,11 +1120,17 @@ router.post('/:id/return', (req, res) => {
         }
       }
 
-      // Bon volledig retour?
+      // Bon volledig retour? v1.14.0: bij een externe bon met openstaande
+      // betaling (payment_status='open') blijft de bon 'active' — 'completed'
+      // wordt pas gezet als óók de betaling binnen is. De betaal-flow
+      // (PATCH /:id/payment) rondt 'm dan alsnog af. Interne bonnen en
+      // externe bonnen zonder betaling (rental_price=0 → payment_status=NULL)
+      // volgen de bestaande logica.
       const { c: openCount } = db.prepare(
         'SELECT COUNT(*) AS c FROM bon_items WHERE bon_id = ? AND returned = 0 AND removed_at_pickup = 0',
       ).get(bon.id);
-      if (openCount === 0) {
+      const paymentPending = bon.payment_status === 'open';
+      if (openCount === 0 && !paymentPending) {
         db.prepare('UPDATE bons SET status = ?, completed_at = ? WHERE id = ?')
           .run('completed', now, bon.id);
         bonCompleted = true;
@@ -1074,7 +1143,18 @@ router.post('/:id/return', (req, res) => {
 
   const result = loadBonWithItems(bon.id);
   if (returnLogParts.length > 0) {
-    const suffix = bonCompleted ? ' (bon voltooid)' : '';
+    // Als alles retour is maar de bon door een openstaande externe betaling
+    // nog niet is afgerond, zeggen we dat expliciet — anders lijkt het in de
+    // log alsof retour "niets" deed.
+    const allBack = (result.items || []).every(
+      (bi) => bi.returned === 1 || bi.removed_at_pickup === 1,
+    );
+    let suffix = '';
+    if (bonCompleted) {
+      suffix = ' (bon voltooid)';
+    } else if (allBack && result.payment_status === 'open') {
+      suffix = ' (materiaal binnen, wacht op betaling)';
+    }
     const displayFor = result.is_external
       ? result.external_org
       : (result.user_name || 'onbekende gebruiker');

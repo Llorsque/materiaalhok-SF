@@ -5,8 +5,9 @@ import { fmtDate, isWeekend } from "../../utils/date";
 import { itemDisplayName } from "../../utils/bons";
 import { fmt } from "../../utils/format";
 
-export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpdateBon, onItemReturn, onDeleteBon }) {
+export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpdateBon, onItemReturn, onDeleteBon, onMarkPaid, onOpenPickupFlow, onOpenReturnFlow }) {
   const [dateError, setDateError] = useState(null);
+  const [confirmPay, setConfirmPay] = useState(false);
   const changeDate = (field, value) => {
     if (isWeekend(value)) {
       const msg = field === "start_date"
@@ -19,7 +20,43 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
     onUpdateBon(bonDetail.id, { [field]: value });
   };
   const isExternal = bonDetail && (bonDetail.is_external === 1 || bonDetail.is_external === true);
-  return <Modal open={!!bonDetail} onClose={()=>{setBonDetail(null);setDateError(null);}} title={bonDetail?`Bon ${bonDetail.bon_number}`:""} wide>
+  // v1.14.0 externe verhuur stap 3: fase-tekst voor externe bonnen met een
+  // betaalstatus. Voor interne bonnen en externe bonnen zonder bedrag houdt
+  // de bestaande status het verhaal.
+  const paymentOpen = isExternal && bonDetail?.payment_status === "open";
+  const paymentPaid = isExternal && bonDetail?.payment_status === "paid";
+  const openItemsCount = (bonDetail?.items || []).filter(
+    (bi) => bi.removed_at_pickup !== 1 && bi.returned !== 1,
+  ).length;
+  const allBack = openItemsCount === 0;
+  let phaseLabel = null;
+  if (isExternal && bonDetail?.payment_status) {
+    if (bonDetail.status === "completed") {
+      phaseLabel = { text: "Afgehandeld", tone: "emerald" };
+    } else if (bonDetail.status === "reserved") {
+      phaseLabel = paymentPaid
+        ? { text: "Betaald, wacht op ophalen", tone: "purple" }
+        : { text: "Wacht op ophalen en betaling", tone: "amber" };
+    } else if (bonDetail.status === "active") {
+      if (allBack && paymentOpen) {
+        phaseLabel = { text: "Materiaal retour, wacht op betaling", tone: "amber" };
+      } else if (allBack && paymentPaid) {
+        // Zou meteen completed moeten worden door de backend; defensief tonen.
+        phaseLabel = { text: "Betaald en retour, afronden lukt", tone: "emerald" };
+      } else if (!allBack && paymentPaid) {
+        phaseLabel = { text: "Betaald, wacht op materiaal retour", tone: "purple" };
+      } else {
+        phaseLabel = { text: "Wacht op retour en betaling", tone: "amber" };
+      }
+    }
+  }
+  const toneClass = {
+    emerald: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    amber:   "bg-amber-100 text-amber-900 border-amber-200",
+    purple:  "bg-purple-100 text-purple-800 border-purple-200",
+  }[phaseLabel?.tone || "amber"];
+
+  return <Modal open={!!bonDetail} onClose={()=>{setBonDetail(null);setDateError(null);setConfirmPay(false);}} title={bonDetail?`Bon ${bonDetail.bon_number}`:""} wide>
     {bonDetail&&<div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
@@ -55,11 +92,56 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
             <p className="text-sm font-semibold text-gray-900">{fmt(bonDetail.deposit)}</p>
           </div>
         </div>
-        {bonDetail.payment_status && <div className="pt-1">
-          {bonDetail.payment_status === "paid"
-            ? <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">{"\u2705"} Betaald</span>
-            : <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">{"\u23f3"} Openstaand</span>}
+        {bonDetail.payment_status && <div className="pt-2 flex items-center gap-2 flex-wrap">
+          {paymentPaid
+            ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">{"\u2705"} Betaald</span>
+            : <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">{"\u23f3"} Betaling openstaand</span>}
         </div>}
+      </div>}
+
+      {phaseLabel && <div className={`rounded-xl px-4 py-3 border text-sm font-medium ${toneClass}`}>
+        {phaseLabel.text}
+      </div>}
+
+      {/* v1.14.1: externe bonnen kunnen alleen vanuit het adminportaal
+          worden opgehaald/geretourneerd — een externe huurder heeft geen
+          account. Interne bonnen lopen via het gebruikersportaal en
+          krijgen deze knoppen niet. */}
+      {isExternal && bonDetail.status === "reserved" && onOpenPickupFlow && <div className="rounded-xl border border-purple-200 bg-white p-4 space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-800">Materiaal ophalen</p>
+          <p className="text-xs text-gray-500 mt-0.5">Scan of vink af wat de huurder meeneemt. De bon wordt daarna actief.</p>
+        </div>
+        <button onClick={() => onOpenPickupFlow(bonDetail)} className="w-full py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700">
+          {"\ud83d\udce6"} Ophalen
+        </button>
+      </div>}
+
+      {isExternal && bonDetail.status === "active" && openItemsCount > 0 && onOpenReturnFlow && <div className="rounded-xl border border-emerald-200 bg-white p-4 space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-800">Materiaal retour</p>
+          <p className="text-xs text-gray-500 mt-0.5">Scan wat er teruggebracht wordt, of meld per stuk kwijt/kapot.</p>
+        </div>
+        <button onClick={() => onOpenReturnFlow(bonDetail)} className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">
+          {"\ud83d\udce5"} Retourneren
+        </button>
+      </div>}
+
+      {paymentOpen && <div className="rounded-xl border border-amber-200 bg-white p-4 space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-800">Betaling registreren</p>
+          <p className="text-xs text-gray-500 mt-0.5">Zet de betaalstatus op "betaald" zodra het bedrag is ontvangen. {allBack ? "Materiaal is al retour — de bon wordt hiermee afgerond." : "Materiaal staat nog uit; de bon blijft lopen tot ook het materiaal retour is."}</p>
+        </div>
+        {!confirmPay
+          ? <button onClick={() => setConfirmPay(true)} className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">
+              {"\ud83d\udcb0"} Markeer als betaald
+            </button>
+          : <div className="flex gap-2">
+              <button onClick={() => setConfirmPay(false)} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200">Annuleer</button>
+              <button onClick={() => { onMarkPaid(bonDetail.id); setConfirmPay(false); }} className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">
+                Bevestig betaald
+              </button>
+            </div>}
       </div>}
 
       {/* Actieve items — meegenomen, deels retour, of nog open */}
@@ -133,7 +215,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
       </div>}
 
       <div className="flex gap-2 pt-2">
-        {bonDetail.status==="active" && <button onClick={()=>onForceComplete(bonDetail.id)} className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">Forceer compleet</button>}
+        {bonDetail.status==="active" && !paymentOpen && <button onClick={()=>onForceComplete(bonDetail.id)} className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">Forceer compleet</button>}
         <button onClick={()=>onDeleteBon(bonDetail)} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 border border-red-200">Verwijder bon</button>
       </div>
     </div>}
