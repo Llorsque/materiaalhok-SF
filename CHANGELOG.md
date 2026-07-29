@@ -7,6 +7,45 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-07-29
+
+### Gewijzigd
+- **ItemsTab en SetsTab: zoek/filter is nu de hoofdactie, scannen de
+  uitzondering.** Het aparte scan-veld met `autoFocus` bovenaan is weg —
+  dat kaapte handmatig getypte tekst en opende per Enter een item in
+  plaats van de lijst te filteren. Wat er nu staat:
+  - Eén prominent zoekveld bovenaan met live substring-match op naam én
+    barcode (hoofdletterongevoelig). Categoriefilters werken zoals eerder
+    samen met de zoekterm (AND).
+  - Enter in het zoekveld doet niks bijzonders meer.
+  - Scannen werkt globaal op de hele pagina via de nieuwe helper
+    `useGlobalBarcodeScan` (`src/utils/barcodeScan.js`): een reeks snelle
+    keystrokes eindigend met Enter wordt herkend als een handscanner en
+    opent direct het bijbehorende item/de set. Handmatig, langzaam typen
+    wordt genegeerd door de detector — die kijkt of alle gap-tijden onder
+    30 ms zaten. Minimale scanlengte: 3 karakters.
+  - Als een scan geen match oplevert: tijdelijke rode toast
+    `"Geen item met barcode X"` (of "set"), 2,5s zichtbaar. Geen pop-up.
+  - Als focus tijdens de scan toevallig in het zoekveld stond: de
+    scan-tekens landen daar wel, maar de detector wist het veld na
+    succesvolle match zodat de lijst niet blijft steken op "M-0042".
+- **Nieuwe helper `useGlobalBarcodeScan(onScan, opts)`** in `src/utils/`.
+  Buffer met per-toets tijdstempels; bij Enter: check of `>= minLength`
+  en of alle gaps `<= charGapMs` waren. Reset bij pauze >
+  `sessionResetMs`, bij Backspace/Tab/pijltjes, of na een geslaagde scan.
+  Bewust minder agressief dan de LoginView-variant: geen focus-diefstal,
+  geen keystroke-blokkade — filter-inputs blijven gewoon werken.
+- **AdminView** kwijt overtollige state: `adminScan`, `adminScanMsg`,
+  `setsScan`, `setsScanMsg` zijn weg; toast-state leeft nu lokaal in de
+  tabs.
+- **Filterbalk-layout in ItemsTab en SetsTab**: zoekveld en
+  categorie-filterknoppen stonden op wide screens (`md:flex-row`) naast
+  elkaar; de knoppenrij met `overflow-x-auto` eiste al z'n breedte op,
+  waardoor het zoekveld kromp tot een vergrootglas-icoontje. Nu: zoekveld
+  op een eigen regel (volle breedte), categorieknoppen daaronder (met
+  hun bestaande horizontale scroll), scan-hint eronder. Puur layout —
+  scan-detectie, filter-logica en toast blijven identiek.
+
 ## [1.11.0] - 2026-07-29
 
 ### Gewijzigd

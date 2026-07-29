@@ -33,12 +33,10 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   const [bonFilter, setBonFilter] = useState("all");
   const [newUser, setNewUser] = useState({name:"",email:"",password:"",role:"user"});
   const [editUser, setEditUser] = useState(null);
-  const [adminScan, setAdminScan] = useState("");
-  const [adminScanMsg, setAdminScanMsg] = useState(null);
-  // Sets-tab state: eigen zoek/filter/scan, aparte add/edit-modals, detail-modal en error-slot.
+  // Sinds v1.11.1 gebruiken Items- en Sets-tab een globale scan-detector; het
+  // aparte scan-inputveld en de bijbehorende scan/scanMsg-state zijn weg.
+  // Sets-tab state: eigen zoek/filter, aparte add/edit-modals, detail-modal en error-slot.
   const [setsQ, setSetsQ] = useState(""); const [setsCat, setSetsCat] = useState("Alle");
-  const [setsScan, setSetsScan] = useState("");
-  const [setsScanMsg, setSetsScanMsg] = useState(null);
   const [newSetOpen, setNewSetOpen] = useState(false);
   const [editSet, setEditSet] = useState(null);
   const [activeSet, setActiveSet] = useState(null);
@@ -368,10 +366,10 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
         {newBonToast && <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3 mb-3 text-sm text-emerald-800 flex items-center justify-between gap-3"><span>{newBonToast.text}</span><button onClick={()=>setNewBonToast(null)} className="text-emerald-700 hover:text-emerald-900 font-bold" aria-label="Sluiten">{"\u00d7"}</button></div>}
         <BonsTab bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} refreshBons={refreshBons} reservedBons={reservedBons} overdueBons={overdueBons} bonFilter={bonFilter} setBonFilter={setBonFilter} onBonClick={setBonDetail} onNewBon={openNewBonFlow}/>
       </>}
-      {tab==="items"&&<ItemsTab eq={eq} bons={bons} q={q} setQ={setQ} cat={cat} setCat={setCat} onItemClick={setDetail} adminScan={adminScan} setAdminScan={setAdminScan} adminScanMsg={adminScanMsg} setAdminScanMsg={setAdminScanMsg}/>}
+      {tab==="items"&&<ItemsTab eq={eq} bons={bons} q={q} setQ={setQ} cat={cat} setCat={setCat} onItemClick={setDetail}/>}
       {tab==="sets"&&<>
         {setsError && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 mb-3 text-sm text-red-700 flex items-center justify-between gap-3"><span>{setsError.message}</span><button onClick={()=>setSetsError(null)} className="text-red-700 hover:text-red-900 font-bold" aria-label="Sluiten">{"\u00d7"}</button></div>}
-        <SetsTab sets={sets} bons={bons} q={setsQ} setQ={setSetsQ} cat={setsCat} setCat={setSetsCat} onSetClick={setActiveSet} scanValue={setsScan} setScanValue={setSetsScan} scanMsg={setsScanMsg} setScanMsg={setSetsScanMsg}/>
+        <SetsTab sets={sets} bons={bons} q={setsQ} setQ={setSetsQ} cat={setsCat} setCat={setSetsCat} onSetClick={setActiveSet}/>
       </>}
       {tab==="damage"&&<DamageTab reports={damageReports} reportsLoading={damageLoading} reportsError={damageError} refreshDamage={refreshDamage} refreshMaterials={refreshMaterials} refreshSets={refreshSets} addLog={addLog}/>}
       {tab==="insights"&&<InsightsTab eq={eq} bons={bons} oneYearAgo={oneYearAgo}/>}
