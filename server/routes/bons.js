@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { nowDutchISO, handleUniqueError, logAction } = require('../utils');
+const { nowDutchISO, handleUniqueError, logAction, getSetting } = require('../utils');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { sendMail } = require('../mail/mailer');
 const { bonConfirmation } = require('../mail/templates');
@@ -455,31 +455,52 @@ router.post('/', (req, res) => {
   // in één handeling aangemaakt én opgehaald). sendMail is intern fout-
   // tolerant en logt zelf.
   //
-  // Externe bonnen slaan we in stap 1 bewust over — mails komen in stap 2
-  // van de sub-roadmap. De bon wordt dus stil aangemaakt.
-  if (!created.is_external) {
+  // Externe huurders: mailen we ALTIJD (geen account, geen prefs). Adres
+  // komt uit external_email. Bij een externe reservering laden we ook de
+  // huurvoorwaarden uit de settings-tabel — die staan alleen in deze
+  // reserveringsmail, niet in de ophaal- en herinneringsmail.
+  {
     const isReservation = created.status === 'reserved';
-    const prefKey = isReservation ? 'notify_reservation' : 'notify_pickup';
     const kindLabel = isReservation ? 'Reserveringsbevestiging' : 'Ophaalbevestiging';
-    const borrower = db.prepare(
-      `SELECT email, notify_reservation, notify_pickup FROM users WHERE id = ?`
-    ).get(created.user_id);
-    const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
-    if (!email) {
-      logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
-    } else if (borrower[prefKey] !== 1) {
-      logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
+    if (created.is_external) {
+      const email = typeof created.external_email === 'string' ? created.external_email.trim() : '';
+      if (!email) {
+        logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: externe huurder heeft geen e-mailadres`);
+      } else {
+        const rentalTerms = isReservation ? (getSetting('rental_terms', '') || '') : '';
+        const tpl = bonConfirmation(created, { rentalTerms });
+        sendMail({
+          to: email,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          context: `${created.bon_number} (extern)`,
+        }).catch((err) => {
+          console.error(`[bons] onverwachte mailfout voor ${created.bon_number}: ${err.message}`);
+        });
+      }
     } else {
-      const tpl = bonConfirmation(created);
-      sendMail({
-        to: email,
-        subject: tpl.subject,
-        html: tpl.html,
-        text: tpl.text,
-        context: created.bon_number,
-      }).catch((err) => {
-        console.error(`[bons] onverwachte mailfout voor ${created.bon_number}: ${err.message}`);
-      });
+      const prefKey = isReservation ? 'notify_reservation' : 'notify_pickup';
+      const borrower = db.prepare(
+        `SELECT email, notify_reservation, notify_pickup FROM users WHERE id = ?`
+      ).get(created.user_id);
+      const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
+      if (!email) {
+        logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
+      } else if (borrower[prefKey] !== 1) {
+        logAction('mail_skipped', `${kindLabel} voor ${created.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
+      } else {
+        const tpl = bonConfirmation(created);
+        sendMail({
+          to: email,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          context: created.bon_number,
+        }).catch((err) => {
+          console.error(`[bons] onverwachte mailfout voor ${created.bon_number}: ${err.message}`);
+        });
+      }
     }
   }
 
@@ -785,30 +806,48 @@ router.post('/:id/pickup', (req, res) => {
   logAction('bon_pickup', parts.join(' — '), req.user.id);
 
   // -- Ophaalbevestiging -------------------------------------------------
-  // Externe bonnen: geen mail in stap 1; volgt in stap 2 van de sub-roadmap.
-  if (!updated.is_external) {
-    const borrower = db.prepare(
-      `SELECT email, notify_pickup FROM users WHERE id = ?`
-    ).get(updated.user_id);
-    const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
-    if (!email) {
-      logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
-    } else if (borrower.notify_pickup !== 1) {
-      logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
+  // Extern: adres uit external_email, geen pref-check. Intern: users-tabel
+  // + notify_pickup. De mail toont alleen de definitieve, meegenomen items —
+  // soft-deleted regels zijn puur voor de audit-trail in admin-detail.
+  {
+    const bonForMail = { ...updated, items: kept };
+    if (updated.is_external) {
+      const email = typeof updated.external_email === 'string' ? updated.external_email.trim() : '';
+      if (!email) {
+        logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: externe huurder heeft geen e-mailadres`);
+      } else {
+        const tpl = bonConfirmation(bonForMail);
+        sendMail({
+          to: email,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          context: `${updated.bon_number} opgehaald (extern)`,
+        }).catch((err) => {
+          console.error(`[bons] onverwachte mailfout bij pickup ${updated.bon_number}: ${err.message}`);
+        });
+      }
     } else {
-      // De mail toont alleen de definitieve, meegenomen items — soft-deleted
-      // regels zijn puur voor de audit-trail in admin-detail.
-      const bonForMail = { ...updated, items: kept };
-      const tpl = bonConfirmation(bonForMail);
-      sendMail({
-        to: email,
-        subject: tpl.subject,
-        html: tpl.html,
-        text: tpl.text,
-        context: `${updated.bon_number} opgehaald`,
-      }).catch((err) => {
-        console.error(`[bons] onverwachte mailfout bij pickup ${updated.bon_number}: ${err.message}`);
-      });
+      const borrower = db.prepare(
+        `SELECT email, notify_pickup FROM users WHERE id = ?`
+      ).get(updated.user_id);
+      const email = borrower && typeof borrower.email === 'string' ? borrower.email.trim() : '';
+      if (!email) {
+        logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft geen e-mailadres`);
+      } else if (borrower.notify_pickup !== 1) {
+        logAction('mail_skipped', `Ophaalbevestiging voor ${updated.bon_number} overgeslagen: gebruiker heeft deze mail uitgezet`);
+      } else {
+        const tpl = bonConfirmation(bonForMail);
+        sendMail({
+          to: email,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          context: `${updated.bon_number} opgehaald`,
+        }).catch((err) => {
+          console.error(`[bons] onverwachte mailfout bij pickup ${updated.bon_number}: ${err.message}`);
+        });
+      }
     }
   }
 

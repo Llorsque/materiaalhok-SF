@@ -77,10 +77,30 @@ function itemLabel(it) {
   return `${it.quantity}x ${name}${suffix}`;
 }
 
+function fmtEuro(n) {
+  const val = typeof n === 'number' && Number.isFinite(n) ? n : 0;
+  return `\u20ac ${val.toFixed(2).replace('.', ',')}`;
+}
+
+// Splitst huurvoorwaarden op lege regels in paragrafen zodat de HTML-mail
+// wat structuur krijgt. De text-variant houdt de regelovergangen intact.
+function paragraphsHtml(raw) {
+  return String(raw || '')
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p style="margin:0 0 10px 0;">${esc(p).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
 // bon: object zoals loadBonWithItems teruggeeft (heeft bon_number, user_name,
-// start_date, return_date, status en items[]).
-function bonConfirmation(bon) {
+// start_date, return_date, status en items[]). Voor externe bonnen bevat
+// het extra external_org / external_contact / rental_price / deposit /
+// is_external. Optionele `rentalTerms` (string uit settings) wordt alleen
+// in de reserveringsmail getoond.
+function bonConfirmation(bon, { rentalTerms = '' } = {}) {
   const isReservation = bon.status === 'reserved';
+  const isExternal = !!(bon.is_external === 1 || bon.is_external === true);
   const kindLabel = isReservation ? 'reservering' : 'uitlening';
   const subject = isReservation
     ? `Reservering ${bon.bon_number} bevestigd`
@@ -90,11 +110,70 @@ function bonConfirmation(bon) {
   const itemsListHtml = items.map((it) => `<li style="margin:2px 0;">${esc(itemLabel(it))}</li>`).join('');
   const itemsListText = items.map((it) => `- ${itemLabel(it)}`).join('\n');
 
-  const introHtml = isReservation
-    ? `<p>Hoi ${esc(bon.user_name || '')},</p>
-       <p>Je reservering is aangemaakt. Hieronder de details.</p>`
-    : `<p>Hoi ${esc(bon.user_name || '')},</p>
-       <p>Je hebt materiaal opgehaald uit het materiaalhok. Hieronder de details van je bon.</p>`;
+  // Aanhef: intern gebruikt de accountnaam, extern de contactpersoon (of
+  // anders de organisatie). Als geen van beide bekend is, valt 'ie terug
+  // op een generieke aanhef zonder komma.
+  let greetingName = '';
+  if (isExternal) {
+    greetingName = (bon.external_contact && bon.external_contact.trim())
+      || (bon.external_org && bon.external_org.trim())
+      || '';
+  } else {
+    greetingName = bon.user_name || '';
+  }
+  const greetLine = greetingName ? `Hoi ${greetingName},` : 'Hoi,';
+
+  const introBody = isReservation
+    ? (isExternal
+        ? 'Bedankt voor je reservering. Hieronder de details van je verhuur bij het materiaalhok.'
+        : 'Je reservering is aangemaakt. Hieronder de details.')
+    : (isExternal
+        ? 'Het gereserveerde materiaal is opgehaald. Hieronder de definitieve details van je verhuur.'
+        : 'Je hebt materiaal opgehaald uit het materiaalhok. Hieronder de details van je bon.');
+
+  const introHtml = `<p>${esc(greetLine)}</p><p>${esc(introBody)}</p>`;
+
+  // Bedragen-blok: alleen bij een externe reservering, en alleen als er
+  // daadwerkelijk iets in rekening wordt gebracht. Ophalen herhaalt de
+  // bedragen niet — die stonden al in de reserveringsmail.
+  const rentalPrice = Number.isFinite(bon.rental_price) ? bon.rental_price : Number(bon.rental_price) || 0;
+  const deposit     = Number.isFinite(bon.deposit)      ? bon.deposit      : Number(bon.deposit)      || 0;
+  const showAmounts = isExternal && isReservation && (rentalPrice > 0 || deposit > 0);
+  const amountsHtml = showAmounts ? `
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 16px 0;background:#faf5ff;border-radius:10px;border:1px solid #e9d5ff;">
+      <tr><td style="padding:12px 16px;">
+        <div style="font-size:12px;color:#6b21a8;text-transform:uppercase;letter-spacing:0.5px;">Bedragen</div>
+        <div style="margin-top:4px;font-size:14px;">Huurprijs: <strong>${esc(fmtEuro(rentalPrice))}</strong></div>
+        <div style="margin-top:2px;font-size:14px;">Borg: <strong>${esc(fmtEuro(deposit))}</strong></div>
+        ${rentalPrice > 0 ? `<div style="margin-top:8px;font-size:12px;color:#6b21a8;">Betaalinstructies volgen apart.</div>` : ''}
+      </td></tr>
+    </table>
+  ` : '';
+  const amountsText = showAmounts ? [
+    'Bedragen:',
+    `- Huurprijs: ${fmtEuro(rentalPrice)}`,
+    `- Borg: ${fmtEuro(deposit)}`,
+    rentalPrice > 0 ? 'Betaalinstructies volgen apart.' : null,
+  ].filter((l) => l !== null).join('\n') : null;
+
+  // Huurvoorwaarden alleen tonen bij een externe reservering en alleen
+  // als er tekst is ingevuld in de admin-instellingen.
+  const termsRaw = typeof rentalTerms === 'string' ? rentalTerms.trim() : '';
+  const showTerms = isExternal && isReservation && termsRaw.length > 0;
+  const termsHtml = showTerms ? `
+    <div style="margin:16px 0;padding:14px 16px;background:#f9fafb;border-left:3px solid ${BRAND_COLOR};border-radius:6px;">
+      <div style="font-weight:600;margin-bottom:8px;">Huurvoorwaarden</div>
+      ${paragraphsHtml(termsRaw)}
+    </div>
+  ` : '';
+  const termsText = showTerms ? `Huurvoorwaarden:\n${termsRaw}` : null;
+
+  const closingHtml = isExternal
+    ? '<p>Vragen? Neem contact op met het materiaalhok.</p>'
+    : '<p>Kom je iets tegen dat niet klopt? Loop even langs het materiaalhok — dan zetten we het samen recht.</p>';
+  const closingText = isExternal
+    ? 'Vragen? Neem contact op met het materiaalhok.'
+    : 'Kom je iets tegen dat niet klopt? Loop even langs het materiaalhok — dan zetten we het samen recht.';
 
   const bodyHtml = `
     ${introHtml}
@@ -103,6 +182,11 @@ function bonConfirmation(bon) {
         <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Bonnummer</div>
         <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;font-size:16px;color:${BRAND_COLOR};">${esc(bon.bon_number)}</div>
       </td></tr>
+      ${isExternal ? `
+      <tr><td style="padding:8px 16px 4px;border-top:1px solid #e5e7eb;">
+        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Huurder</div>
+        <div>${esc(bon.external_org || '')}</div>
+      </td></tr>` : ''}
       <tr><td style="padding:8px 16px 12px;border-top:1px solid #e5e7eb;">
         <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">${isReservation ? 'Ophaaldatum' : 'Aangemaakt op'}</div>
         <div>${esc(formatDateNL(bon.start_date))}</div>
@@ -112,29 +196,34 @@ function bonConfirmation(bon) {
     </table>
     <p style="font-weight:600;margin-bottom:6px;">Op deze bon:</p>
     <ul style="margin:0 0 16px 20px;padding:0;">${itemsListHtml}</ul>
-    <p>Kom je iets tegen dat niet klopt? Loop even langs het materiaalhok — dan zetten we het samen recht.</p>
+    ${amountsHtml}
+    ${termsHtml}
+    ${closingHtml}
     <p style="margin-top:20px;">Groet,<br>${esc(BRAND_NAME)}</p>
   `;
 
   const text = [
-    `Hoi ${bon.user_name || ''},`,
+    greetLine,
     '',
-    isReservation
-      ? 'Je reservering is aangemaakt. Hieronder de details.'
-      : 'Je hebt materiaal opgehaald uit het materiaalhok. Hieronder de details van je bon.',
+    introBody,
     '',
     `Bonnummer: ${bon.bon_number}`,
+    isExternal ? `Huurder: ${bon.external_org || ''}` : null,
     `${isReservation ? 'Ophaaldatum' : 'Aangemaakt op'}: ${formatDateNL(bon.start_date)}`,
     `Retour uiterlijk: ${formatDateNL(bon.return_date)}`,
     '',
     'Op deze bon:',
     itemsListText,
+    amountsText ? '' : null,
+    amountsText,
+    termsText ? '' : null,
+    termsText,
     '',
-    'Kom je iets tegen dat niet klopt? Loop even langs het materiaalhok — dan zetten we het samen recht.',
+    closingText,
     '',
     'Groet,',
     BRAND_NAME,
-  ].join('\n');
+  ].filter((l) => l !== null).join('\n');
 
   return {
     subject,
@@ -152,17 +241,27 @@ function bonConfirmation(bon) {
 
 function returnReminder(bon, { catchup = false } = {}) {
   const subject = `Herinnering: retour ${bon.bon_number}`;
+  const isExternal = !!(bon.is_external === 1 || bon.is_external === true);
 
   const items = Array.isArray(bon.items) ? bon.items : [];
   const itemsListHtml = items.map((it) => `<li style="margin:2px 0;">${esc(itemLabel(it))}</li>`).join('');
   const itemsListText = items.map((it) => `- ${itemLabel(it)}`).join('\n');
 
+  let greetingName = '';
+  if (isExternal) {
+    greetingName = (bon.external_contact && bon.external_contact.trim())
+      || (bon.external_org && bon.external_org.trim())
+      || '';
+  } else {
+    greetingName = bon.user_name || '';
+  }
+  const greetLine = greetingName ? `Hoi ${greetingName},` : 'Hoi,';
+
   const retourStr = formatDateNL(bon.return_date);
-  const introHtml = catchup
-    ? `<p>Hoi ${esc(bon.user_name || '')},</p>
-       <p>Kleine herinnering: het materiaal op bon <strong>${esc(bon.bon_number)}</strong> moet binnenkort weer terug in het materiaalhok. Uiterlijk op <strong>${esc(retourStr)}</strong>.</p>`
-    : `<p>Hoi ${esc(bon.user_name || '')},</p>
-       <p>Kleine herinnering: het materiaal op bon <strong>${esc(bon.bon_number)}</strong> moet <strong>${esc(retourStr)}</strong> weer terug in het materiaalhok.</p>`;
+  const introBodyHtml = catchup
+    ? `Kleine herinnering: het materiaal op bon <strong>${esc(bon.bon_number)}</strong> moet binnenkort weer terug in het materiaalhok. Uiterlijk op <strong>${esc(retourStr)}</strong>.`
+    : `Kleine herinnering: het materiaal op bon <strong>${esc(bon.bon_number)}</strong> moet <strong>${esc(retourStr)}</strong> weer terug in het materiaalhok.`;
+  const introHtml = `<p>${esc(greetLine)}</p><p>${introBodyHtml}</p>`;
 
   const introText = catchup
     ? `Kleine herinnering: het materiaal op bon ${bon.bon_number} moet binnenkort weer terug in het materiaalhok. Uiterlijk op ${retourStr}.`
@@ -170,23 +269,23 @@ function returnReminder(bon, { catchup = false } = {}) {
 
   const bodyHtml = `
     ${introHtml}
-    <p style="font-weight:600;margin:16px 0 6px;">Wat je nog moet inleveren:</p>
+    <p style="font-weight:600;margin:16px 0 6px;">Wat er nog terug moet:</p>
     <ul style="margin:0 0 16px 20px;padding:0;">${itemsListHtml}</ul>
     <p>Alvast bedankt voor het op tijd terugbrengen — dat scheelt de volgende gebruiker een hoop gedoe.</p>
-    <p>Kom je iets tegen dat niet klopt of lukt terugbrengen niet? Loop even langs het materiaalhok.</p>
+    <p>Kom je iets tegen dat niet klopt of lukt terugbrengen niet? Neem contact op met het materiaalhok.</p>
     <p style="margin-top:20px;">Groet,<br>${esc(BRAND_NAME)}</p>
   `;
 
   const text = [
-    `Hoi ${bon.user_name || ''},`,
+    greetLine,
     '',
     introText,
     '',
-    'Wat je nog moet inleveren:',
+    'Wat er nog terug moet:',
     itemsListText,
     '',
     'Alvast bedankt voor het op tijd terugbrengen — dat scheelt de volgende gebruiker een hoop gedoe.',
-    'Kom je iets tegen dat niet klopt of lukt terugbrengen niet? Loop even langs het materiaalhok.',
+    'Kom je iets tegen dat niet klopt of lukt terugbrengen niet? Neem contact op met het materiaalhok.',
     '',
     'Groet,',
     BRAND_NAME,

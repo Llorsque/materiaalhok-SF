@@ -7,18 +7,64 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-07-29
+
+Externe verhuur — stap 2 van vier: mails voor externe huurders. De
+externe huurder krijgt nu automatisch dezelfde drie mails als een
+interne gebruiker (reservering, ophaal, herinnering), plus een blok
+met bedragen en optionele huurvoorwaarden in de reserveringsmail.
+
+### Toegevoegd
+- **Instelbare huurvoorwaarden (SettingsTab).** Nieuwe tekstarea onder
+  Instellingen waarin een admin de huurvoorwaarden voor externe verhuur
+  kwijt kan. Leeg = geen voorwaarden-blok in de mail. Waarde staat
+  server-side in de nieuwe `settings`-tabel; volgende UI-teksten die
+  door de mails moeten kunnen, kunnen dezelfde tabel hergebruiken.
+- **Nieuwe `settings`-tabel.** `key TEXT PRIMARY KEY, value TEXT`.
+  Idempotente `CREATE TABLE IF NOT EXISTS`, geen data-migratie nodig.
+- **Helpers `getSetting(key, fallback)` en `setSetting(key, value)`**
+  in `server/utils.js`. `setSetting` gebruikt `INSERT ... ON CONFLICT
+  DO UPDATE` zodat aanroepers zich niet druk hoeven te maken om
+  bestaan-of-niet.
+- **Backend routes `GET /api/settings` en `PUT /api/settings`**
+  (admin-only). Whitelist van bekende keys (nu alleen `rental_terms`)
+  voorkomt dat een typo in het request-body ongewenste rijen in de
+  settings-tabel achterlaat.
+- **API-client helpers `getSettings()` en `updateSettings(patch)`**.
+- **Externe reserveringsmail toont bedragen** (huurprijs + borg). Alleen
+  als één van beide > 0, anders wordt het hele blok weggelaten. Bij
+  huurprijs > 0 komt er een zin "Betaalinstructies volgen apart" onder
+  (de betaal-flow zelf is stap 3 van de sub-roadmap).
+- **Externe reserveringsmail toont huurvoorwaarden** wanneer de
+  admin een tekst heeft ingevuld. Leeg = geen blok. Voorwaarden staan
+  alleen in de reserveringsmail — de ophaal- en herinneringsmail
+  herhalen ze niet.
+- **Retourherinnering voor externe bonnen.** De scheduler gebruikt nu
+  `LEFT JOIN users` op `bons`, coalesced `COALESCE(u.email,
+  b.external_email)` als ontvanger en pikt externe bonnen mee in de
+  kandidaten. `shouldSendReminderTo` geeft altijd true terug voor
+  externe bonnen; interne blijven `notify_reminder` respecteren.
+
 ### Gewijzigd
-- **Admin bonnen-overzicht: nieuwste bovenaan.** `GET /api/bons`
-  sorteert nu `ORDER BY b.id DESC` (id is monotoon, functioneel gelijk
-  aan created_at DESC). BonsTab neemt die default over. Dashboard-
-  blokken en UserHome sorteren zelf op andere velden en zijn dus
-  ongevoelig voor de wijziging.
-- **ExternalBonFlow: bedragen pas in de bevestigstap.** Huurprijs en
-  borg worden niet meer vóór de materiaalkeuze gevraagd, maar in de
-  bevestigstap — nadat materiaal en periode bekend zijn kan de admin
-  een passende prijs bepalen. De huurdergegevens (org/contact/tel/mail)
-  blijven wel vooraan omdat ze de bon identificeren. Volgorde is nu:
-  huurdergegevens → periode → materiaal → bedragen + bevestigen.
+- **Externe huurders krijgen ALTIJD alle drie de mails.** Prefs
+  (`notify_reservation`, `notify_pickup`, `notify_reminder`) horen bij
+  accounts en een externe huurder heeft geen account. `POST /api/bons`
+  en `/api/bons/:id/pickup` slaan de pref-check over bij externe bonnen
+  en gebruiken `external_email` als geadresseerde.
+- **`bonConfirmation(bon, { rentalTerms })`** heeft twee toevoegingen
+  voor externe bonnen: aanhef gebruikt `external_contact` (of `external_org`
+  als fallback), en er komt een "Huurder"-regel bovenaan de details. Voor
+  interne bonnen is het resultaat identiek aan vóór v1.13.0.
+- **`returnReminder(bon, ...)`** kiest de aanhef op dezelfde manier
+  (contact voor extern, user_name voor intern). Verder inhoudelijk
+  gelijk.
+- **Mail-templates gebruiken kleine helpers** `fmtEuro()` en
+  `paragraphsHtml()` (splitst voorwaarden op lege regels in
+  `<p>`-blokken zodat de mail leesbaar blijft).
+
+### Niet in deze stap
+- Betaalstatus-knop en `completed`-logica voor externe bonnen (stap 3).
+- Dashboard-tegel "Externe verhuur openstaand" (stap 4).
 
 ## [1.12.0] - 2026-07-23
 
@@ -49,6 +95,17 @@ dashboard-tegel (stap 4) volgen in latere releases.
   Betaalknop komt in stap 3.
 
 ### Gewijzigd
+- **Admin bonnen-overzicht: nieuwste bovenaan.** `GET /api/bons`
+  sorteert nu `ORDER BY b.id DESC` (id is monotoon, functioneel gelijk
+  aan created_at DESC). BonsTab neemt die default over. Dashboard-
+  blokken en UserHome sorteren zelf op andere velden en zijn dus
+  ongevoelig voor de wijziging.
+- **ExternalBonFlow: bedragen pas in de bevestigstap.** Huurprijs en
+  borg worden niet meer vóór de materiaalkeuze gevraagd, maar in de
+  bevestigstap — nadat materiaal en periode bekend zijn kan de admin
+  een passende prijs bepalen. De huurdergegevens (org/contact/tel/mail)
+  blijven wel vooraan omdat ze de bon identificeren. Volgorde is nu:
+  huurdergegevens → periode → materiaal → bedragen + bevestigen.
 - **Datamodel `bons`**. Zeven nieuwe kolommen (allemaal nullable behalve
   de bedragen, die zijn `NOT NULL DEFAULT 0`): `external_org`,
   `external_contact`, `external_phone`, `external_email`, `rental_price`,

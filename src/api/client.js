@@ -179,6 +179,12 @@ export const runBackup       = () => request('POST', '/api/backup/run');
 export const getResetPreview = () => request('GET',  '/api/admin/reset-preview');
 export const executeReset    = () => request('POST', '/api/admin/reset', { confirm: 'RESET' });
 
+// --- Settings --------------------------------------------------------------
+// Server-side kv-store voor instelbare tekst (bv. huurvoorwaarden extern).
+// Payload is een object met alleen die keys die je wilt aanpassen.
+export const getSettings    = ()        => request('GET', '/api/settings');
+export const updateSettings = (patch)   => request('PUT', '/api/settings', patch);
+
 // --- Logs ------------------------------------------------------------------
 // Bouwt een querystring uit de gedefinieerde params; lege waarden overslaan
 // zodat we niet per ongeluk 'action=' als een echte filter meesturen.

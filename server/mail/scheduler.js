@@ -43,13 +43,12 @@ function lastWorkdayBefore(dateStr) {
   return `${yy}-${mm}-${dd}`;
 }
 
-// Voor toekomstige uitbreiding met externe huurders (ronde B). Nu is elke
-// ontvanger een 'user' met notify_reminder — dus checken we die vlag. Zodra
-// er ook een externe huurder-tabel bestaat, hoort dit ding true terug te
-// geven voor die groep ongeacht voorkeuren.
+// Externe huurders hebben geen account en dus geen prefs — die krijgen
+// altijd de retourherinnering. Interne gebruikers respecteren hun
+// notify_reminder-vlag.
 function shouldSendReminderTo(receiver) {
   if (!receiver) return false;
-  // Aanhakingspunt: als receiver.kind === 'external' → return true.
+  if (receiver.is_external) return true;
   return receiver.notify_reminder === 1;
 }
 
@@ -80,15 +79,18 @@ async function runReminderCycle() {
     const today = todayDateStr();
 
     // Kandidaten: openstaande bon (active of reserved), retour nog niet
-    // verstreken, herinnering nog niet verstuurd. We filteren de precieze
-    // herinnerdag daarna in JS omdat SQLite lastig kan doen over
-    // werkdagen.
+    // verstreken, herinnering nog niet verstuurd. LEFT JOIN users omdat
+    // externe bonnen geen user_id hebben — hun contact zit op de bon zelf
+    // (external_email, external_org, external_contact).
     const candidates = db.prepare(`
       SELECT b.id, b.bon_number, b.return_date, b.status,
-             u.id AS user_id, u.name AS user_name, u.email,
-             u.notify_reminder
+             u.id AS user_id, u.name AS user_name,
+             COALESCE(u.email, b.external_email) AS email,
+             u.notify_reminder,
+             CASE WHEN b.user_id IS NULL THEN 1 ELSE 0 END AS is_external,
+             b.external_org, b.external_contact
       FROM bons b
-      JOIN users u ON u.id = b.user_id
+      LEFT JOIN users u ON u.id = b.user_id
       WHERE b.reminder_sent_at IS NULL
         AND b.status IN ('active', 'reserved')
         AND date(b.return_date) >= date(?)
@@ -122,6 +124,9 @@ async function runReminderCycle() {
         bon_number: row.bon_number,
         user_name: row.user_name,
         return_date: row.return_date,
+        is_external: row.is_external,
+        external_org: row.external_org,
+        external_contact: row.external_contact,
         items: loadItemsForBon(row.id),
       };
       const tpl = returnReminder(bon, { catchup });

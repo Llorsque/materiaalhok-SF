@@ -159,6 +159,15 @@ CREATE TABLE IF NOT EXISTS sessions (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- v1.13.0: instelbare tekstinstellingen die niet in code horen. Voor nu
+-- alleen `rental_terms` (huurvoorwaarden extern), maar bewust generiek
+-- opgezet zodat andere UI-teksten hier later ook in kunnen. Waarde is
+-- altijd TEXT; interpretatie ligt bij de aanroeper.
+CREATE TABLE IF NOT EXISTS settings (
+  key    TEXT PRIMARY KEY,
+  value  TEXT
+);
+
 CREATE TABLE IF NOT EXISTS logs (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   timestamp  TEXT    NOT NULL,

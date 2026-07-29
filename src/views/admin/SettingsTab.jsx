@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ImageUpload } from "../../components/ImageUpload";
 import { Modal } from "../../components/Modal";
-import { getResetPreview, executeReset } from "../../api/client";
+import { getResetPreview, executeReset, getSettings, updateSettings } from "../../api/client";
 
 export function SettingsTab({ branding, setBranding }) {
   const [resetOpen, setResetOpen] = useState(false);
@@ -12,6 +12,47 @@ export function SettingsTab({ branding, setBranding }) {
   const [resetting, setResetting] = useState(false);
   const [resetError, setResetError] = useState(null);
   const [resetResult, setResetResult] = useState(null);
+
+  // Server-side settings: huurvoorwaarden voor externe reserveringsmails.
+  // `saved` is de laatst opgehaalde waarde; `rentalTerms` is de bewerkte
+  // waarde. Save-knop is uit bij gelijkheid of tijdens laden.
+  const [rentalTerms, setRentalTerms] = useState("");
+  const [savedRentalTerms, setSavedRentalTerms] = useState("");
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsError, setSettingsError] = useState(null);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsToast, setSettingsToast] = useState(null);
+
+  useEffect(() => {
+    setSettingsLoading(true);
+    getSettings()
+      .then((data) => {
+        const v = (data && typeof data.rental_terms === "string") ? data.rental_terms : "";
+        setRentalTerms(v);
+        setSavedRentalTerms(v);
+      })
+      .catch((err) => setSettingsError(err.message || "Kon instellingen niet laden"))
+      .finally(() => setSettingsLoading(false));
+  }, []);
+
+  const saveRentalTerms = async () => {
+    setSettingsSaving(true);
+    setSettingsError(null);
+    setSettingsToast(null);
+    try {
+      const data = await updateSettings({ rental_terms: rentalTerms });
+      const v = (data && typeof data.rental_terms === "string") ? data.rental_terms : "";
+      setSavedRentalTerms(v);
+      setRentalTerms(v);
+      setSettingsToast("Huurvoorwaarden opgeslagen.");
+      setTimeout(() => setSettingsToast(null), 2500);
+    } catch (err) {
+      setSettingsError(err.message || "Opslaan mislukt");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+  const rentalTermsDirty = rentalTerms !== savedRentalTerms;
 
   useEffect(() => {
     if (!resetOpen) return;
@@ -71,6 +112,38 @@ export function SettingsTab({ branding, setBranding }) {
       <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Ondertitel</label><input className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.subtitle} onChange={e=>setBranding(p=>({...p,subtitle:e.target.value}))}/></div>
       <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Kleur</label><div className="flex items-center gap-3"><input type="color" value={branding.color} onChange={e=>setBranding(p=>({...p,color:e.target.value}))} className="w-10 h-10 rounded-lg cursor-pointer border-0"/><span className="text-sm text-gray-500">{branding.color}</span></div></div>
       <ImageUpload value={branding.loginBg} onChange={v=>setBranding(p=>({...p,loginBg:v}))} label="Login achtergrond"/>
+    </div>
+
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
+      <div>
+        <h4 className="font-semibold text-gray-800">Huurvoorwaarden externe verhuur</h4>
+        <p className="text-xs text-gray-500 mt-1">Deze tekst wordt onderaan de reserveringsmail voor externe huurders getoond. Laat leeg om geen voorwaarden mee te sturen.</p>
+      </div>
+      <textarea
+        rows={8}
+        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+        placeholder="Bijv. 'Materiaal wordt schoon en droog geretourneerd. Bij verlies of schade wordt de dagprijs in rekening gebracht...'"
+        value={rentalTerms}
+        onChange={(e) => setRentalTerms(e.target.value)}
+        disabled={settingsLoading || settingsSaving}
+      />
+      {settingsError && <p className="text-sm text-red-600">{settingsError}</p>}
+      {settingsToast && <p className="text-sm text-emerald-700">{settingsToast}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={saveRentalTerms}
+          disabled={!rentalTermsDirty || settingsLoading || settingsSaving}
+          className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-40"
+        >
+          {settingsSaving ? "Opslaan\u2026" : "Opslaan"}
+        </button>
+        {rentalTermsDirty && !settingsSaving && <button
+          onClick={() => setRentalTerms(savedRentalTerms)}
+          className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+        >
+          Herstellen
+        </button>}
+      </div>
     </div>
 
     <div className="bg-red-50 rounded-2xl p-6 shadow-sm border-2 border-red-200 space-y-3">
