@@ -22,8 +22,9 @@ import { ItemDetailModal } from "./admin/ItemDetailModal";
 import { SetDetailModal } from "./admin/SetDetailModal";
 import { BonDetailModal } from "./admin/BonDetailModal";
 import { AdminBonFlow } from "./admin/AdminBonFlow";
+import { DamageTab } from "./admin/DamageTab";
 
-export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, users, setUsers, usersLoading, usersError, setUsersError, refreshUsers, sets, refreshSets, bons, bonsLoading, bonsError, setBonsError, refreshBons, logs, addLog, branding, setBranding, onLogout }) {
+export function AdminView({ eq, setEq, materialsLoading, materialsError, setMaterialsError, refreshMaterials, users, setUsers, usersLoading, usersError, setUsersError, refreshUsers, sets, refreshSets, bons, bonsLoading, bonsError, setBonsError, refreshBons, logs, addLog, damageReports, damageLoading, damageError, refreshDamage, branding, setBranding, onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [q, setQ] = useState(""); const [cat, setCat] = useState("Alle");
   const [addOpen, setAddOpen] = useState(false); const [edit, setEdit] = useState(null);
@@ -47,7 +48,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   const [newBonToast, setNewBonToast] = useState(null);
 
   const totalStock = useMemo(()=>eq.reduce((s,e)=>s+e.stock,0),[eq]);
-  const totalUnavail = useMemo(()=>eq.reduce((s,e)=>s+unavailableQty(bons,e.id)+(e.maintenance||0),0),[eq,bons]);
+  const totalUnavail = useMemo(()=>eq.reduce((s,e)=>s+unavailableQty(bons,e.id),0),[eq,bons]);
   const totalValue = useMemo(()=>eq.reduce((s,e)=>s+(e.pricePerUnit||0)*e.stock,0),[eq]);
   const activeBons = bons.filter(b=>b.status==="active");
   const overdueBons = bons.filter(bonIsOverdue);
@@ -237,7 +238,8 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     return { count, borrowers };
   };
 
-  const tabs=[["dashboard","Dashboard"],["bons","Bonnen"],["items","Materiaal"],["sets","Sets"],["insights","Inzichten"],["log","Logboek"],["barcodes","Barcodes"],["users","Gebruikers"],["import","Import"],["settings","Instellingen"]];
+  const openDamageCount = (damageReports || []).filter((r) => r.status === "open").length;
+  const tabs=[["dashboard","Dashboard"],["bons","Bonnen"],["items","Materiaal"],["sets","Sets"],["damage","Schade / verlies"],["insights","Inzichten"],["log","Logboek"],["barcodes","Barcodes"],["users","Gebruikers"],["import","Import"],["settings","Instellingen"]];
 
   // Wanneer de admin een bon aanmaakt namens iemand, nemen we het hele scherm
   // over met AdminBonFlow. Dat spiegelt hoe UserView tussen home en LoanFlow
@@ -261,7 +263,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
     <AppHeader branding={branding} role="admin" onLogout={onLogout} onAdd={() => tab === "sets" ? setNewSetOpen(true) : setAddOpen(true)}>
       <div className="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto">
-        {tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap ${tab===k?"border-blue-600 text-blue-600":"border-transparent text-gray-500 hover:text-gray-700"}`}>{l}{k==="bons"&&openBons.length>0?` (${openBons.length})`:""}</button>)}
+        {tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap ${tab===k?"border-blue-600 text-blue-600":"border-transparent text-gray-500 hover:text-gray-700"}`}>{l}{k==="bons"&&openBons.length>0?` (${openBons.length})`:""}{k==="damage"&&openDamageCount>0?` (${openDamageCount})`:""}</button>)}
       </div>
     </AppHeader>
 
@@ -278,6 +280,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
         {setsError && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 mb-3 text-sm text-red-700 flex items-center justify-between gap-3"><span>{setsError.message}</span><button onClick={()=>setSetsError(null)} className="text-red-700 hover:text-red-900 font-bold" aria-label="Sluiten">{"\u00d7"}</button></div>}
         <SetsTab sets={sets} bons={bons} q={setsQ} setQ={setSetsQ} cat={setsCat} setCat={setSetsCat} onSetClick={setActiveSet} scanValue={setsScan} setScanValue={setSetsScan} scanMsg={setsScanMsg} setScanMsg={setSetsScanMsg}/>
       </>}
+      {tab==="damage"&&<DamageTab reports={damageReports} reportsLoading={damageLoading} reportsError={damageError} refreshDamage={refreshDamage} refreshMaterials={refreshMaterials} refreshSets={refreshSets} addLog={addLog}/>}
       {tab==="insights"&&<InsightsTab eq={eq} bons={bons} oneYearAgo={oneYearAgo}/>}
       {tab==="log"&&<LogTab/>}
       {tab==="barcodes"&&<BarcodesTab eq={eq} sets={sets}/>}
@@ -292,7 +295,7 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
     <Modal open={newSetOpen} onClose={()=>setNewSetOpen(false)} title="Nieuwe set"><SetForm onSave={addSet} onCancel={()=>setNewSetOpen(false)}/></Modal>
     <Modal open={!!editSet} onClose={()=>setEditSet(null)} title="Set bewerken">{editSet&&<SetForm item={editSet} onSave={saveSet} onCancel={()=>setEditSet(null)}/>}</Modal>
 
-    <ItemDetailModal detail={detail} setDetail={setDetail} bons={bons} eq={eq} addLog={addLog} getItemStats={getItemStats} onPrint={handlePrint} onEdit={setEdit} onDelete={del} onOpenBon={setBonDetail} onRegenBarcode={regenBarcode}/>
+    <ItemDetailModal detail={detail} setDetail={setDetail} bons={bons} eq={eq} addLog={addLog} getItemStats={getItemStats} onPrint={handlePrint} onEdit={setEdit} onDelete={del} onOpenBon={setBonDetail} onRegenBarcode={regenBarcode} damageReports={damageReports} onOpenDamage={() => setTab("damage")}/>
     <SetDetailModal detail={activeSet} setDetail={setActiveSet} bons={bons} onEdit={setEditSet} onDelete={delSet} onPrint={handlePrint} onRegenBarcode={regenSetBarcode} onOpenBon={setBonDetail}/>
     <BonDetailModal bonDetail={bonDetail} setBonDetail={setBonDetail} onForceComplete={forceCompleteBon} onUpdateBon={handleBonUpdate} onItemReturn={handleBonItemReturn} onDeleteBon={handleBonDelete}/>
   </div>;

@@ -202,6 +202,24 @@ export const deleteBon  = (id)       => request('DELETE', `/api/bons/${id}`);
 // changes: { remove?: [bon_item_id], add?: [{ kind:'material'|'set', id, quantity }] }
 // Weglaten = kaal opnemen zoals gereserveerd (achterwaarts compatibel).
 export const pickupBon  = (id, changes) => request('POST', `/api/bons/${id}/pickup`, changes || {});
-// items mag undefined zijn (complete retour) of een array {id, returned}.
+// items mag undefined zijn (achterwaarts compatibel: alles retour) of een
+// array van { id, condition: 'returned'|'lost'|'broken', quantity }. Meerdere
+// entries voor hetzelfde bon_item mogen; de backend splitst per conditie.
 export const returnBon  = (id, items) =>
   request('POST', `/api/bons/${id}/return`, items ? { items } : undefined);
+
+// --- Damage reports (Ronde B blok 2) --------------------------------------
+export const getDamageReports = (params = {}) => {
+  const qs = new URLSearchParams();
+  for (const key of ['status', 'reason', 'material_id', 'set_id']) {
+    const v = params[key];
+    if (v === undefined || v === null || v === '') continue;
+    qs.set(key, v);
+  }
+  const s = qs.toString();
+  return request('GET', `/api/damage-reports${s ? `?${s}` : ''}`);
+};
+
+// resolution: 'repaired' | 'replaced' | 'written_off'
+export const resolveDamageReport = (id, { resolution, notes } = {}) =>
+  request('PATCH', `/api/damage-reports/${id}/resolve`, { resolution, notes });

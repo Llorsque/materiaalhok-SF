@@ -116,4 +116,20 @@ if (bonsCols.length > 0 && !bonsCols.includes('reminder_sent_at')) {
   }
 }
 
+// Ronde B blok 2 — kwijt/kapot melden: return_condition op bon_items, plus
+// available_status op materials en sets. Bestaande rijen krijgen de default
+// mee ('returned' / 'available'), wat historisch klopt.
+{
+  const cols = db.pragma('table_info(bon_items)').map((c) => c.name);
+  if (cols.length > 0 && !cols.includes('return_condition')) {
+    db.exec("ALTER TABLE bon_items ADD COLUMN return_condition TEXT NOT NULL DEFAULT 'returned'");
+  }
+}
+for (const table of ['materials', 'sets']) {
+  const cols = db.pragma(`table_info(${table})`).map((c) => c.name);
+  if (cols.length > 0 && !cols.includes('available_status')) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN available_status TEXT NOT NULL DEFAULT 'available'`);
+  }
+}
+
 module.exports = db;

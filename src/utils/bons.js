@@ -38,6 +38,10 @@ export function unavailableQty(bons, materialId) {
 }
 
 export function availQty(item, bons) {
+  // Ronde B blok 2: buitendienst-materialen zijn niet beschikbaar, ongeacht
+  // stock. Voor unieke items die kwijt/kapot zijn is dit hoe ze uit de
+  // beschikbare voorraad verdwijnen tot een admin ze afhandelt.
+  if (item && item.available_status === 'out_of_service') return 0;
   return Math.max(0, (item.stock || 0) - unavailableQty(bons, item.id));
 }
 
@@ -71,6 +75,7 @@ export function unavailableSetQty(bons, setId) {
 }
 
 export function availSetQty(item, bons) {
+  if (item && item.available_status === 'out_of_service') return 0;
   return Math.max(0, (item.stock || 0) - unavailableSetQty(bons, item.id));
 }
 

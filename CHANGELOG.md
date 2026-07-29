@@ -7,6 +7,81 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-07-28
+
+Blok 2 van Ronde B: kwijt/kapot melden bij retour, met directe
+voorraadmutatie en een schade/verlies-overzicht voor de admin.
+
+### Toegevoegd
+- **Kwijt/kapot melden bij retour, per stuk**. `ReturnFlow.jsx` heeft per
+  bon-regel drie tellers (Retour / Kwijt / Kapot) met +/-. Scannen telt
+  standaard als Retour; Kwijt en Kapot markeer je expliciet. Voor bulk-
+  regels kunnen de stuks over meerdere condities verdeeld worden (3
+  ballen: 2 retour + 1 kwijt). Bevestigingsbanner meldt wat er straks van
+  de voorraad wordt afgeboekt.
+- **Nieuwe tabel `damage_reports`** met `reason` (`lost`/`broken`),
+  `quantity`, `status` (`open`/`repaired`/`replaced`/`written_off`) en
+  audit-velden. Bron van waarheid voor het admin-overzicht én voor
+  tellingen per materiaal.
+- **Nieuwe kolommen** `bon_items.return_condition`
+  (`returned`/`lost`/`broken`) en `materials.available_status` +
+  `sets.available_status` (`available`/`out_of_service`). Migraties voor
+  bestaande DBs: alles krijgt de default (`returned`, `available`).
+- **`POST /api/bons/:id/return` uitgebreid**: body `{ items: [{ id,
+  condition, quantity }] }`. Meerdere entries per bon_item worden
+  gecombineerd; het bon_item wordt gesplitst in aparte rijen met eigen
+  `return_condition` en `quantity`, precies zoals de pickup-split werkt.
+  In één transactie: bon_items splitsen, `damage_reports` inschrijven,
+  voorraad muteren (bulk/sets: `stock -= n`, uniek: `available_status =
+  'out_of_service'`), bon voltooien wanneer alles binnen is. `stock`
+  klemt op 0 met `MAX(0, stock - n)`, zodat 'ie nooit negatief wordt.
+  Achterwaarts compatibel: kaal retour zonder body blijft "alles retour".
+- **Nieuw endpoint `GET /api/damage-reports`** (admin) met filters
+  `?status=open|resolved`, `?reason=lost|broken`, `?material_id=`,
+  `?set_id=`. Openstaande bovenaan, historie eronder.
+- **Nieuw endpoint `PATCH /api/damage-reports/:id/resolve`** (admin) met
+  body `{ resolution: 'repaired'|'replaced'|'written_off', notes? }`.
+  Bulk/sets: `stock += n` bij repaired/replaced, ongewijzigd bij
+  written_off. Uniek: `available_status = 'available'` bij repaired/
+  replaced, `out_of_service` bij written_off. Log-actie
+  `damage_resolved` met leesbare NL-omschrijving.
+- **Nieuwe admin-tab "Schade / verlies"** (`DamageTab.jsx`) met status- en
+  reason-filters, teller in de tab-titel voor openstaande meldingen,
+  per-melding een "Afhandelen"-modal met keuze uit gerepareerd/vervangen/
+  afgeschreven + optionele notitie.
+- **Materiaal-detail** (`ItemDetailModal.jsx`) toont nu een schade-blok
+  met open kwijt/kapot-tellingen + totaal aantal meldingen, en een
+  "Bekijk"-knop die naar de Schade-tab springt. Buiten dienst-badge op de
+  header. Beschikbaarheid rendert 0 (met "(buiten dienst)"-notitie) voor
+  unieke items die kwijt/kapot zijn.
+- **Bon-detail** (`BonDetailModal.jsx`) toont per item labeltje "kwijt" of
+  "kapot" waar van toepassing.
+- **Log-acties** `damage_reported` en `damage_resolved` toegevoegd aan
+  `LogTab`-dropdown, plus `bon_pickup` en `user_password_reset` die al
+  bestonden maar nog niet zichtbaar waren als filter-optie.
+- API-client: `getDamageReports(params)` en `resolveDamageReport(id, {
+  resolution, notes })`. `returnBon` accepteert nu de nieuwe entry-shape
+  (achterwaarts compatibel).
+
+### Gewijzigd
+- **Beschikbaarheid** houdt nu rekening met `available_status`:
+  ```
+  available = (available_status === 'available') ? (stock - unavailableQty) : 0
+  ```
+  Consistent doorgevoerd in `checkStock` (server) en `availQty`/
+  `availSetQty` (client). Een reservering op een `out_of_service`-item
+  krijgt 409 met `reden: 'buiten dienst (kwijt/kapot)'` in de details.
+- **Kapotte "maintenance"-veld verwijderd** uit `AdminView` (dead code:
+  bestond niet in schema of API, leverde altijd 0 op) en uit
+  `ItemDetailModal` (regel "Onderhoud").
+
+### Opgelost
+- **Dead `maintenance`-veld** stond in de UI maar bestond niet in de
+  backend. Uit `totalUnavail`-berekening en het materiaal-detail
+  verwijderd.
+
+## [1.8.0] - 2026-07-28
+
 ### Gewijzigd
 - **UserHome-layout**: de vier actietegels (Materiaal lenen, Reserveren,
   Ophalen, Retourneren) staan nu altijd bovenaan, direct onder de header.

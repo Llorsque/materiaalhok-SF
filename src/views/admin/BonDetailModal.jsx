@@ -40,17 +40,24 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
             {kept.map((bi) => {
               const isReturned = !!bi.returned;
               const isAdded    = bi.added_at_pickup === 1;
+              const cond       = bi.return_condition;
+              const wasLost    = isReturned && cond === "lost";
+              const wasBroken  = isReturned && cond === "broken";
               return <div key={bi.id} className="px-4 py-3 flex items-center justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-medium flex items-center gap-2 flex-wrap">
                     <span>{itemDisplayName(bi)}</span>
                     {isAdded && <span className="text-[10px] font-semibold uppercase tracking-wide bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">toegevoegd bij ophalen</span>}
+                    {wasLost   && <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">kwijt</span>}
+                    {wasBroken && <span className="text-[10px] font-semibold uppercase tracking-wide bg-red-100 text-red-800 px-1.5 py-0.5 rounded">kapot</span>}
                   </p>
-                  <p className="text-xs text-gray-500">{bi.quantity} stuk{bi.quantity !== 1 ? "s" : ""}{isReturned ? " \u2014 retour" : ""}{bi.picked_up && !isReturned ? " \u2014 opgehaald" : ""}</p>
+                  <p className="text-xs text-gray-500">{bi.quantity} stuk{bi.quantity !== 1 ? "s" : ""}{isReturned ? (wasLost ? " \u2014 kwijt gemeld" : wasBroken ? " \u2014 kapot gemeld" : " \u2014 retour") : ""}{bi.picked_up && !isReturned ? " \u2014 opgehaald" : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {isReturned
-                    ? <span className="text-xs text-emerald-600">{"\u2705"} retour</span>
+                    ? (wasLost || wasBroken
+                        ? <span className={`text-xs ${wasLost ? "text-amber-700" : "text-red-700"}`}>{"\u26a0"} {wasLost ? "kwijt" : "kapot"}</span>
+                        : <span className="text-xs text-emerald-600">{"\u2705"} retour</span>)
                     : <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-full">open</span>}
                   {bonDetail.status === "active" && !isReturned && <button onClick={() => onItemReturn(bonDetail.id, bi.id)} className="px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs hover:bg-emerald-200">Retour</button>}
                 </div>

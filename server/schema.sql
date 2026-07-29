@@ -3,32 +3,38 @@
 -- start veilig kan worden uitgevoerd.
 
 CREATE TABLE IF NOT EXISTS materials (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  name          TEXT    NOT NULL,
-  category      TEXT,
-  stock         INTEGER NOT NULL DEFAULT 0,
-  unit          TEXT,
-  type          TEXT    NOT NULL CHECK (type IN ('uniek', 'bulk')),
-  location      TEXT,
-  notes         TEXT,
-  purchase_link TEXT,
-  barcode       TEXT    UNIQUE,
-  created_at    TEXT    NOT NULL,
-  updated_at    TEXT    NOT NULL
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  name             TEXT    NOT NULL,
+  category         TEXT,
+  stock            INTEGER NOT NULL DEFAULT 0,
+  unit             TEXT,
+  type             TEXT    NOT NULL CHECK (type IN ('uniek', 'bulk')),
+  location         TEXT,
+  notes            TEXT,
+  purchase_link    TEXT,
+  barcode          TEXT    UNIQUE,
+  created_at       TEXT    NOT NULL,
+  updated_at       TEXT    NOT NULL,
+  -- Ronde B: unieke materialen die kwijt/kapot zijn, staan 'out_of_service'.
+  -- Beschikbaarheid wordt dan 0 ongeacht stock. Voor bulk zakt stock zelf.
+  available_status TEXT    NOT NULL DEFAULT 'available' CHECK (available_status IN ('available', 'out_of_service'))
 );
 
 CREATE TABLE IF NOT EXISTS sets (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  name          TEXT    NOT NULL,
-  category      TEXT,
-  stock         INTEGER NOT NULL DEFAULT 0,
-  composition   TEXT,
-  location      TEXT,
-  notes         TEXT,
-  purchase_link TEXT,
-  barcode       TEXT    UNIQUE,
-  created_at    TEXT    NOT NULL,
-  updated_at    TEXT    NOT NULL
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  name             TEXT    NOT NULL,
+  category         TEXT,
+  stock            INTEGER NOT NULL DEFAULT 0,
+  composition      TEXT,
+  location         TEXT,
+  notes            TEXT,
+  purchase_link    TEXT,
+  barcode          TEXT    UNIQUE,
+  created_at       TEXT    NOT NULL,
+  updated_at       TEXT    NOT NULL,
+  -- Sets gedragen zich als bulk: kwijt/kapot verlaagt stock. Kolom zit hier
+  -- voor consistentie met materials en toekomstige uitbreiding.
+  available_status TEXT    NOT NULL DEFAULT 'available' CHECK (available_status IN ('available', 'out_of_service'))
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -75,9 +81,46 @@ CREATE TABLE IF NOT EXISTS bon_items (
   -- 1 = pas bij ophalen aan de bon toegevoegd (stond niet op de oorspronkelijke
   -- reservering). Zichtbaar in admin-detail, niet in de mail.
   added_at_pickup     INTEGER NOT NULL DEFAULT 0 CHECK (added_at_pickup IN (0, 1)),
+  -- Ronde B: hoe kwam dit (deel-)item terug? Voor rijen met returned=1 is dit
+  -- de audit-trail; voor returned=0 is de waarde irrelevant (default vult 'm).
+  -- Per-stuk splitsing: bulk 3 waarvan 2 retour + 1 kwijt wordt gesplitst in
+  -- twee rijen met eigen return_condition en quantity, vergelijkbaar met
+  -- de pickup-split.
+  return_condition    TEXT    NOT NULL DEFAULT 'returned' CHECK (return_condition IN ('returned', 'lost', 'broken')),
   FOREIGN KEY (bon_id)      REFERENCES bons(id)      ON DELETE CASCADE,
   FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE RESTRICT,
   FOREIGN KEY (set_id)      REFERENCES sets(id)      ON DELETE RESTRICT,
+  CHECK (
+    (material_id IS NOT NULL AND set_id IS NULL)
+    OR
+    (material_id IS NULL AND set_id IS NOT NULL)
+  )
+);
+
+-- Ronde B: één rij per gemelde schade/verlies. Bron van waarheid voor het
+-- admin-overzicht én voor tellingen per materiaal ("hoe vaak is dit al kapot
+-- geweest?"). Aangemaakt door de retour-flow; afgehandeld door admin via
+-- PATCH /api/damage-reports/:id/resolve.
+CREATE TABLE IF NOT EXISTS damage_reports (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  bon_id         INTEGER,
+  bon_item_id    INTEGER,
+  material_id    INTEGER,
+  set_id         INTEGER,
+  reason         TEXT    NOT NULL CHECK (reason IN ('lost', 'broken')),
+  quantity       INTEGER NOT NULL,
+  status         TEXT    NOT NULL CHECK (status IN ('open', 'repaired', 'replaced', 'written_off')),
+  notes          TEXT,
+  reported_at    TEXT    NOT NULL,
+  reported_by    INTEGER,
+  resolved_at    TEXT,
+  resolved_by    INTEGER,
+  FOREIGN KEY (bon_id)      REFERENCES bons(id)       ON DELETE SET NULL,
+  FOREIGN KEY (bon_item_id) REFERENCES bon_items(id)  ON DELETE SET NULL,
+  FOREIGN KEY (material_id) REFERENCES materials(id)  ON DELETE SET NULL,
+  FOREIGN KEY (set_id)      REFERENCES sets(id)       ON DELETE SET NULL,
+  FOREIGN KEY (reported_by) REFERENCES users(id)      ON DELETE SET NULL,
+  FOREIGN KEY (resolved_by) REFERENCES users(id)      ON DELETE SET NULL,
   CHECK (
     (material_id IS NOT NULL AND set_id IS NULL)
     OR
@@ -112,3 +155,6 @@ CREATE INDEX IF NOT EXISTS idx_bons_user_id         ON bons (user_id);
 CREATE INDEX IF NOT EXISTS idx_bons_status          ON bons (status);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id     ON sessions (user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at  ON sessions (expires_at);
+CREATE INDEX IF NOT EXISTS idx_damage_status        ON damage_reports (status);
+CREATE INDEX IF NOT EXISTS idx_damage_material_id   ON damage_reports (material_id);
+CREATE INDEX IF NOT EXISTS idx_damage_set_id        ON damage_reports (set_id);

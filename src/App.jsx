@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DEFAULT_BRANDING } from "./data/defaults";
 import { store, session } from "./utils/storage";
 import { genItemBarcode, syncBarcodeCounter } from "./utils/barcode";
-import { getMaterials, getUsers, getSets, getBons, getLogs, logout as apiLogout } from "./api/client";
+import { getMaterials, getUsers, getSets, getBons, getLogs, getDamageReports, logout as apiLogout } from "./api/client";
 import { LoginView } from "./views/LoginView";
 import { AdminView } from "./views/AdminView";
 import { UserView } from "./views/UserView";
@@ -25,6 +25,9 @@ export default function App() {
   const [bonsLoading, setBonsLoading] = useState(false);
   const [bonsError, setBonsError] = useState(null);
   const [logs, setLogs] = useState([]);
+  const [damageReports, setDamageReports] = useState([]);
+  const [damageLoading, setDamageLoading] = useState(false);
+  const [damageError, setDamageError] = useState(null);
   const [branding, setBranding] = useState(DEFAULT_BRANDING);
   const [ok, setOk] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -98,6 +101,23 @@ export default function App() {
     }
   }, []);
 
+  // Damage reports (Ronde B blok 2) — admin-only. Wordt gebruikt in het
+  // schade-overzicht, op het dashboard voor de open-teller en in het
+  // materiaal-detail voor de per-item historie.
+  const refreshDamage = useCallback(async () => {
+    setDamageError(null);
+    const t = setTimeout(() => setDamageLoading(true), 200);
+    try {
+      const rows = await getDamageReports();
+      setDamageReports(Array.isArray(rows) ? rows : []);
+    } catch (err) {
+      setDamageError(err);
+    } finally {
+      clearTimeout(t);
+      setDamageLoading(false);
+    }
+  }, []);
+
   // localStorage blijft bron voor branding.
   // mhok-user staat in sessionStorage zodat de sessie eindigt bij browser/laptop-herstart.
   // mhok-eq6, mhok-users, mhok-bons en mhok-logs worden bewust NIET meer ingelezen —
@@ -122,8 +142,9 @@ export default function App() {
     if (user.role === "admin") {
       refreshUsers();
       refreshLogs();
+      refreshDamage();
     }
-  }, [ok, user, refreshMaterials, refreshUsers, refreshSets, refreshBons, refreshLogs]);
+  }, [ok, user, refreshMaterials, refreshUsers, refreshSets, refreshBons, refreshLogs, refreshDamage]);
 
   useEffect(() => { if (ok) store.set("mhok-brand", branding); }, [branding, ok]);
 
@@ -173,6 +194,6 @@ export default function App() {
 
   if (!ok) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-400">Laden...</p></div>;
   if (!user) return <LoginView onLogin={handleLogin} branding={branding} usersLoading={usersLoading} usersError={usersError} refreshUsers={refreshUsers} sessionExpired={sessionExpired} onDismissSessionExpired={()=>setSessionExpired(false)}/>;
-  if (user.role === "admin") return <AdminView eq={eq} setEq={setEq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} users={users} setUsers={setUsers} usersLoading={usersLoading} usersError={usersError} setUsersError={setUsersError} refreshUsers={refreshUsers} sets={sets} refreshSets={refreshSets} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} setBonsError={setBonsError} refreshBons={refreshBons} logs={logs} addLog={addLog} branding={branding} setBranding={setBranding} onLogout={handleLogout}/>;
+  if (user.role === "admin") return <AdminView eq={eq} setEq={setEq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} users={users} setUsers={setUsers} usersLoading={usersLoading} usersError={usersError} setUsersError={setUsersError} refreshUsers={refreshUsers} sets={sets} refreshSets={refreshSets} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} setBonsError={setBonsError} refreshBons={refreshBons} logs={logs} addLog={addLog} damageReports={damageReports} damageLoading={damageLoading} damageError={damageError} refreshDamage={refreshDamage} branding={branding} setBranding={setBranding} onLogout={handleLogout}/>;
   return <UserView eq={eq} materialsLoading={materialsLoading} materialsError={materialsError} setMaterialsError={setMaterialsError} refreshMaterials={refreshMaterials} sets={sets} bons={bons} bonsLoading={bonsLoading} bonsError={bonsError} setBonsError={setBonsError} refreshBons={refreshBons} addLog={addLog} branding={branding} onLogout={handleLogout} user={user} onProfileUpdate={handleUserPatch}/>;
 }

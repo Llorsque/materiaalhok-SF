@@ -15,6 +15,7 @@ const importRouter = require('./routes/import');
 const backupRouter = require('./routes/backup');
 const adminRouter = require('./routes/admin');
 const logsRouter = require('./routes/logs');
+const damageRouter = require('./routes/damage');
 
 const app = express();
 const PORT = 3001;
@@ -40,6 +41,7 @@ app.use('/api/import', importRouter);
 app.use('/api/backup', backupRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/logs', logsRouter);
+app.use('/api/damage-reports', damageRouter);
 
 const { startReminderScheduler } = require('./mail/scheduler');
 

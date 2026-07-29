@@ -92,7 +92,7 @@ function checkStock(items, period, excludeBonId = null) {
     const idCol = req.kind === 'material' ? 'material_id' : 'set_id';
     const nameCol = req.kind === 'material' ? 'material_name' : 'set_name';
 
-    const item = db.prepare(`SELECT id, name, stock FROM ${table} WHERE id = ?`).get(req.id);
+    const item = db.prepare(`SELECT id, name, stock, available_status FROM ${table} WHERE id = ?`).get(req.id);
     if (!item) {
       conflicts.push({
         [idCol]: req.id,
@@ -100,6 +100,19 @@ function checkStock(items, period, excludeBonId = null) {
         gevraagd: req.quantity,
         beschikbaar: 0,
         reden: `${req.kind === 'material' ? 'materiaal' : 'set'} bestaat niet`,
+      });
+      continue;
+    }
+    // Ronde B: unieke items die kwijt of kapot zijn, staan buiten dienst.
+    // Beschikbaarheid is dan 0 ongeacht stock — een reservering kan er niet
+    // op landen tot een admin de schade afhandelt.
+    if (item.available_status === 'out_of_service') {
+      conflicts.push({
+        [idCol]: req.id,
+        [nameCol]: item.name,
+        gevraagd: req.quantity,
+        beschikbaar: 0,
+        reden: 'buiten dienst (kwijt/kapot)',
       });
       continue;
     }
@@ -715,6 +728,17 @@ router.post('/:id/pickup', (req, res) => {
   res.json(updated);
 });
 
+// Ronde B blok 2 — retour met kwijt/kapot melden.
+// Body:
+//   items: [{ id, condition: 'returned'|'lost'|'broken', quantity }]
+//     Weglaten of leeg → alle openstaande items volledig als 'returned'
+//     afhandelen (achterwaarts compatibel met de kaal-retour-call).
+// Voor bulk-items met quantity > 1 mogen meerdere entries voor hetzelfde
+// bon_item.id staan (bv. 2 retour + 1 kwijt). De backend splitst het
+// bon_item dan in aparte rijen met eigen `return_condition` en `quantity`,
+// analoog aan de pickup-split. Bij lost/broken wordt tegelijk een
+// damage_reports-rij aangemaakt en de voorraad direct gemuteerd: bulk
+// zakt in aantal, uniek gaat naar `available_status = 'out_of_service'`.
 router.post('/:id/return', (req, res) => {
   const bon = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
   if (!assertOwnBonOrAdmin(req, res, bon)) return;
@@ -724,75 +748,215 @@ router.post('/:id/return', (req, res) => {
     });
   }
 
-  // Soft-deleted items (removed_at_pickup=1) tellen niet mee voor retour —
-  // die zijn nooit meegegaan uit het hok en hoeven ook niet terug.
-  const allItemIds = new Set(
-    db.prepare('SELECT id FROM bon_items WHERE bon_id = ? AND removed_at_pickup = 0')
-      .all(bon.id).map((r) => r.id),
-  );
+  // Alle openstaande items (returned=0) die daadwerkelijk uit het hok zijn
+  // gegaan (removed_at_pickup=0). Deze mogen gemuteerd worden.
+  const openItems = db.prepare(`
+    SELECT bi.id, bi.bon_id, bi.material_id, bi.set_id, bi.quantity,
+           bi.picked_up, bi.added_at_pickup, bi.removed_at_pickup,
+           m.name AS material_name, m.type AS material_type,
+           s.name AS set_name
+    FROM bon_items bi
+    LEFT JOIN materials m ON m.id = bi.material_id
+    LEFT JOIN sets s ON s.id = bi.set_id
+    WHERE bi.bon_id = ? AND bi.returned = 0 AND bi.removed_at_pickup = 0
+  `).all(bon.id);
+  const openById = new Map(openItems.map((it) => [it.id, it]));
 
+  // Aggregeer client-entries per (bon_item_id, condition). Meerdere entries
+  // voor dezelfde combinatie tellen bij elkaar op.
   const body = req.body || {};
-  let idsToMark;
+  let entriesByItem; // Map<bon_item_id, { returned, lost, broken }>
+
   if (!Array.isArray(body.items) || body.items.length === 0) {
-    idsToMark = [...allItemIds];
+    // Achterwaarts compatibel: kaal retour = alles volledig 'returned'.
+    entriesByItem = new Map();
+    for (const it of openItems) {
+      entriesByItem.set(it.id, { returned: it.quantity, lost: 0, broken: 0 });
+    }
   } else {
-    idsToMark = [];
-    for (const [idx, item] of body.items.entries()) {
-      if (!item || !Number.isInteger(item.id)) {
+    entriesByItem = new Map();
+    for (const [idx, entry] of body.items.entries()) {
+      if (!entry || !Number.isInteger(entry.id)) {
         return res.status(400).json({ error: `items[${idx}]: 'id' moet een integer zijn` });
       }
-      if (!allItemIds.has(item.id)) {
+      if (!openById.has(entry.id)) {
         return res.status(400).json({
-          error: `items[${idx}]: id ${item.id} hoort niet bij bon ${bon.id}`,
+          error: `items[${idx}]: id ${entry.id} hoort niet bij bon ${bon.id} of is al afgehandeld`,
         });
       }
-      // returned: false expliciet → item overslaan; alle andere waarden (true, undefined) → markeren
-      if (item.returned === false) continue;
-      idsToMark.push(item.id);
+      // Achterwaartse compatibiliteit: als er alleen { id, returned: true } binnenkomt
+      // (oude client), reken dat als volledig retour.
+      if (entry.condition === undefined && (entry.returned === true || entry.returned === undefined)) {
+        const cur = entriesByItem.get(entry.id) || { returned: 0, lost: 0, broken: 0 };
+        cur.returned += openById.get(entry.id).quantity - (cur.returned + cur.lost + cur.broken);
+        entriesByItem.set(entry.id, cur);
+        continue;
+      }
+      if (entry.condition === undefined && entry.returned === false) continue;
+
+      if (entry.condition !== 'returned' && entry.condition !== 'lost' && entry.condition !== 'broken') {
+        return res.status(400).json({
+          error: `items[${idx}]: 'condition' moet 'returned', 'lost' of 'broken' zijn`,
+        });
+      }
+      if (!Number.isInteger(entry.quantity) || entry.quantity <= 0) {
+        return res.status(400).json({
+          error: `items[${idx}]: 'quantity' moet een positief geheel getal zijn`,
+        });
+      }
+      const cur = entriesByItem.get(entry.id) || { returned: 0, lost: 0, broken: 0 };
+      cur[entry.condition] += entry.quantity;
+      entriesByItem.set(entry.id, cur);
+    }
+    // Valideer dat sums per item niet groter zijn dan de openstaande quantity.
+    for (const [id, cnt] of entriesByItem.entries()) {
+      const openQty = openById.get(id).quantity;
+      const total = cnt.returned + cnt.lost + cnt.broken;
+      if (total > openQty) {
+        return res.status(400).json({
+          error: `items voor bon_item ${id}: totaal (${total}) groter dan openstaand (${openQty})`,
+        });
+      }
     }
   }
 
-  // Snapshot van de betrokken items (met namen) vóór de mutatie, zodat de
-  // logregel kan vermelden wat er precies retour is gebracht.
-  let returnedNames = [];
-  if (idsToMark.length > 0) {
-    const placeholders = idsToMark.map(() => '?').join(',');
-    returnedNames = db.prepare(`
-      SELECT bi.quantity, m.name AS material_name, s.name AS set_name
-      FROM bon_items bi
-      LEFT JOIN materials m ON m.id = bi.material_id
-      LEFT JOIN sets s ON s.id = bi.set_id
-      WHERE bi.id IN (${placeholders})
-    `).all(...idsToMark);
+  // Als niets echt afgehandeld wordt: gewoon 200 met huidige state (net als
+  // de oude flow "items: [] betekent niets doen" implicit deed).
+  const hasWork = Array.from(entriesByItem.values())
+    .some((c) => c.returned + c.lost + c.broken > 0);
+  if (!hasWork) {
+    return res.json(loadBonWithItems(bon.id));
   }
 
   const now = nowDutchISO();
   let bonCompleted = false;
-  const tx = db.transaction(() => {
-    if (idsToMark.length > 0) {
-      const placeholders = idsToMark.map(() => '?').join(',');
-      db.prepare(`UPDATE bon_items SET returned = 1 WHERE id IN (${placeholders})`).run(...idsToMark);
-    }
-    const { c: openCount } = db.prepare(
-      'SELECT COUNT(*) AS c FROM bon_items WHERE bon_id = ? AND returned = 0 AND removed_at_pickup = 0',
-    ).get(bon.id);
-    if (openCount === 0) {
-      db.prepare('UPDATE bons SET status = ?, completed_at = ? WHERE id = ?')
-        .run('completed', now, bon.id);
-      bonCompleted = true;
-    }
-  });
-  tx();
+  // Snapshots voor logs — buiten de transactie tellen omdat we ook damage-
+  // regels willen benoemen na commit.
+  const returnLogParts = []; // "2x Voetbal"
+  const damageLogLines = []; // "Kwijt gemeld: 1x Voetbal op BON-..."
+
+  try {
+    const tx = db.transaction(() => {
+      const stmtUpdate = db.prepare(
+        `UPDATE bon_items SET quantity = ?, returned = 1, return_condition = ? WHERE id = ?`,
+      );
+      const stmtInsertPart = db.prepare(`
+        INSERT INTO bon_items
+          (bon_id, material_id, set_id, quantity, returned, return_condition,
+           picked_up, added_at_pickup, removed_at_pickup)
+        VALUES (?, ?, ?, ?, 1, ?, ?, ?, 0)
+      `);
+      const stmtUpdateRemaining = db.prepare(
+        `UPDATE bon_items SET quantity = ? WHERE id = ?`,
+      );
+      const stmtDamage = db.prepare(`
+        INSERT INTO damage_reports
+          (bon_id, bon_item_id, material_id, set_id, reason, quantity, status, reported_at, reported_by)
+        VALUES (?, ?, ?, ?, ?, ?, 'open', ?, ?)
+      `);
+      const stmtMatStock = db.prepare(
+        `UPDATE materials SET stock = MAX(0, stock - ?) WHERE id = ?`,
+      );
+      const stmtMatUnavail = db.prepare(
+        `UPDATE materials SET available_status = 'out_of_service' WHERE id = ?`,
+      );
+      const stmtSetStock = db.prepare(
+        `UPDATE sets SET stock = MAX(0, stock - ?) WHERE id = ?`,
+      );
+
+      for (const [id, cnt] of entriesByItem.entries()) {
+        const original = openById.get(id);
+        const total = cnt.returned + cnt.lost + cnt.broken;
+        if (total === 0) continue;
+
+        const remaining = original.quantity - total;
+        // Volgorde: returned eerst, dan lost, dan broken. Voor de audit is
+        // dit voorspelbaar en 'returned' blijft (indien aanwezig) op de
+        // originele rij staan.
+        const entries = [];
+        if (cnt.returned > 0) entries.push({ condition: 'returned', quantity: cnt.returned });
+        if (cnt.lost > 0)     entries.push({ condition: 'lost',     quantity: cnt.lost });
+        if (cnt.broken > 0)   entries.push({ condition: 'broken',   quantity: cnt.broken });
+
+        const partIds = []; // bon_item.id per condition-part
+        if (remaining > 0) {
+          // Origineel blijft de open remainder houden; alle handled parts
+          // komen als nieuwe rijen bij.
+          stmtUpdateRemaining.run(remaining, original.id);
+          for (const e of entries) {
+            const info = stmtInsertPart.run(
+              original.bon_id, original.material_id, original.set_id,
+              e.quantity, e.condition, original.picked_up, original.added_at_pickup,
+            );
+            partIds.push({ id: info.lastInsertRowid, entry: e });
+          }
+        } else {
+          // Volledig afgehandeld: eerste entry updatet het origineel, rest is INSERT.
+          const first = entries[0];
+          stmtUpdate.run(first.quantity, first.condition, original.id);
+          partIds.push({ id: original.id, entry: first });
+          for (let i = 1; i < entries.length; i++) {
+            const e = entries[i];
+            const info = stmtInsertPart.run(
+              original.bon_id, original.material_id, original.set_id,
+              e.quantity, e.condition, original.picked_up, original.added_at_pickup,
+            );
+            partIds.push({ id: info.lastInsertRowid, entry: e });
+          }
+        }
+
+        // Voorraad-effect + damage_reports per lost/broken part.
+        const displayName = original.material_name || original.set_name || 'item';
+        for (const { id: partId, entry } of partIds) {
+          if (entry.condition === 'returned') {
+            returnLogParts.push(`${entry.quantity}x ${displayName}`);
+            continue;
+          }
+          // Damage: insert report, mutate stock/status.
+          stmtDamage.run(
+            bon.id, partId, original.material_id, original.set_id,
+            entry.condition, entry.quantity, now, req.user.id,
+          );
+          if (original.material_id != null) {
+            if (original.material_type === 'uniek') {
+              stmtMatUnavail.run(original.material_id);
+            } else {
+              stmtMatStock.run(entry.quantity, original.material_id);
+            }
+          } else if (original.set_id != null) {
+            stmtSetStock.run(entry.quantity, original.set_id);
+          }
+          const reasonLabel = entry.condition === 'lost' ? 'Kwijt gemeld' : 'Kapot gemeld';
+          damageLogLines.push(`${reasonLabel}: ${entry.quantity}x ${displayName} op ${bon.bon_number}`);
+        }
+      }
+
+      // Bon volledig retour?
+      const { c: openCount } = db.prepare(
+        'SELECT COUNT(*) AS c FROM bon_items WHERE bon_id = ? AND returned = 0 AND removed_at_pickup = 0',
+      ).get(bon.id);
+      if (openCount === 0) {
+        db.prepare('UPDATE bons SET status = ?, completed_at = ? WHERE id = ?')
+          .run('completed', now, bon.id);
+        bonCompleted = true;
+      }
+    });
+    tx();
+  } catch (err) {
+    return res.status(500).json({ error: `Retour mislukt: ${err.message}` });
+  }
 
   const result = loadBonWithItems(bon.id);
-  if (idsToMark.length > 0) {
-    const itemsStr = formatBonItems(returnedNames);
+  if (returnLogParts.length > 0) {
     const suffix = bonCompleted ? ' (bon voltooid)' : '';
     logAction(
       'bon_return',
-      `Retour ${result.bon_number} voor ${result.user_name || 'onbekende gebruiker'}: ${itemsStr} geretourneerd${suffix}`,
+      `Retour ${result.bon_number} voor ${result.user_name || 'onbekende gebruiker'}: ${returnLogParts.join(', ')} geretourneerd${suffix}`,
       req.user.id,
     );
+  }
+  for (const line of damageLogLines) {
+    logAction('damage_reported', line, req.user.id);
   }
 
   res.json(result);
