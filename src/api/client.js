@@ -3,10 +3,17 @@
 // componenten roepen deze functies aan en weten verder niets van fetch,
 // JSON-serialisatie of error-handling.
 
-// LET OP: BASE_URL is voor nu hardgecoded. Als we later via een env-var
-// willen configureren (bijv. productie vs lokaal), schakel dan over op
-// `import.meta.env.VITE_API_BASE_URL` met deze constante als fallback.
-const BASE_URL = 'http://localhost:3001';
+// BASE_URL schakelt tussen dev en productie:
+//   - Dev (Vite dev-server op :5173, backend los op :3001): fetches naar
+//     de backend op absolute URL. `import.meta.env.DEV` wordt door Vite bij
+//     het bundelen als `true` ingebed.
+//   - Productie (backend serveert dist/ zelf onder dezelfde origin): lege
+//     BASE_URL zodat fetches naar /api/... relatief aan de huidige origin
+//     zijn. Zo werkt de tool ook wanneer de app via een ander adres (LAN,
+//     iPad, Cloudflare-tunnel) wordt geopend — niet alleen op de laptop.
+// Alle fetch-calls gebruiken `${BASE_URL}${path}`; met lege BASE_URL levert
+// dat een correct relatief pad op (/api/...).
+const BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
 
 // --- Token-opslag ----------------------------------------------------------
 // Token staat in localStorage (blijft over browser-restart heen), de user

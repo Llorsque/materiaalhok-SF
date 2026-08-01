@@ -7,6 +7,83 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-08-01
+
+Productie-serveermodus: één Node-proces serveert nu naast de API ook de
+gebouwde frontend uit `dist/`. Dat scheelt geheugen op de productie-
+laptop (geen aparte Vite dev-server meer nodig) en maakt de app
+bereikbaar vanaf andere apparaten binnen dezelfde origin — via LAN,
+iPad of Cloudflare-tunnel.
+
+### Toegevoegd
+- **Statisch serveren van `dist/` in `server/index.js`.** Wanneer bij
+  startup een `dist/index.html` bestaat, mount de backend:
+  - `express.static('/materiaalhok-SF', dist, { index: false,
+    fallthrough: true, maxAge: '1h' })` voor de bestaande bundle-assets;
+  - een SPA-fallback op `GET /^\/materiaalhok-SF(\/.*)?$/` die
+    `dist/index.html` terugstuurt zodat client-side routing werkt bij
+    verversen (regex omdat Express 5 / path-to-regexp 6 het oude
+    `'*'`-patroon niet meer accepteert);
+  - een 302-redirect op `GET /` naar `/materiaalhok-SF/` zodat de
+    root-URL de app opent.
+  Bij afwezig `dist/` (dev-modus) valt `GET /` terug op de bestaande
+  plain-text banner en logt de server één regel: `[static] dist/ niet
+  gevonden — statische serving overgeslagen (dev-modus). Draai
+  'npm run build' in de projectroot voor productie.` Geen crash.
+- **Same-origin API-adres in productie.** `src/api/client.js` schakelt
+  op basis van `import.meta.env.DEV`:
+  - dev-bundle (Vite dev-server): `BASE_URL = 'http://localhost:3001'`;
+  - prod-bundle: `BASE_URL = ''` → fetches gaan naar `/api/...`
+    relatief aan de huidige origin, zodat het werkt vanaf welke host of
+    IP dan ook waarmee de app is geopend (niet meer alleen `localhost`).
+
+### Gewijzigd
+- **API-routers blijven strikt vóór de static-mount staan.** Onbekende
+  `/api/*`-paden krijgen een gewone 404 van express (of 401 van de
+  auth-middleware), nooit `index.html`. Same-origin fetches vanaf
+  `/materiaalhok-SF/` en cross-origin fetches vanaf de Vite dev-server
+  op `:5173` werken beide.
+- **CORS-regel ongewijzigd** en bewust behouden op één plek:
+  `cors({ origin: 'http://localhost:5173' })`. In dev laat 'ie de
+  Vite-server cross-origin praten; in productie is alle verkeer
+  same-origin en doet de middleware niks. Een korte comment in
+  `server/index.js` legt dit vast.
+
+### Getest
+- **Dev zonder `dist/`**: log `[static] dist/ niet gevonden ...`, `GET
+  /` → 200 plain-text banner, `GET /api/health` → 200 JSON, `GET
+  /materiaalhok-SF/` → 404 (correct — geen dist).
+- **Prod met `dist/`**: log `[static] dist/ serveert onder
+  /materiaalhok-SF/`, `GET /` → 302 → `/materiaalhok-SF/`, `GET
+  /materiaalhok-SF/` → 200 `index.html` (413 bytes), `GET
+  /materiaalhok-SF/assets/index-*.js` → 200 text/javascript (~360 KB),
+  `GET /materiaalhok-SF/assets/index-*.css` → 200 text/css (~34 KB),
+  `GET /materiaalhok-SF/bonnen/12` → 200 identiek aan `index.html`
+  (SPA-fallback), `GET /api/health` → 200 JSON, `GET /api/onbekend`
+  → 404 van express met "Cannot GET /api/onbekend" (**niet**
+  `index.html`), `GET /api/materials` zonder token → 401 JSON van de
+  auth-middleware (**niet** `index.html`).
+- **Frontend-fetch werkt in beide modi**: same-origin (Origin
+  `http://localhost:3001`) haalt 170 materialen en 17 bonnen op met de
+  prod-bundle waarin `BASE_URL = ''`; cross-origin (Origin
+  `http://localhost:5173`) krijgt CORS-preflight 204 met
+  `Access-Control-Allow-Origin: http://localhost:5173` en de bijbehorende
+  GET geeft dezelfde header.
+- **Bundle-verificatie**: `grep localhost:3001 dist/assets/index-*.js`
+  levert 0 matches op (prod-bundle bevat geen absolute backend-URL);
+  paden zoals `"/api/bons"`, `"/api/login"`, `"/api/materials"` staan
+  wel in de bundle.
+
+### Draaien in productie
+```
+npm run build        # in de projectroot → schrijft dist/
+node server/index.js # één proces serveert API + frontend op :3001
+```
+Openen: `http://localhost:3001/` (redirect naar `/materiaalhok-SF/`)
+of `http://<laptop-lan-ip>:3001/materiaalhok-SF/` vanaf een ander
+apparaat. Dev-workflow (Vite op :5173 los naast backend op :3001)
+blijft ongewijzigd werken.
+
 ## [1.15.1] - 2026-08-01
 
 Robuustheidsfix voor de database-initialisatie. Een grote sprong-update
