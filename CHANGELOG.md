@@ -7,6 +7,82 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.15.1] - 2026-08-01
+
+Robuustheidsfix voor de database-initialisatie. Een grote sprong-update
+over een oude productie-database crashte in de bons-herbouw omdat het
+INSERT ... SELECT-statement `reminder_sent_at` verwachtte terwijl die
+kolom pas in een latere migratiestap zou worden toegevoegd. Door de
+crash werden alle daaropvolgende kolom-toevoegingen (notify_*,
+bon_items-vlaggen, return_condition, available_status) overgeslagen en
+bleef de DB structureel half-af. Deze release repareert dat en zorgt
+dat één restart een half-gemigreerde DB volledig aanvult.
+
+### Opgelost
+- **db.js: vaste, veilige init-volgorde met idempotente kolom-
+  migraties.** Eén crash in de middelste stap kan de rest van de
+  migratieketen niet meer overslaan omdat elke kolom afzonderlijk
+  wordt gecontroleerd en toegevoegd. De volgorde is nu (met docblock
+  in `db.js`):
+  1. DB openen + pragmas
+  2. Legacy barcode-UNIQUE opruiming (ongewijzigd)
+  3. `db.exec(schema.sql)` — alleen `CREATE TABLE IF NOT EXISTS`
+  4. `runColumnMigrations()` — `ensureColumn(table, name, def)` per veld
+  5. `rebuildBonsIfNeeded()` — `user_id` nullable + intern/extern CHECK
+  6. `migrateUsersEmailRemindersLegacy()` — v1.7.0 datamigratie
+  7. `db.exec(indexes.sql)` — alle indexen als laatste
+- **Bons-herbouw kan niet meer crashen op ontbrekende bronkolommen.**
+  Stap 4 garandeert dat `reminder_sent_at` en alle externe-verhuur-
+  kolommen bestaan voordat stap 5 z'n `INSERT ... SELECT` doet.
+- **Half-gemigreerde DBs worden bij de eerstvolgende restart in één
+  keer gerepareerd.** `ensureColumn` detecteert per kolom wat mist en
+  vult aan met de juiste defaults (notify_* = 1, available_status =
+  'available', return_condition = 'returned', added_at_pickup /
+  removed_at_pickup = 0, reminder_sent_at nullable).
+
+### Gewijzigd
+- **`server/schema.sql` bevat alleen nog `CREATE TABLE`-statements.**
+  Elke tabel staat in de volledige v1.15-vorm zodat een verse install
+  na één `db.exec(schema)` structureel compleet is. Nieuwe kolommen
+  moeten voortaan zowel in `schema.sql` (voor verse DBs) als in
+  `runColumnMigrations()` (voor bestaande DBs) landen — de docblock
+  in `db.js` legt deze regel vast.
+- **Alle `CREATE INDEX`-statements verhuisd naar het nieuwe
+  `server/indexes.sql`.** Dit bestand draait als laatste stap; de
+  inline `CREATE INDEX`-regels binnen de bons-herbouw zijn weg
+  (`DROP TABLE bons` verwijdert de bijbehorende indexen, `indexes.sql`
+  legt ze meteen opnieuw aan).
+- **Nieuwe `ensureColumn(table, name, def)`-helper** in `db.js`.
+  Idempotent per kolom: checkt tabelbestaan, checkt kolombestaan,
+  voegt anders toe. Vervangt alle ad-hoc `ALTER TABLE ADD COLUMN`-
+  blokken die eerder verspreid stonden.
+
+### Getest
+- **Test A (verse install)**: DB weg → server start → 18-koloms bons,
+  10-koloms users met notify_*, geen `email_reminders`. Alle tabellen
+  aanwezig, integrity_check ok, foreign_key_check leeg.
+- **Test B (kopie huidige DB)**: 170 materialen, 15 bonnen, 108 logs
+  vóór en na identiek. Geen schemawijzigingen. Integrity + FK ok.
+- **Test C (gefingeerde pre-v1.7 DB)**: kopie van huidige DB gemunget
+  naar oude vorm (bons zonder externe/notes/reminder_sent_at kolommen
+  en met `user_id NOT NULL`; users met `email_reminders` i.p.v.
+  notify_*; bon_items zonder soft-delete-vlaggen; materials/sets
+  zonder `available_status`; damage_reports en settings gedropt).
+  Restart voegde in één keer aan: `materials.available_status`,
+  `sets.available_status`, `users.notify_reservation/pickup/reminder`
+  (met `email_reminders` gedropt), `bons.notes` +
+  `created_by_admin_id` + `reminder_sent_at` + external_* + prijs +
+  borg + `payment_status`, `user_id` werd nullable, `bon_items`
+  kreeg `removed_at_pickup` + `added_at_pickup` + `return_condition`,
+  damage_reports en settings werden aangemaakt. Rij-aantallen
+  ongewijzigd (170/54/4/13/27/108), integrity_check ok, FK-check leeg.
+- **Test D (idempotent, tweede start)**: schema byte-identiek na een
+  tweede run op de Test C-DB, geen crash, integrity + FK ok. Legacy
+  round-trip via `email_reminders` bewaart notify_*-waarden.
+
+Alle tests gedraaid tegen kopieën in `/tmp/mhok-migration-test/`; de
+echte `server/database.db` is tijdens deze release niet aangeraakt.
+
 ## [1.15.0] - 2026-07-29
 
 Externe verhuur — stap 4 (laatste) van de sub-roadmap: dashboardtile en

@@ -1,6 +1,14 @@
 -- Schema voor materiaalhok-SF backend.
--- Alle CREATE-statements zijn idempotent (IF NOT EXISTS) zodat dit bij elke
--- start veilig kan worden uitgevoerd.
+--
+-- Alleen CREATE TABLE IF NOT EXISTS-statements. Elke tabel staat hier in de
+-- volledige, huidige gewenste vorm zodat een verse database na één
+-- db.exec(schema) structureel compleet is. Indexen staan bewust in een apart
+-- bestand (indexes.sql) dat als LAATSTE draait — na de kolom-migraties in
+-- db.js en na de bons-herbouw. Zie server/db.js voor de vaste init-volgorde.
+--
+-- Nieuwe kolommen NOOIT alleen hier toevoegen: op oude databases is een
+-- CREATE TABLE IF NOT EXISTS een no-op, dus dan mist die kolom nog steeds.
+-- Voeg de kolom hier toe én in runColumnMigrations() in db.js.
 
 CREATE TABLE IF NOT EXISTS materials (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,6 +53,9 @@ CREATE TABLE IF NOT EXISTS users (
   role                  TEXT    NOT NULL CHECK (role IN ('admin', 'user')),
   login_barcode         TEXT    UNIQUE,
   created_at            TEXT    NOT NULL,
+  -- v1.7.0: aparte voorkeur per mail-soort (was: één grofmazige email_reminders).
+  -- Oude DBs met email_reminders worden in db.js door de legacy-migratie
+  -- geconsolideerd en de oude kolom wordt daar gedropt.
   notify_reservation    INTEGER NOT NULL DEFAULT 1 CHECK (notify_reservation IN (0, 1)),
   notify_pickup         INTEGER NOT NULL DEFAULT 1 CHECK (notify_pickup IN (0, 1)),
   notify_reminder       INTEGER NOT NULL DEFAULT 1 CHECK (notify_reminder IN (0, 1))
@@ -53,9 +64,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS bons (
   id                     INTEGER PRIMARY KEY AUTOINCREMENT,
   bon_number             TEXT    NOT NULL UNIQUE,
-  -- v1.12.0 externe verhuur: user_id is nullable geworden. Een bon is óf
-  -- intern (user_id gevuld, externe velden NULL) óf extern (user_id NULL,
-  -- external_org gevuld). Zie CHECK onderin de tabel.
+  -- v1.12.0 externe verhuur: user_id is nullable. Intern = user_id gevuld
+  -- + externe velden NULL; extern = user_id NULL + external_org gevuld.
+  -- Zie CHECK onderin de tabel.
   user_id                INTEGER,
   start_date             TEXT,
   return_date            TEXT,
@@ -65,9 +76,6 @@ CREATE TABLE IF NOT EXISTS bons (
   completed_at           TEXT,
   created_by_admin_id    INTEGER,
   reminder_sent_at       TEXT,
-  -- Externe verhuur (v1.12.0). Alleen gevuld bij een externe bon; blijven
-  -- NULL voor interne bonnen. external_org fungeert als sentinel voor de
-  -- CHECK verderop: als 'ie gevuld is, hoort de bon extern te zijn.
   external_org           TEXT,
   external_contact       TEXT,
   external_phone         TEXT,
@@ -75,13 +83,13 @@ CREATE TABLE IF NOT EXISTS bons (
   rental_price           REAL    NOT NULL DEFAULT 0,
   deposit                REAL    NOT NULL DEFAULT 0,
   -- NULL bij interne bon of bij externe bon met prijs 0. 'open' zodra een
-  -- externe bon met bedrag > 0 wordt aangemaakt; 'paid' pas nadat een admin
-  -- de betaling markeert (stap 3 van de sub-roadmap).
+  -- externe bon met bedrag > 0 wordt aangemaakt; 'paid' zodra de admin de
+  -- betaling markeert.
   payment_status         TEXT    CHECK (payment_status IS NULL OR payment_status IN ('open', 'paid')),
   FOREIGN KEY (user_id)             REFERENCES users(id) ON DELETE RESTRICT,
   FOREIGN KEY (created_by_admin_id) REFERENCES users(id) ON DELETE SET NULL,
-  -- Intern-vs-extern: exact één van beide "identiteiten" moet gevuld zijn.
-  -- external_org fungeert als sentinel voor "dit is een externe bon".
+  -- Intern-vs-extern: precies één identiteit gevuld. external_org fungeert
+  -- als sentinel voor "dit is een externe bon".
   CHECK (
     (user_id IS NOT NULL AND external_org IS NULL)
     OR
@@ -97,9 +105,9 @@ CREATE TABLE IF NOT EXISTS bon_items (
   quantity            INTEGER NOT NULL,
   returned            INTEGER NOT NULL DEFAULT 0 CHECK (returned IN (0, 1)),
   picked_up           INTEGER NOT NULL DEFAULT 0 CHECK (picked_up IN (0, 1)),
-  -- Soft-delete-vlag: 1 = stond op de reservering maar is bij ophalen niet
-  -- meegenomen. Telt nergens meer mee (beschikbaarheid, retour, mail) en
-  -- blijft alleen bestaan voor de audit-trail in admin-detail.
+  -- Ronde B soft-delete-vlag: 1 = stond op de reservering maar is bij ophalen
+  -- niet meegenomen. Telt nergens meer mee (beschikbaarheid, retour, mail)
+  -- en blijft alleen bestaan voor de audit-trail in admin-detail.
   removed_at_pickup   INTEGER NOT NULL DEFAULT 0 CHECK (removed_at_pickup IN (0, 1)),
   -- 1 = pas bij ophalen aan de bon toegevoegd (stond niet op de oorspronkelijke
   -- reservering). Zichtbaar in admin-detail, niet in de mail.
@@ -107,8 +115,7 @@ CREATE TABLE IF NOT EXISTS bon_items (
   -- Ronde B: hoe kwam dit (deel-)item terug? Voor rijen met returned=1 is dit
   -- de audit-trail; voor returned=0 is de waarde irrelevant (default vult 'm).
   -- Per-stuk splitsing: bulk 3 waarvan 2 retour + 1 kwijt wordt gesplitst in
-  -- twee rijen met eigen return_condition en quantity, vergelijkbaar met
-  -- de pickup-split.
+  -- twee rijen met eigen return_condition en quantity.
   return_condition    TEXT    NOT NULL DEFAULT 'returned' CHECK (return_condition IN ('returned', 'lost', 'broken')),
   FOREIGN KEY (bon_id)      REFERENCES bons(id)      ON DELETE CASCADE,
   FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE RESTRICT,
@@ -176,17 +183,3 @@ CREATE TABLE IF NOT EXISTS logs (
   user_id    INTEGER,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
-
--- Indexen op velden die we vaak filteren of opzoeken
-CREATE INDEX IF NOT EXISTS idx_materials_barcode    ON materials (barcode);
-CREATE INDEX IF NOT EXISTS idx_sets_barcode         ON sets (barcode);
-CREATE INDEX IF NOT EXISTS idx_users_email          ON users (email);
-CREATE INDEX IF NOT EXISTS idx_users_login_barcode  ON users (login_barcode);
-CREATE INDEX IF NOT EXISTS idx_bons_bon_number      ON bons (bon_number);
-CREATE INDEX IF NOT EXISTS idx_bons_user_id         ON bons (user_id);
-CREATE INDEX IF NOT EXISTS idx_bons_status          ON bons (status);
-CREATE INDEX IF NOT EXISTS idx_sessions_user_id     ON sessions (user_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires_at  ON sessions (expires_at);
-CREATE INDEX IF NOT EXISTS idx_damage_status        ON damage_reports (status);
-CREATE INDEX IF NOT EXISTS idx_damage_material_id   ON damage_reports (material_id);
-CREATE INDEX IF NOT EXISTS idx_damage_set_id        ON damage_reports (set_id);
