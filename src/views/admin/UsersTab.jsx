@@ -1,11 +1,20 @@
 import { useState } from "react";
 import { Modal } from "../../components/Modal";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
+import { TileGrid, Tile } from "../../components/TileGrid";
 import { encodeCode128B } from "../../utils/barcode";
 import { genLoginCode } from "../../utils/bons";
 import { createUser, updateUser, deleteUser as apiDeleteUser, resetUserPassword } from "../../api/client";
 
 export function UsersTab({ users, usersLoading, usersError, setUsersError, refreshUsers, addLog, newUser, setNewUser, editUser, setEditUser }) {
+  // Detail-modal: opent bij klik op een tile en biedt de vier acties
+  // (print, bewerken, wachtwoord resetten, verwijderen). De onderliggende
+  // handlers zijn ongewijzigd — deze modal fungeert alleen als nieuwe
+  // ingang, in plaats van de knoppen naast elke lijstregel.
+  const [activeUser, setActiveUser] = useState(null);
+  // Nieuw-gebruiker-modal: was voorheen een inline formulier onder de lijst.
+  const [addOpen, setAddOpen] = useState(false);
+
   const [resetTarget, setResetTarget] = useState(null);
   const [resetPass, setResetPass] = useState("");
   const [resetConfirm, setResetConfirm] = useState("");
@@ -59,6 +68,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
       await refreshUsers();
       addLog("edit", `Gebruiker "${newUser.name.trim()}" (${newUser.email.trim()}) aangemaakt`);
       setNewUser({ name: "", email: "", password: "", role: "user" });
+      setAddOpen(false);
     } catch (err) {
       setUsersError(err);
     }
@@ -70,6 +80,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
       await apiDeleteUser(u.id);
       await refreshUsers();
       addLog("edit", `Gebruiker "${u.name}" (${u.email}) verwijderd`);
+      setActiveUser(null);
     } catch (err) {
       setUsersError(err);
     }
@@ -151,52 +162,122 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
       <body>${badges}<script>setTimeout(()=>window.print(),500)<\/script></body></html>`);
   };
 
-  return <div className="space-y-6 max-w-2xl">
+  const openAdd = () => {
+    setNewUser({ name: "", email: "", password: "", role: "user" });
+    setAddOpen(true);
+  };
+
+  const openEditFromDetail = (u) => {
+    setEditUser({ ...u, password: "" });
+    setActiveUser(null);
+  };
+  const openResetFromDetail = (u) => {
+    openReset(u);
+    setActiveUser(null);
+  };
+
+  return <div className="space-y-6">
     <ConnectionBanner loading={usersLoading} error={usersError} onRetry={refreshUsers} resource="Gebruikers"/>
 
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-3">
       <h3 className="text-lg font-bold text-gray-900">Gebruikers ({users.length})</h3>
-      <button onClick={printAllBadges} className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">{"\ud83d\udda8"} Print alle badges</button>
+      <div className="flex items-center gap-2">
+        <button onClick={printAllBadges} className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">{"\ud83d\udda8"} Print alle badges</button>
+        <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 whitespace-nowrap">{"\u2795"} Nieuwe gebruiker</button>
+      </div>
     </div>
 
-    {/* User list */}
-    <div className="space-y-2">
-      {users.map(u => <div key={u.id} className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm ${u.role==="admin"?"bg-blue-600":"bg-gray-500"}`}>{u.name.charAt(0).toUpperCase()}</div>
-            <div>
-              <p className="font-semibold text-gray-900">{u.name}</p>
-              <p className="text-xs text-gray-500">{u.email} {"\u00b7"} {u.role==="admin"?"Beheerder":"Gebruiker"} {"\u00b7"} <span className="font-mono">{u.login_barcode||"geen code"}</span></p>
-            </div>
+    <TileGrid>
+      {users.map(u => {
+        const isAdmin = u.role === "admin";
+        const media = <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm ${isAdmin ? "bg-blue-600" : "bg-gray-500"}`}>
+          {(u.name || "?").charAt(0).toUpperCase()}
+        </div>;
+        return <Tile
+          key={u.id}
+          onClick={() => setActiveUser(u)}
+          media={media}
+          title={u.name}
+          subtitle={u.email}
+          badges={[{ text: isAdmin ? "Beheerder" : "Gebruiker", tone: isAdmin ? "blue" : "gray" }]}
+          extra={u.login_barcode && <p className="text-[11px] text-gray-400 font-mono truncate">{u.login_barcode}</p>}
+        />;
+      })}
+    </TileGrid>
+
+    {/* Detail modal — biedt alle acties, geen actieknoppen meer op de tile */}
+    <Modal open={!!activeUser} onClose={() => setActiveUser(null)} title={activeUser ? activeUser.name : "Gebruiker"}>
+      {activeUser && <div className="space-y-5">
+        <div className="flex items-center gap-3">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl ${activeUser.role === "admin" ? "bg-blue-600" : "bg-gray-500"}`}>
+            {(activeUser.name || "?").charAt(0).toUpperCase()}
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={()=>printBadge(u)} className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200">{"\ud83d\udda8"}</button>
-            <button onClick={()=>setEditUser({...u, password: ""})} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100">Bewerken</button>
-            <button onClick={()=>openReset(u)} className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium hover:bg-amber-100">Wachtwoord resetten</button>
-            <button onClick={()=>handleDelete(u)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100">Verwijder</button>
+          <div className="min-w-0">
+            <p className="font-semibold text-gray-900">{activeUser.name}</p>
+            <p className="text-xs text-gray-500 truncate">{activeUser.email}</p>
+            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${activeUser.role === "admin" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}>
+              {activeUser.role === "admin" ? "Beheerder" : "Gebruiker"}
+            </span>
           </div>
         </div>
-      </div>)}
-    </div>
 
-    {/* Add new user */}
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-      <h4 className="font-semibold text-gray-800">Nieuwe gebruiker</h4>
-      <div className="grid grid-cols-2 gap-3">
-        <div><label className={lc}>Naam</label><input className={ic} value={newUser.name} onChange={e=>setNewUser(p=>({...p,name:e.target.value}))} placeholder="Bijv. Jan de Vries"/></div>
-        <div><label className={lc}>E-mailadres</label><input type="email" className={ic} value={newUser.email||""} onChange={e=>setNewUser(p=>({...p,email:e.target.value}))} placeholder="bijv. jan@voorbeeld.nl"/></div>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-[11px] uppercase font-semibold text-gray-500 mb-1">Badge-code</p>
+            <p className="font-mono text-gray-800">{activeUser.login_barcode || "\u2014"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] uppercase font-semibold text-gray-500 mb-1">Rol</p>
+            <p className="text-gray-800">{activeUser.role === "admin" ? "Beheerder" : "Gebruiker"}</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] uppercase font-semibold text-gray-500 mb-2">E-mailvoorkeuren</p>
+          <ul className="text-sm text-gray-700 space-y-1">
+            {[
+              ["notify_reservation", "Reserveringsbevestiging"],
+              ["notify_pickup",      "Ophaalbevestiging"],
+              ["notify_reminder",    "Retourherinnering"],
+            ].map(([key, label]) => <li key={key} className="flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full ${activeUser[key] ? "bg-emerald-500" : "bg-gray-300"}`}/>
+              <span>{label}</span>
+              <span className="text-xs text-gray-400">{activeUser[key] ? "aan" : "uit"}</span>
+            </li>)}
+          </ul>
+          <p className="text-[11px] text-gray-400 mt-1">Wijzig via Bewerken.</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <button onClick={() => printBadge(activeUser)} className="px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200">{"\ud83d\udda8"} Print badge</button>
+          <button onClick={() => openEditFromDetail(activeUser)} className="px-3 py-2 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100">Bewerken</button>
+          <button onClick={() => openResetFromDetail(activeUser)} className="px-3 py-2 rounded-xl bg-amber-50 text-amber-700 text-sm font-medium hover:bg-amber-100">Wachtwoord resetten</button>
+          <button onClick={() => handleDelete(activeUser)} className="px-3 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100">Verwijder</button>
+        </div>
+      </div>}
+    </Modal>
+
+    {/* Nieuwe gebruiker — voorheen inline onder de lijst */}
+    <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Nieuwe gebruiker">
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className={lc}>Naam</label><input className={ic} value={newUser.name} onChange={e=>setNewUser(p=>({...p,name:e.target.value}))} placeholder="Bijv. Jan de Vries"/></div>
+          <div><label className={lc}>E-mailadres</label><input type="email" className={ic} value={newUser.email||""} onChange={e=>setNewUser(p=>({...p,email:e.target.value}))} placeholder="bijv. jan@voorbeeld.nl"/></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className={lc}>Wachtwoord</label><input className={ic} value={newUser.password} onChange={e=>setNewUser(p=>({...p,password:e.target.value}))} placeholder="Minimaal 6 tekens"/></div>
+          <div><label className={lc}>Rol</label><select className={ic} value={newUser.role} onChange={e=>setNewUser(p=>({...p,role:e.target.value}))}><option value="user">Gebruiker</option><option value="admin">Beheerder</option></select></div>
+        </div>
+        <p className="text-xs text-gray-400">Er wordt automatisch een unieke badge-code aangemaakt</p>
+        <div className="flex gap-3 pt-2">
+          <button onClick={addUser} disabled={!newUser.name?.trim()||!newUser.email?.trim()||!newUser.password?.trim()} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Gebruiker toevoegen</button>
+          <button onClick={() => setAddOpen(false)} className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50">Annuleren</button>
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div><label className={lc}>Wachtwoord</label><input className={ic} value={newUser.password} onChange={e=>setNewUser(p=>({...p,password:e.target.value}))} placeholder="Minimaal 6 tekens"/></div>
-        <div><label className={lc}>Rol</label><select className={ic} value={newUser.role} onChange={e=>setNewUser(p=>({...p,role:e.target.value}))}><option value="user">Gebruiker</option><option value="admin">Beheerder</option></select></div>
-      </div>
-      <p className="text-xs text-gray-400">Er wordt automatisch een unieke badge-code aangemaakt</p>
-      <button onClick={addUser} disabled={!newUser.name?.trim()||!newUser.email?.trim()||!newUser.password?.trim()} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Gebruiker toevoegen</button>
-    </div>
+    </Modal>
 
     {/* Password reset modal */}
-    <Modal open={!!resetTarget} onClose={closeReset} title={resetTarget ? `Wachtwoord resetten — ${resetTarget.name}` : "Wachtwoord resetten"}>
+    <Modal open={!!resetTarget} onClose={closeReset} title={resetTarget ? `Wachtwoord resetten \u2014 ${resetTarget.name}` : "Wachtwoord resetten"}>
       {resetTarget && !resetDone && <div className="space-y-4">
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-900">
           Na het resetten wordt <span className="font-semibold">{resetTarget.name}</span> op alle

@@ -7,6 +7,42 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-08-06
+
+Fine-tuning ronde 3: de Gebruikers-tab krijgt dezelfde tile-stijl als
+Materiaal/Sets/Bonnen, met een detail-pop-up voor de vier acties en
+een aparte "+"-modal voor het aanmaken van een nieuwe gebruiker. Puur
+herinrichting van waar de knoppen leven — geen wijzigingen aan
+authenticatie, handlers of de bestaande beveiliging.
+
+### Toegevoegd
+- **Tile-weergave op `UsersTab`** via de bestaande `TileGrid`- en
+  `Tile`-primitives. Per tile: initiaal-avatar (blauw voor beheerders,
+  grijs voor gebruikers), naam, e-mail, rol-badge en de badge-code
+  klein onderin (mono, in de nieuwe `extra`-slot van `Tile`). De tile
+  is puur ter weergave; de vroegere per-rij actieknoppen zijn eraf.
+- **Detail-modal per gebruiker** die opent bij klik op een tile.
+  Bevat volledige info (naam, e-mail, rol, badge-code) en de
+  e-mailvoorkeuren als leesbaar overzicht — met de opmerking dat
+  wijzigen via Bewerken gaat. Onderin vier actieknoppen die de
+  bestaande handlers aanroepen: Print badge, Bewerken, Wachtwoord
+  resetten, Verwijderen. Bewerken en Wachtwoord resetten sluiten de
+  detail-modal en openen hun eigen modal (voorkomt gestapelde
+  modals). Verwijderen sluit de detail-modal na succes.
+- **"+ Nieuwe gebruiker"-knop** naast "Print alle badges" bovenaan de
+  tab. Opent het bestaande nieuw-gebruiker-formulier in een modal in
+  plaats van inline onder de lijst. De handler (`addUser`) sluit de
+  modal automatisch na succes.
+
+### Gewijzigd
+- **Nieuw-gebruiker-formulier verplaatst naar modal.** De inline
+  sectie onderaan de tab is weg — hetzelfde formulier, dezelfde
+  velden, dezelfde `addUser`-handler; alleen de plek verandert.
+- **Delete-beveiliging ongewijzigd behouden.** Backend blijft een
+  409 teruggeven zodra er nog bonnen aan de gebruiker hangen
+  (`SQLITE_CONSTRAINT_FOREIGNKEY`); die foutmelding komt zoals
+  voorheen in de `usersError`-banner terecht.
+
 ## [1.18.0] - 2026-08-06
 
 Fine-tuning ronde 2: de Bonnen-tab krijgt dezelfde weergave-toggle als
