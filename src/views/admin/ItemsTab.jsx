@@ -3,11 +3,13 @@ import { CATS } from "../../data/defaults";
 import { getIcon } from "../../utils/format";
 import { availQty, loanedQty, reservedQty } from "../../utils/bons";
 import { useGlobalBarcodeScan } from "../../utils/barcodeScan";
+import { ViewToggle, TileGrid, Tile } from "../../components/TileGrid";
 
 export function ItemsTab({ eq, bons, q, setQ, cat, setCat, onItemClick }) {
   // Tijdelijke toast alleen voor scan-uitkomst (geen match). Handmatig typen
   // filtert live in het zoekveld en gebruikt deze toast nooit.
   const [scanMsg, setScanMsg] = useState(null);
+  const [view, setView] = useState("list");
 
   const openByScan = (code) => {
     const trimmed = code.trim();
@@ -42,6 +44,13 @@ export function ItemsTab({ eq, bons, q, setQ, cat, setCat, onItemClick }) {
     return inName || inBarcode;
   });
 
+  const badgesFor = (av, lo, res) => {
+    const arr = [{ text: String(av), tone: "emerald" }];
+    if (lo > 0)  arr.push({ text: `${lo} uit`, tone: "amber" });
+    if (res > 0) arr.push({ text: `${res} res`, tone: "purple" });
+    return arr;
+  };
+
   return <div className="space-y-4">
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
       <div className="relative">
@@ -62,9 +71,12 @@ export function ItemsTab({ eq, bons, q, setQ, cat, setCat, onItemClick }) {
 
     {scanMsg && <div className={`rounded-2xl px-4 py-2.5 text-sm font-medium ${scanMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{scanMsg.text}</div>}
 
-    <h3 className="text-lg font-bold text-gray-900">Materiaal ({filt.length})</h3>
+    <div className="flex items-center justify-between gap-3">
+      <h3 className="text-lg font-bold text-gray-900">Materiaal ({filt.length})</h3>
+      <ViewToggle view={view} onChange={setView} accent="blue" />
+    </div>
 
-    <div className="space-y-2">
+    {view === "list" ? <div className="space-y-2">
       {filt.map((i) => {
         const av = availQty(i, bons);
         const lo = loanedQty(bons, i.id);
@@ -86,6 +98,23 @@ export function ItemsTab({ eq, bons, q, setQ, cat, setCat, onItemClick }) {
           </div>
         </div>;
       })}
-    </div>
+    </div> : <TileGrid>
+      {filt.map((i) => {
+        const av = availQty(i, bons);
+        const lo = loanedQty(bons, i.id);
+        const res = reservedQty(bons, i.id);
+        const media = i.photo
+          ? <img src={i.photo} className="w-10 h-10 rounded-xl object-cover" alt=""/>
+          : <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-base">{getIcon(i.category)}</div>;
+        return <Tile
+          key={i.id}
+          onClick={() => onItemClick(i)}
+          media={media}
+          title={i.name}
+          subtitle={`${i.stock} ${i.unit} \u00b7 ${i.category}`}
+          badges={badgesFor(av, lo, res)}
+        />;
+      })}
+    </TileGrid>}
   </div>;
 }

@@ -3,9 +3,11 @@ import { CATS } from "../../data/defaults";
 import { getIcon } from "../../utils/format";
 import { availSetQty, loanedSetQty, reservedSetQty } from "../../utils/bons";
 import { useGlobalBarcodeScan } from "../../utils/barcodeScan";
+import { ViewToggle, TileGrid, Tile } from "../../components/TileGrid";
 
 export function SetsTab({ sets, bons, q, setQ, cat, setCat, onSetClick }) {
   const [scanMsg, setScanMsg] = useState(null);
+  const [view, setView] = useState("list");
 
   const openByScan = (code) => {
     const trimmed = code.trim();
@@ -37,6 +39,13 @@ export function SetsTab({ sets, bons, q, setQ, cat, setCat, onSetClick }) {
     return inName || inBarcode;
   });
 
+  const badgesFor = (av, lo, res) => {
+    const arr = [{ text: String(av), tone: "emerald" }];
+    if (lo > 0)  arr.push({ text: `${lo} uit`, tone: "amber" });
+    if (res > 0) arr.push({ text: `${res} res`, tone: "purple" });
+    return arr;
+  };
+
   return <div className="space-y-4">
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
       <div className="relative">
@@ -57,30 +66,48 @@ export function SetsTab({ sets, bons, q, setQ, cat, setCat, onSetClick }) {
 
     {scanMsg && <div className={`rounded-2xl px-4 py-2.5 text-sm font-medium ${scanMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{scanMsg.text}</div>}
 
-    <h3 className="text-lg font-bold text-gray-900">Sets ({filt.length})</h3>
+    <div className="flex items-center justify-between gap-3">
+      <h3 className="text-lg font-bold text-gray-900">Sets ({filt.length})</h3>
+      <ViewToggle view={view} onChange={setView} accent="purple" />
+    </div>
 
     {filt.length === 0
       ? <div className="bg-white rounded-2xl p-10 text-center border border-gray-100"><p className="text-gray-400 text-sm">Geen sets gevonden</p></div>
-      : <div className="space-y-2">{filt.map((s) => {
-          const av = availSetQty(s, bons);
-          const lo = loanedSetQty(bons, s.id);
-          const res = reservedSetQty(bons, s.id);
-          return <div key={s.id} onClick={() => onSetClick(s)} className="bg-white rounded-2xl px-5 py-3.5 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:border-gray-200">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center text-base flex-shrink-0">{getIcon(s.category)}</div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">{s.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{s.stock} set{s.stock !== 1 ? "s" : ""} {"\u00b7"} {s.category || "\u2014"}</p>
+      : view === "list"
+        ? <div className="space-y-2">{filt.map((s) => {
+            const av = availSetQty(s, bons);
+            const lo = loanedSetQty(bons, s.id);
+            const res = reservedSetQty(bons, s.id);
+            return <div key={s.id} onClick={() => onSetClick(s)} className="bg-white rounded-2xl px-5 py-3.5 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:border-gray-200">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center text-base flex-shrink-0">{getIcon(s.category)}</div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 text-sm truncate">{s.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{s.stock} set{s.stock !== 1 ? "s" : ""} {"\u00b7"} {s.category || "\u2014"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs flex-shrink-0">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">{av}</span>
+                  {lo > 0 && <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">{lo} uit</span>}
+                  {res > 0 && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">{res} res</span>}
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs flex-shrink-0">
-                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">{av}</span>
-                {lo > 0 && <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">{lo} uit</span>}
-                {res > 0 && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">{res} res</span>}
-              </div>
-            </div>
-          </div>;
-        })}</div>}
+            </div>;
+          })}</div>
+        : <TileGrid>{filt.map((s) => {
+            const av = availSetQty(s, bons);
+            const lo = loanedSetQty(bons, s.id);
+            const res = reservedSetQty(bons, s.id);
+            const media = <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-base">{getIcon(s.category)}</div>;
+            return <Tile
+              key={s.id}
+              onClick={() => onSetClick(s)}
+              media={media}
+              title={s.name}
+              subtitle={`${s.stock} set${s.stock !== 1 ? "s" : ""} \u00b7 ${s.category || "\u2014"}`}
+              badges={badgesFor(av, lo, res)}
+            />;
+          })}</TileGrid>}
   </div>;
 }

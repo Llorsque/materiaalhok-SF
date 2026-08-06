@@ -7,6 +7,38 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-08-06
+
+Fine-tuning ronde 1: de Materiaal- en Sets-tab krijgen een weergave-
+toggle waarmee je kunt schakelen tussen de bestaande lijstweergave en
+een responsive tiles-weergave. De tile-stijl is opgezet als
+herbruikbare component (`src/components/TileGrid.jsx`) zodat de
+Bonnen- en Gebruikers-tab straks hetzelfde patroon kunnen overnemen
+zonder duplicatie.
+
+### Toegevoegd
+- **Nieuwe component `TileGrid`** met drie exports: `ViewToggle`
+  (Lijst/Tiles-schakelaar, accent `blue` of `purple`), `TileGrid`
+  (responsive grid — 2 kolommen op smal, 3 op `md`, 4 op `xl`) en
+  `Tile` (kaart met media-slot, titel, subtitel en gekleurde badges).
+  Bewust dun gehouden: het onderliggende tabblad blijft
+  verantwoordelijk voor filteren, click-gedrag en welke data in de
+  tile komt.
+- **Weergave-toggle op `ItemsTab`** naast de titelregel. Standaard
+  staat 'ie op Lijst; Tiles rendert dezelfde items via `TileGrid`
+  met naam, `stock unit · categorie` als subtitel en de bekende
+  beschikbaarheid-/uit-/reserveringsbadges.
+- **Weergave-toggle op `SetsTab`** met identiek gedrag en dezelfde
+  tile-stijl (paars accent). De "Geen sets gevonden"-lege staat
+  blijft in beide weergaves werken.
+
+### Gewijzigd
+- **Geen wijzigingen aan filter-, zoek- of scanlogica.** De toggle is
+  puur presentatie: `useGlobalBarcodeScan`, de categorie-knoppen en
+  het zoekveld werken ongewijzigd in beide weergaves. De
+  toggle-keuze wordt in gewone React-state bewaard en valt na
+  herladen terug op Lijst — bewust, geen persistentie.
+
 ## [1.16.0] - 2026-08-01
 
 Productie-serveermodus: één Node-proces serveert nu naast de API ook de
