@@ -138,8 +138,16 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
   };
 
   const printAllBadges = () => {
+    // Admins loggen in met e-mail + wachtwoord en scannen geen badge, dus
+    // ze horen niet op het badge-vel. Sorteren op naam (case-insensitieve
+    // NL-locale) zodat het vel altijd A-Z staat, onafhankelijk van de
+    // volgorde waarin gebruikers zijn aangemaakt.
+    const printable = users
+      .filter(u => u.role !== "admin")
+      .slice()
+      .sort((a, b) => (a.name || "").localeCompare(b.name || "", "nl", { sensitivity: "base" }));
     const w = window.open('','_blank');
-    const badges = users.map(u => {
+    const badges = printable.map(u => {
       const code = u.login_barcode || "NOCODE";
       const modules = encodeCode128B(code);
       const mw = 2; const bw = modules.length * mw + 30; const bh = 60;
@@ -154,7 +162,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
         </svg>
       </div>`;
     }).join('');
-    w.document.write(`<html><head><title>Badges</title><style>body{font-family:sans-serif;display:flex;flex-wrap:wrap;gap:20px;padding:20px;justify-content:center}
+    w.document.write(`<html><head><title>Badges (${printable.length})</title><style>body{font-family:sans-serif;display:flex;flex-wrap:wrap;gap:20px;padding:20px;justify-content:center}
       .badge{border:2px solid #ccc;border-radius:12px;padding:20px;text-align:center;width:280px;break-inside:avoid}
       .name{font-size:18px;font-weight:bold;margin-bottom:2px}
       .role{font-size:12px;color:#666;margin-bottom:12px}

@@ -7,6 +7,24 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.19.1] - 2026-08-06
+
+Kleine correctie op "Print alle badges" in de Gebruikers-tab.
+
+### Gewijzigd
+- **Admins worden overgeslagen bij "Print alle badges".** Beheerders
+  loggen in met e-mail + wachtwoord en scannen geen badge, dus horen
+  ze niet op het gedeelde badge-vel. Losse `printBadge` vanuit de
+  gebruikers-detail-modal blijft ongewijzigd — daar mag een admin
+  desgewenst nog wél een badge printen.
+- **Alfabetische volgorde.** De print-pagina rendert de badges nu
+  gesorteerd op naam A-Z, case-insensitief via
+  `localeCompare("nl", { sensitivity: "base" })`, zodat de
+  aanmaakvolgorde niet meer bepalend is.
+- **Verificatie:** de titel van het print-tabblad toont het aantal
+  gerenderde badges (`Badges (n)`), zodat je in één oogopslag kunt
+  zien of het klopt met "aantal gebruikers minus admins".
+
 ## [1.19.0] - 2026-08-06
 
 Fine-tuning ronde 3: de Gebruikers-tab krijgt dezelfde tile-stijl als
