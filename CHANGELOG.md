@@ -7,6 +7,44 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-08-06
+
+Fine-tuning ronde 2: de Bonnen-tab krijgt dezelfde weergave-toggle als
+Materiaal/Sets, plus twee nieuwe filters — sorteervolgorde en een
+gebruikersfilter met tellingen. Alle presentatie; onderliggende bon-
+data en -logica ongewijzigd.
+
+### Toegevoegd
+- **Weergave-toggle op `BonsTab`** (Lijst / Tiles), hergebruik van de
+  `ViewToggle`- en `TileGrid`-primitives uit v1.17.0. Tile-stijl
+  identiek aan Materiaal/Sets: responsive 2/3/4 kolommen, dezelfde
+  padding/gap/border/schaduw. Per tile: bon-nummer bovenaan in het
+  bestaande mono-blauwe font (via de nieuwe `titleClassName`-slot op
+  `Tile`), daaronder de gebruiker of — bij externe bonnen — de
+  organisatienaam met een Extern-badge. Verdere badges: status
+  (Actief / Gereserveerd / Te laat / Deels retour / Compleet),
+  retour-datum en aantal open items.
+- **Sorteerfilter** met twee opties: `Nieuwste eerst` (default) en
+  `Oudste eerst`. Sortering gebeurt nu expliciet op de frontend op
+  `created_at` (fallback `id`), zodat de gebruikerskeuze leidend is
+  en niet meer bijproduct van de fetch-volgorde. Backend blijft
+  `ORDER BY b.id DESC` teruggeven — geen conflict, want de frontend
+  regelt de definitieve volgorde.
+- **Gebruikersfilter** als dropdown met `Alle gebruikers (n)`,
+  `Externe bonnen (n)` en per gebruiker `Naam (n)`. De tellingen zijn
+  gebaseerd op alle bons zodat de admin de verdeling in één blik
+  ziet. Externe bonnen krijgen een eigen ingang in dezelfde dropdown
+  — groeperen onder één gebruiker zou verwarrend zijn omdat ze bij
+  een organisatie horen, niet bij een persoon.
+- **Nieuwe optionele props op `Tile`**: `titleClassName` (voor
+  bon-nummers in mono-blauw) en `extra` (voor toekomstig gebruik
+  waarbij de bestaande badges-rij niet volstaat).
+
+### Gewijzigd
+- **Filters combineren i.p.v. overschrijven.** Status (bestaand),
+  gebruikersfilter en sortering werken samen; de toggle Lijst/Tiles
+  is puur presentatie en verandert de resultaatset niet.
+
 ## [1.17.0] - 2026-08-06
 
 Fine-tuning ronde 1: de Materiaal- en Sets-tab krijgen een weergave-

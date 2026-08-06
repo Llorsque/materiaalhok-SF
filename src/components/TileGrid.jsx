@@ -43,7 +43,15 @@ export function TileGrid({ children }) {
   </div>;
 }
 
-export function Tile({ onClick, media, title, subtitle, badges = [] }) {
+export function Tile({
+  onClick,
+  media,
+  title,
+  titleClassName = "font-semibold text-gray-900 text-sm truncate",
+  subtitle,
+  badges = [],
+  extra,
+}) {
   return <div
     onClick={onClick}
     className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:border-gray-200 flex flex-col gap-3"
@@ -51,7 +59,7 @@ export function Tile({ onClick, media, title, subtitle, badges = [] }) {
     <div className="flex items-center gap-3 min-w-0">
       {media && <div className="flex-shrink-0">{media}</div>}
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-gray-900 text-sm truncate">{title}</p>
+        <p className={titleClassName}>{title}</p>
         {subtitle && <p className="text-xs text-gray-500 mt-0.5 truncate">{subtitle}</p>}
       </div>
     </div>
@@ -61,5 +69,6 @@ export function Tile({ onClick, media, title, subtitle, badges = [] }) {
         className={`px-2 py-0.5 rounded-full font-medium ${TONE_CLASSES[b.tone] || TONE_CLASSES.gray}`}
       >{b.text}</span>)}
     </div>}
+    {extra}
   </div>;
 }
