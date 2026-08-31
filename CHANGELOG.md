@@ -7,6 +7,49 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.20.1] - 2026-08-31
+
+UI-verduidelijking bovenop v1.20.0 in de leen-/reserveer-flow
+(`LoanFlow`, ook geërfd door `AdminBonFlow` en `ExternalBonFlow`). Het
+periode-beschikbare aantal is nu een **zachte grens**: de gebruiker mag
+er expliciet overheen, ziet dan een duidelijke waarschuwing, en kan pas
+aanmaken zodra alle aantallen weer binnen hun periode-maximum vallen.
+
+### Gewijzigd
+- **Zachte grens op het periode-beschikbare aantal.** De "+"-knop en het
+  aantal-veld in de materiaal- en bevestig-stap zijn niet langer op het
+  periode-beschikbare aantal `disabled`. De harde bovengrens ligt nu op
+  de totale stock (`item.stock`) — daarboven kun je fysiek niet, want
+  meer bestaan er niet. Zodra het aantal het periode-beschikbare aantal
+  overschrijdt (bijvoorbeeld doordat de gebruiker de periode achteraf
+  aanpast), kleurt het aantal rood en verschijnt onder het item de
+  melding "Max X beschikbaar in deze periode". Met de "-"-knop of door
+  te typen kom je gewoon weer terug binnen de grens, waarna melding en
+  rood-kleur verdwijnen.
+- **Aantal invullen via typen.** Het aantal-blokje bij een cart-item is
+  in beide stappen (materiaal én bevestig) omgezet van een read-only
+  weergave naar een `type="number"`-invoerveld. Klemt op `[0, stock]`;
+  0 verwijdert het item uit de cart. Werkt voor materialen én sets.
+- **Aanmaak-knop blokkeert bij overschrijding.** "Reservering bevestigen"
+  en "Bon aanmaken" zijn `disabled` zolang minstens één cart-item boven
+  het periode-beschikbare aantal zit, met daarboven een rode
+  waarschuwing "Pas de aantallen aan: minstens één item overschrijdt
+  het beschikbare voor deze periode." Zo weigert de frontend al netjes
+  wat de backend anders alsnog met een 409 zou blokkeren; `checkStock`
+  blijft ongewijzigd als laatste vangnet.
+- **Scan-flow past bij zachte grens.** De scanner in de materiaal-stap
+  laat nu ook toe tot de totale stock. Zodra de scan het periode-
+  beschikbare aantal overschrijdt, komt er een geel-oranje melding
+  ("`toegevoegd (Nx) — max Y beschikbaar in deze periode`") in plaats
+  van een harde weigering.
+
+### Ongewijzigd
+- Backend `checkStock`, database-schema en rekenlogica zijn niet
+  aangeraakt. Deze release is puur een UI-verschuiving van de grens.
+- De datum-afhankelijke helpers uit v1.20.0 (`availQty`/`availSetQty`
+  met periode-overlap) leveren het maximum-getal — er is geen tweede
+  berekening bijgekomen.
+
 ## [1.20.0] - 2026-08-31
 
 Datum-afhankelijke beschikbaarheid: een reservering voor een periode in
