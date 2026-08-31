@@ -144,7 +144,7 @@ export function ExternalBonFlow({ eq, materialsLoading, materialsError, refreshM
     <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
       <div className="bg-purple-50 border border-purple-200 rounded-2xl px-4 py-3 text-sm text-purple-900">
         Externe verhuur is altijd een reservering. Vul eerst de huurder in.
-        Materiaal, periode en bedragen komen daarna.
+        Periode, materiaal en bedragen komen daarna.
       </div>
 
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
@@ -199,7 +199,7 @@ export function ExternalBonFlow({ eq, materialsLoading, materialsError, refreshM
         onClick={startFlow}
         className="w-full py-4 rounded-2xl bg-purple-500 text-white font-bold text-base hover:bg-purple-600 shadow-lg"
       >
-        Kies materiaal en periode {"\u2192"}
+        Kies periode en materiaal {"\u2192"}
       </button>
     </div>
   </div>;

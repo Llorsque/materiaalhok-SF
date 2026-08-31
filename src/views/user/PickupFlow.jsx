@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { BonBadge } from "../../components/BonBadge";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { KindBadge } from "../../components/KindBadge";
-import { itemDisplayName } from "../../utils/bons";
+import { itemDisplayName, availQty, availSetQty } from "../../utils/bons";
 import { getIcon } from "../../utils/format";
 import { fmtDate } from "../../utils/date";
 import { CATS } from "../../data/defaults";
@@ -227,29 +227,21 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
   };
 
   // -- Beschikbaarheid voor 'extra materiaal toevoegen' -------------------
+  // v1.20.0: gebruikt centrale helpers uit src/utils/bons.js met de bon-
+  // periode en excludeBonId — spiegelt exact wat backend checkStock doet bij
+  // POST /api/bons/:id/pickup. De eigen items op deze bon en cart-items
+  // trekken we er lokaal nog vanaf, want die zitten (nog) niet in de globale
+  // bons-state maar horen wel bezetting van deze bon te vertegenwoordigen.
   const getAvailForAdd = (item) => {
     if (!activeBon) return 0;
     const idField = item.kind === "set" ? "set_id" : "material_id";
-    let av = item.stock || 0;
-    for (const b of bons) {
-      if (b.id === activeBon.id) continue;
-      const status = b.status;
-      if (status !== "active" && status !== "reserved") continue;
-      for (const bi of b.items || []) {
-        if (bi.removed_at_pickup === 1) continue;
-        if (bi[idField] !== item.id) continue;
-        if (status === "active" && bi.returned) continue;
-        av -= bi.quantity;
-      }
-    }
-    // Wat we van deze eigen bon nog "meenemen": gescande aantallen + items
-    // die we niet als removed hebben aangevinkt en waar niets van gescand is.
-    // Voor de simpelste versie tellen we het volle originele quantity mee,
-    // want zolang de gebruiker niet expliciet 'niet meenemen' zegt blijft
-    // dat aantal op de reservering staan. Bij submit valt het daadwerkelijk
-    // op de gescande hoeveelheid, en de backend voorkomt overshoot via
-    // checkStock met excludeBonId. Voor de live UI-schatting is dit
-    // conservatief genoeg.
+    const availFn = item.kind === "set" ? availSetQty : availQty;
+    let av = availFn(item, bons, activeBon.start_date, activeBon.return_date, {
+      excludeBonId: activeBon.id,
+    });
+    // Wat we van deze eigen bon nog "meenemen": items die we niet als
+    // removed hebben aangevinkt. Conservatief telt het volle originele
+    // quantity mee — de backend voorkomt via checkStock overshoot bij submit.
     for (const bi of originalItems) {
       if (removedIds.has(bi.id)) continue;
       if (bi[idField] !== item.id) continue;

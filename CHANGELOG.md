@@ -7,6 +7,55 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-08-31
+
+Datum-afhankelijke beschikbaarheid: een reservering voor een periode in
+de toekomst haalt materiaal niet langer NU al uit de voorraad, en alle
+bon-aanmaak-flows beginnen nu met een periode-keuze. De backend
+(`checkStock` in `server/routes/bons.js`) was al periode-bewust; deze
+release brengt de frontend daarmee in lijn en breidt de flow-stappen uit
+zodat de gebruiker de gekozen periode zijn beschikbaarheid ziet bepalen.
+
+### Opgelost
+- **Beschikbaarheid is datum-afhankelijk.** De helpers in
+  `src/utils/bons.js` (`loanedQty`, `reservedQty`, `unavailableQty`,
+  `availQty` en de set-varianten) accepteren nu een optionele
+  `(startDate, returnDate)` en filteren bonnen op overlap met die
+  periode. De overlap-regel is 1-op-1 gekopieerd van backend
+  `checkStock`: `status IN ('active','reserved')` én
+  `b.start_date <= period.return_date` én
+  `b.return_date >= period.start_date` (inclusieve grenzen — de leendag
+  en retourdag blijven bezet zoals voorheen). Zonder periode-argument
+  geldt "vandaag", zodat dashboard en admin-lijsten simpelweg
+  "Beschikbaar" (vandaag) tonen zonder extra label-ruis.
+- **PickupFlow en LoanFlow gebruiken nu de centrale helpers** in plaats
+  van eigen (datum-loze) kopieën. Dat elimineert de mismatch waarbij
+  frontend en backend verschillende getallen konden geven. De helpers
+  hebben ook een optionele `excludeBonId` (spiegel van `checkStock`)
+  voor de "extra materiaal toevoegen"-stap in PickupFlow, waar de bon
+  zelf niet dubbel geteld mag worden.
+
+### Gewijzigd
+- **Alle bon-aanmaak-flows beginnen met een periode-stap.** Voor
+  reserveringen bleef die stap ongewijzigd (start + retour kiezen);
+  voor directe leningen is de retourdatum verplaatst van de
+  bevestig-stap naar een aparte periode-stap vooraf. Materiaal wordt
+  daarna gefilterd op wat in die periode beschikbaar is. Dit geldt voor
+  `LoanFlow`, `AdminBonFlow` en `ExternalBonFlow` (die laatste twee
+  gebruiken `LoanFlow` intern en erven de wijziging).
+- **409-melding aangepast.** "Onvoldoende voorraad voor deze periode"
+  is vervangen door "Niet beschikbaar in deze periode" — beknopter en
+  spreekt dezelfde taal als het nieuwe periode-eerst-model.
+- **ExternalBonFlow-intro** vermeldt nu "Periode, materiaal en bedragen
+  komen daarna" (in plaats van "Materiaal, periode en bedragen"), zodat
+  de introductie de nieuwe volgorde weerspiegelt.
+
+### Beveiliging
+- Geen wijziging aan permissies of authenticatie. Backend `checkStock`
+  is ongemoeid gelaten en blijft de definitieve bron van waarheid; de
+  frontend voorkomt alleen dat gebruikers werk verspillen op materiaal
+  dat in hun periode toch niet vrij is.
+
 ## [1.19.1] - 2026-08-06
 
 Kleine correctie op "Print alle badges" in de Gebruikers-tab.

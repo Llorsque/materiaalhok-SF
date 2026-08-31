@@ -9,10 +9,56 @@
 // uitsluitend bestaan voor de audit-trail in het admin bon-detail.
 const isActiveBonItem = (it) => it && it.removed_at_pickup !== 1;
 
-export function loanedQty(bons, materialId) {
+// v1.20.0: beschikbaarheid is datum-afhankelijk. Een bon telt alleen mee
+// als hij OVERLAPT met de gevraagde periode.
+//
+// LET OP — SYNCHRONISATIE VERPLICHT met backend checkStock() in
+// server/routes/bons.js (rond regel 120-131). De overlap-regel is:
+//   status IN ('active','reserved')
+//   AND b.start_date <= period.return_date
+//   AND b.return_date >= period.start_date
+// (inclusieve grenzen; de leendag en retourdag tellen als bezet). Bij
+// aanpassing van deze regel moet OOK checkStock bijgewerkt worden — anders
+// tonen we op de frontend andere getallen dan wat de backend weigert.
+//
+// Als er geen periode wordt meegegeven, geldt "vandaag" (start=return=today).
+// Dat is wat het dashboard en de admin-lijsten tonen onder het label
+// "Beschikbaar".
+function todayYmd() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function bonOverlapsPeriod(b, startDate, returnDate) {
+  // Ontbrekende datums op een bon zouden alles kunnen matchen; behandel ze
+  // defensief als "telt niet mee" — bons zonder datums horen niet voor te
+  // komen (backend valideert bij POST) maar we willen geen spookbezetting.
+  if (!b.start_date || !b.return_date) return false;
+  return b.start_date <= returnDate && b.return_date >= startDate;
+}
+
+function normalizePeriod(startDate, returnDate) {
+  const today = todayYmd();
+  const start = startDate || today;
+  const ret = returnDate || start;
+  return { start, ret };
+}
+
+// De optionele 5e arg (opts) spiegelt de excludeBonId-parameter van backend
+// checkStock: bij het "extra materiaal toevoegen aan een lopende bon" willen
+// we die bon zelf uit de bezetting halen — zijn eigen items tellen tenslotte
+// al mee via de eigen state (originele items + cart) in PickupFlow.
+export function loanedQty(bons, materialId, startDate, returnDate, opts) {
+  const { start, ret } = normalizePeriod(startDate, returnDate);
+  const excludeBonId = opts?.excludeBonId ?? null;
   let total = 0;
   for (const b of bons) {
     if (b.status !== "active") continue;
+    if (excludeBonId != null && b.id === excludeBonId) continue;
+    if (!bonOverlapsPeriod(b, start, ret)) continue;
     for (const it of b.items || []) {
       if (!isActiveBonItem(it)) continue;
       if (it.material_id === materialId && !it.returned) total += it.quantity;
@@ -21,10 +67,14 @@ export function loanedQty(bons, materialId) {
   return total;
 }
 
-export function reservedQty(bons, materialId) {
+export function reservedQty(bons, materialId, startDate, returnDate, opts) {
+  const { start, ret } = normalizePeriod(startDate, returnDate);
+  const excludeBonId = opts?.excludeBonId ?? null;
   let total = 0;
   for (const b of bons) {
     if (b.status !== "reserved") continue;
+    if (excludeBonId != null && b.id === excludeBonId) continue;
+    if (!bonOverlapsPeriod(b, start, ret)) continue;
     for (const it of b.items || []) {
       if (!isActiveBonItem(it)) continue;
       if (it.material_id === materialId) total += it.quantity;
@@ -33,23 +83,33 @@ export function reservedQty(bons, materialId) {
   return total;
 }
 
-export function unavailableQty(bons, materialId) {
-  return loanedQty(bons, materialId) + reservedQty(bons, materialId);
+export function unavailableQty(bons, materialId, startDate, returnDate, opts) {
+  return (
+    loanedQty(bons, materialId, startDate, returnDate, opts) +
+    reservedQty(bons, materialId, startDate, returnDate, opts)
+  );
 }
 
-export function availQty(item, bons) {
+export function availQty(item, bons, startDate, returnDate, opts) {
   // Ronde B blok 2: buitendienst-materialen zijn niet beschikbaar, ongeacht
   // stock. Voor unieke items die kwijt/kapot zijn is dit hoe ze uit de
   // beschikbare voorraad verdwijnen tot een admin ze afhandelt.
   if (item && item.available_status === 'out_of_service') return 0;
-  return Math.max(0, (item.stock || 0) - unavailableQty(bons, item.id));
+  return Math.max(
+    0,
+    (item.stock || 0) - unavailableQty(bons, item.id, startDate, returnDate, opts),
+  );
 }
 
 // Set-varianten: identieke logica maar tegen set_id in bon_items.
-export function loanedSetQty(bons, setId) {
+export function loanedSetQty(bons, setId, startDate, returnDate, opts) {
+  const { start, ret } = normalizePeriod(startDate, returnDate);
+  const excludeBonId = opts?.excludeBonId ?? null;
   let total = 0;
   for (const b of bons) {
     if (b.status !== "active") continue;
+    if (excludeBonId != null && b.id === excludeBonId) continue;
+    if (!bonOverlapsPeriod(b, start, ret)) continue;
     for (const it of b.items || []) {
       if (!isActiveBonItem(it)) continue;
       if (it.set_id === setId && !it.returned) total += it.quantity;
@@ -58,10 +118,14 @@ export function loanedSetQty(bons, setId) {
   return total;
 }
 
-export function reservedSetQty(bons, setId) {
+export function reservedSetQty(bons, setId, startDate, returnDate, opts) {
+  const { start, ret } = normalizePeriod(startDate, returnDate);
+  const excludeBonId = opts?.excludeBonId ?? null;
   let total = 0;
   for (const b of bons) {
     if (b.status !== "reserved") continue;
+    if (excludeBonId != null && b.id === excludeBonId) continue;
+    if (!bonOverlapsPeriod(b, start, ret)) continue;
     for (const it of b.items || []) {
       if (!isActiveBonItem(it)) continue;
       if (it.set_id === setId) total += it.quantity;
@@ -70,13 +134,19 @@ export function reservedSetQty(bons, setId) {
   return total;
 }
 
-export function unavailableSetQty(bons, setId) {
-  return loanedSetQty(bons, setId) + reservedSetQty(bons, setId);
+export function unavailableSetQty(bons, setId, startDate, returnDate, opts) {
+  return (
+    loanedSetQty(bons, setId, startDate, returnDate, opts) +
+    reservedSetQty(bons, setId, startDate, returnDate, opts)
+  );
 }
 
-export function availSetQty(item, bons) {
+export function availSetQty(item, bons, startDate, returnDate, opts) {
   if (item && item.available_status === 'out_of_service') return 0;
-  return Math.max(0, (item.stock || 0) - unavailableSetQty(bons, item.id));
+  return Math.max(
+    0,
+    (item.stock || 0) - unavailableSetQty(bons, item.id, startDate, returnDate, opts),
+  );
 }
 
 export function bonIsOverdue(b) {

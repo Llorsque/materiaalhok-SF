@@ -3,6 +3,7 @@ import { CATS } from "../../data/defaults";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { getIcon } from "../../utils/format";
 import { fmtDate, today, isWeekend } from "../../utils/date";
+import { availQty, availSetQty } from "../../utils/bons";
 
 const WEEKEND_MSG_START = "Ophaaldatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.";
 const WEEKEND_MSG_END = "Retourdatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.";
@@ -58,26 +59,15 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     return [...mats, ...ss];
   }, [eq, sets]);
 
-  // Frontend-beschikbaarheid voor zowel materiaal als set: trek lopende
-  // (active, niet retour) en gereserveerde quantities af. Backend doet de
-  // definitieve periode-overlap-check bij POST en geeft 409 met details.
+  // v1.20.0: beschikbaarheid voor DE GEKOZEN PERIODE. Bij een reservering
+  // heeft de gebruiker in stap 1 start+eind gekozen; bij een directe leen
+  // is start = vandaag en heeft de gebruiker in stap 1 alleen de retour-
+  // datum gekozen. Voor de materiaal-stap moet endDate dus altijd al gezet
+  // zijn — anders gebruiken we een defensieve fallback (vandaag) zodat de
+  // helpers geen NaN-gedrag krijgen.
   const getAvailForItem = (item) => {
-    const idField = item.kind === "set" ? "set_id" : "material_id";
-    let av = item.stock || 0;
-    bons.forEach((b) => {
-      if (b.status === "active") {
-        (b.items || []).forEach((bi) => {
-          if (bi.removed_at_pickup === 1) return;
-          if (bi[idField] === item.id && !bi.returned) av -= bi.quantity;
-        });
-      } else if (b.status === "reserved") {
-        (b.items || []).forEach((bi) => {
-          if (bi.removed_at_pickup === 1) return;
-          if (bi[idField] === item.id) av -= bi.quantity;
-        });
-      }
-    });
-    return Math.max(0, av);
+    const availFn = item.kind === "set" ? availSetQty : availQty;
+    return availFn(item, bons, startDate, endDate || startDate);
   };
 
   const addToCart = (item) => {
@@ -176,7 +166,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       });
     } catch (err) {
       if (err.status === 409 && Array.isArray(err.details)) {
-        setSubmitError({ message: "Onvoldoende voorraad voor deze periode", conflicts: err.details });
+        setSubmitError({ message: "Niet beschikbaar in deze periode", conflicts: err.details });
       } else {
         setSubmitError({ message: err.message || "Aanmaken mislukt" });
         setBonsError(err);
@@ -186,10 +176,14 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     }
   };
 
-  const resSteps = isReservation ? ["Periode","Materiaal","Bevestig"] : ["Materiaal","Bevestig"];
+  // v1.20.0: beide flows beginnen met een periode-stap. Bij een reservering
+  // kiest de gebruiker start+eind, bij een directe leen alleen retour
+  // (start = vandaag). Daarna pas de materiaal-lijst filteren op wat in die
+  // periode beschikbaar is.
+  const resSteps = ["Periode","Materiaal","Bevestig"];
   const totalSteps = resSteps.length;
-  const itemStep = isReservation ? 2 : 1;
-  const confirmStep = isReservation ? 3 : 2;
+  const itemStep = 2;
+  const confirmStep = 3;
 
   const availableForPeriod = allItems.filter((i) => {
     if (kindFilter === "material" && i.kind !== "material") return false;
@@ -219,32 +213,43 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
     </div>
 
-    {/* RESERVATION STEP 1: Pick dates first */}
-    {isReservation && loanStep===1 && <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
+    {/* STEP 1: Periode eerst (voor zowel leen als reservering). Bij een
+        directe leen is de ophaaldatum vast op vandaag; bij een reservering
+        mag de gebruiker beide kiezen. */}
+    {loanStep===1 && <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-5">
-        <h3 className="font-bold text-gray-900 text-lg">{"\ud83d\udcc5"} Wanneer heb je het materiaal nodig?</h3>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Ophaaldatum</label>
-          <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${startDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-purple-500"}`} value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/>
-          {startDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_START}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Retourdatum</label>
-          <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-purple-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/>
-          {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
-        </div>
-        {startDate && endDate && !startDateInvalid && !endDateInvalid && <p className="text-sm text-purple-700 bg-purple-50 rounded-xl px-4 py-3">{"\ud83d\udcc6"} Periode: {fmtDate(startDate)} t/m {fmtDate(endDate)} ({Math.max(1,Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24)))} dagen)</p>}
+        <h3 className="font-bold text-gray-900 text-lg">{"\ud83d\udcc5"} {isReservation ? "Wanneer heb je het materiaal nodig?" : "Wanneer breng je het terug?"}</h3>
+        {isReservation ? <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Ophaaldatum</label>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${startDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-purple-500"}`} value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/>
+            {startDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_START}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Retourdatum</label>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-purple-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/>
+            {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
+          </div>
+        </> : <>
+          <p className="text-sm text-gray-600">Ophaaldatum: <span className="font-medium text-gray-900">{fmtDate(startDate)}</span> (vandaag)</p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Retourdatum</label>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={today()}/>
+            {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
+          </div>
+        </>}
+        {startDate && endDate && !startDateInvalid && !endDateInvalid && <p className={`text-sm rounded-xl px-4 py-3 ${isReservation ? "text-purple-700 bg-purple-50" : "text-blue-700 bg-blue-50"}`}>{"\ud83d\udcc6"} Periode: {fmtDate(startDate)} t/m {fmtDate(endDate)} ({Math.max(1,Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24)))} dagen)</p>}
       </div>
-      <button onClick={()=>setLoanStep(2)} disabled={!startDate||!endDate||startDateInvalid||endDateInvalid} className="w-full py-4 rounded-2xl bg-purple-500 text-white font-bold text-base hover:bg-purple-600 disabled:opacity-40 shadow-lg">
+      <button onClick={()=>setLoanStep(2)} disabled={!startDate||!endDate||startDateInvalid||endDateInvalid} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-600 hover:bg-blue-700"}`}>
         Bekijk beschikbaarheid {"\u2192"}
       </button>
     </div>}
 
     {/* ITEMS STEP */}
     {loanStep===itemStep && <div className="max-w-xl mx-auto px-5 py-6 space-y-4">
-      {isReservation && <div className="bg-purple-50 rounded-2xl px-4 py-3 text-sm text-purple-800 font-medium">
+      <div className={`rounded-2xl px-4 py-3 text-sm font-medium ${isReservation ? "bg-purple-50 text-purple-800" : "bg-blue-50 text-blue-800"}`}>
         {"\ud83d\udcc5"} {fmtDate(startDate)} t/m {fmtDate(endDate)} {"\u2014"} beschikbaarheid voor deze periode
-      </div>}
+      </div>
 
       {/* Scan to add */}
       <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
@@ -339,17 +344,10 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         </div>
       </div>
 
-      {!isReservation && <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-900 text-lg mb-4">Retourdatum</h3>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Wanneer breng je het terug? *</label>
-        <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500"}`} value={endDate} onChange={e => setEndDate(e.target.value)} min={today()}/>
-        {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
-      </div>}
-
-      {isReservation && <div className="bg-purple-50 rounded-2xl px-5 py-4 text-sm text-purple-800">
-        <p className="font-semibold">{"\ud83d\udcc5"} Reserveringsperiode</p>
+      <div className={`rounded-2xl px-5 py-4 text-sm ${isReservation ? "bg-purple-50 text-purple-800" : "bg-blue-50 text-blue-800"}`}>
+        <p className="font-semibold">{"\ud83d\udcc5"} {isReservation ? "Reserveringsperiode" : "Leenperiode"}</p>
         <p className="mt-1">Ophalen: {fmtDate(startDate)} {"\u2014"} Retour: {fmtDate(endDate)}</p>
-      </div>}
+      </div>
 
       {submitError && <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4">
         <p className="text-sm font-semibold text-red-800">{submitError.message}</p>
