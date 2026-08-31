@@ -7,6 +7,38 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.20.2] - 2026-08-31
+
+Kleine vervolg-verfijning op v1.20.1 in de leen-/reserveer-flow. De
+absolute bovengrens op de aantal-invoer is losgekoppeld van de totale
+voorraad, zodat de gebruiker niet meer tegen een onzichtbare muur op de
+totale stock aanloopt zonder uitleg.
+
+### Gewijzigd
+- **Absolute bovengrens verschoven van `item.stock` naar `MAX_QTY`
+  (999).** In `LoanFlow.jsx` gebruikten de +knop, het aantal-invoerveld,
+  de scan-handler en de `setCartQty`-clamp `item.stock` als harde
+  maximum. Voor een gebruiker die de totale voorraad niet kent, voelde
+  dat als een onverklaarde muur — vraag om "20 van dit item" en de
+  interface geeft simpelweg 10 zonder uitleg. Een gedeelde constante
+  `MAX_QTY = 999` vervangt die grens overal. Onder 999 mag alles worden
+  ingevuld, ook boven de totale voorraad; de bestaande melding "Max X
+  beschikbaar in deze periode" (met `X` = periode-beschikbaar) blijft
+  altijd zichtbaar én is nu het enige signaal dat de gebruiker terug
+  begeleidt naar een geldig aantal. 999 is puur een veiligheidsmarge
+  tegen absurde invoer, geen inhoudelijke beperking.
+- **Scan-melding bij bovengrens aangepast.** Waar de scanner voorheen
+  "totale voorraad is N" liet zien bij het raken van `item.stock`, is
+  dat nu "maximaal 999 per bon" — consistent met de nieuwe absolute
+  grens. In de praktijk krijgt niemand deze melding te zien.
+
+### Ongewijzigd
+- De periode-overschrijdingslogica (`over = qty > av`), de rode markering,
+  de "Max X beschikbaar in deze periode"-tekst en de submit-blokkade via
+  `hasOverage` werken exact zoals in v1.20.1. Enige verschil: ze blijven
+  ook zichtbaar/actief boven `item.stock`, wat voorheen onbereikbaar was.
+- Backend `checkStock`, database-schema en rekenlogica: geen wijziging.
+
 ## [1.20.1] - 2026-08-31
 
 UI-verduidelijking bovenop v1.20.0 in de leen-/reserveer-flow

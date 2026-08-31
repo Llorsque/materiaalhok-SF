@@ -12,6 +12,13 @@ import { KindBadge } from "../../components/KindBadge";
 
 const cartKey = (kind, id) => `${kind}:${id}`;
 
+// v1.20.2: absolute bovengrens voor invulling in de cart. Bewust hoger dan
+// elke realistische voorraad zodat de gebruiker de "Max X beschikbaar in
+// deze periode"-melding kan zien i.p.v. tegen een onzichtbare muur op de
+// totale stock aan te lopen. Puur een technische veiligheidsmarge tegen
+// absurde invoer — inhoudelijk begrenst de melding en de submit-blokkering.
+const MAX_QTY = 999;
+
 // `user` is verplicht voor interne bonnen (dan zit user_id in de payload).
 // Voor externe bonnen laat de aanroeper `user` weg en levert een
 // `createBonOverride(basePayload) => finalPayload` die user_id vervangt door
@@ -72,15 +79,15 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
 
   // v1.20.1: zachte grens. De +knop en het aantal-veld staan overschrijding
   // van het periode-beschikbare aantal TOE — pas dan wordt de melding "Max X
-  // beschikbaar in deze periode" ook echt bereikbaar. De harde grens ligt op
-  // de totale stock (item.stock): daar kun je fysiek nooit overheen. De
-  // aanmaak-knop verderop blokkeert nog wel op periode-overschrijding, zodat
-  // je geen bon kunt sturen die de backend toch met een 409 zou weigeren.
+  // beschikbaar in deze periode" ook echt bereikbaar. v1.20.2: de absolute
+  // bovengrens is niet meer de totale stock (die de gebruiker niet kent),
+  // maar `MAX_QTY` — puur om absurde invoer te vangen. De aanmaak-knop
+  // verderop blokkeert nog wel op periode-overschrijding, zodat je geen bon
+  // kunt sturen die de backend toch met een 409 zou weigeren.
   const addToCart = (item) => {
-    const stock = item.stock || 0;
     const key = cartKey(item.kind, item.id);
     const inC = cart.find((c) => c.key === key)?.qty || 0;
-    if (inC >= stock) return;
+    if (inC >= MAX_QTY) return;
     if (cart.find((c) => c.key === key)) {
       setCart((p) => p.map((c) => (c.key === key ? { ...c, qty: c.qty + 1 } : c)));
     } else {
@@ -96,12 +103,13 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     }
   };
 
-  // Typen in het aantal-veld gaat via deze setter. Klamp op [0, stock], en
-  // laat het item uit de cart verdwijnen zodra het naar 0 wordt gezet.
+  // Typen in het aantal-veld gaat via deze setter. Klamp op [0, MAX_QTY], en
+  // laat het item uit de cart verdwijnen zodra het naar 0 wordt gezet. De
+  // periode-overschrijding wordt daarna zichtbaar via de rode melding + de
+  // geblokkeerde aanmaak-knop.
   const setCartQty = (item, rawQty) => {
-    const stock = item.stock || 0;
     const parsed = Math.floor(Number(rawQty));
-    const clamped = Number.isFinite(parsed) ? Math.max(0, Math.min(stock, parsed)) : 0;
+    const clamped = Number.isFinite(parsed) ? Math.max(0, Math.min(MAX_QTY, parsed)) : 0;
     const key = cartKey(item.kind, item.id);
     setCart((prev) => {
       const idx = prev.findIndex((c) => c.key === key);
@@ -155,12 +163,11 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     }
     if (!item) item = allItems.find((i) => i.name.toLowerCase().includes(code.toLowerCase()));
     if (item) {
-      const stock = item.stock || 0;
       const av = getAvailForItem(item);
       const key = cartKey(item.kind, item.id);
       const inC = cart.find((c) => c.key === key)?.qty || 0;
-      if (inC >= stock) {
-        setLoanScanMsg({ ok: false, text: `\u26a0\ufe0f ${item.name} \u2014 totale voorraad is ${stock}` });
+      if (inC >= MAX_QTY) {
+        setLoanScanMsg({ ok: false, text: `\u26a0\ufe0f ${item.name} \u2014 maximaal ${MAX_QTY} per bon` });
       } else {
         addToCart(item);
         const newCount = inC + 1;
@@ -338,7 +345,6 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         : availableForPeriod.map((i) => {
           const key = cartKey(i.kind, i.id);
           const av = getAvailForItem(i);
-          const stock = i.stock || 0;
           const inC = cart.find((c) => c.key === key)?.qty || 0;
           const isSet = i.kind === "set";
           const expanded = isSet && expandedSets.has(i.id);
@@ -360,12 +366,12 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
                 {inC > 0 && <input
                   type="number"
                   min={0}
-                  max={stock}
+                  max={MAX_QTY}
                   value={inC}
                   onChange={(e) => setCartQty(i, e.target.value)}
                   className={`w-14 h-10 rounded-xl border text-lg font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500 " + (isSet?"text-purple-600":"text-blue-600")}`}
                 />}
-                <button onClick={() => addToCart(i)} disabled={inC >= stock} className={`w-10 h-10 rounded-xl text-white font-bold text-lg disabled:opacity-30 flex items-center justify-center ${isSet?"bg-purple-600 hover:bg-purple-700":"bg-blue-600 hover:bg-blue-700"}`}>+</button>
+                <button onClick={() => addToCart(i)} disabled={inC >= MAX_QTY} className={`w-10 h-10 rounded-xl text-white font-bold text-lg disabled:opacity-30 flex items-center justify-center ${isSet?"bg-purple-600 hover:bg-purple-700":"bg-blue-600 hover:bg-blue-700"}`}>+</button>
               </div>
             </div>
             {over && <p className="mt-2 text-xs font-medium text-red-600">Max {av} beschikbaar in deze periode</p>}
@@ -384,7 +390,6 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
             const lookup = c.kind === "set" ? (sets || []) : eq;
             const item = lookup.find((e) => e.id === c.itemId);
             const av = item ? getAvailForItem({ ...item, kind: c.kind }) : 0;
-            const stock = item?.stock || 0;
             const isSet = c.kind === "set";
             const composition = isSet ? (item?.composition || "").trim() : "";
             const over = c.qty > av;
@@ -400,12 +405,12 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
                   <input
                     type="number"
                     min={0}
-                    max={stock}
+                    max={MAX_QTY}
                     value={c.qty}
                     onChange={(e) => { if (itemForCart) setCartQty(itemForCart, e.target.value); }}
                     className={`w-12 h-8 rounded-lg border text-sm font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500 " + (isSet?"text-purple-700":"text-blue-700")}`}
                   />
-                  <button onClick={()=>{if(itemForCart)addToCart(itemForCart)}} disabled={c.qty>=stock} className="w-8 h-8 rounded-lg bg-white text-gray-600 font-bold text-sm hover:bg-gray-100 flex items-center justify-center border border-gray-200 disabled:opacity-30">+</button>
+                  <button onClick={()=>{if(itemForCart)addToCart(itemForCart)}} disabled={c.qty>=MAX_QTY} className="w-8 h-8 rounded-lg bg-white text-gray-600 font-bold text-sm hover:bg-gray-100 flex items-center justify-center border border-gray-200 disabled:opacity-30">+</button>
                   <button onClick={() => setCart((p) => p.filter((x) => x.key !== c.key))} className="text-red-400 hover:text-red-600 p-1 ml-1"><svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 5L5 13M5 5l8 8"/></svg></button>
                 </div>
               </div>
