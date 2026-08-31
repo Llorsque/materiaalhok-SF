@@ -243,11 +243,15 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     return c.qty > av;
   });
 
-  const availableForPeriod = allItems.filter((i) => {
+  // v1.20.3: items met 0 beschikbaar in de periode blijven zichtbaar (met
+  // duidelijke 0-marker en uitgeschakelde +knop) i.p.v. verborgen. De reden:
+  // "0 beschikbaar in DEZE periode" is niet hetzelfde als "bestaat niet" —
+  // een gebruiker die dat verschil niet ziet, denkt dat het materiaal is
+  // verdwenen. De overige filters (kind/zoek/categorie) blijven wel filteren.
+  const visibleForPeriod = allItems.filter((i) => {
     if (kindFilter === "material" && i.kind !== "material") return false;
     if (kindFilter === "set" && i.kind !== "set") return false;
-    return getAvailForItem(i) > 0
-      && i.name.toLowerCase().includes(q.toLowerCase())
+    return i.name.toLowerCase().includes(q.toLowerCase())
       && (cat === "Alle" || i.category === cat);
   });
 
@@ -341,15 +345,16 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       </div>
 
       <div className="space-y-3">
-        {availableForPeriod.length===0 ? <div className="bg-white rounded-2xl p-10 text-center border border-gray-100"><p className="text-gray-400">{isReservation?"Niets beschikbaar in deze periode":"Niets gevonden"}</p></div>
-        : availableForPeriod.map((i) => {
+        {visibleForPeriod.length===0 ? <div className="bg-white rounded-2xl p-10 text-center border border-gray-100"><p className="text-gray-400">Niets gevonden</p></div>
+        : visibleForPeriod.map((i) => {
           const key = cartKey(i.kind, i.id);
           const av = getAvailForItem(i);
           const inC = cart.find((c) => c.key === key)?.qty || 0;
           const isSet = i.kind === "set";
           const expanded = isSet && expandedSets.has(i.id);
           const over = inC > av;
-          return <div key={key} className={`bg-white rounded-2xl px-5 py-4 border-2 transition-all ${inC > 0 ? (isSet?"border-purple-400 shadow-md":"border-blue-400 shadow-md") : "border-gray-100 hover:border-gray-200"}`}>
+          const soldOut = av === 0;
+          return <div key={key} className={`bg-white rounded-2xl px-5 py-4 border-2 transition-all ${inC > 0 ? (isSet?"border-purple-400 shadow-md":"border-blue-400 shadow-md") : (soldOut ? "border-gray-100 opacity-60" : "border-gray-100 hover:border-gray-200")}`}>
             <div className="flex items-center gap-4">
               {i.photo ? <img src={i.photo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" alt=""/> : <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">{getIcon(i.category)}</div>}
               <div className="flex-1 min-w-0">
@@ -358,7 +363,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
                   {isSet && <button type="button" onClick={() => toggleSetExpanded(i.id)} className="text-purple-600 hover:text-purple-800 text-sm leading-none px-1" title={expanded ? "Verberg samenstelling" : "Toon samenstelling"} aria-label={expanded ? "Verberg samenstelling" : "Toon samenstelling"}>{expanded ? "\u2304" : "\u25b8"}</button>}
                   <KindBadge kind={i.kind}/>
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">{i.category || "\u2014"} {"\u00b7"} <span className="text-emerald-600 font-medium">{av} beschikbaar</span></p>
+                <p className="text-sm text-gray-500 mt-0.5">{i.category || "\u2014"} {"\u00b7"} <span className={`font-medium ${soldOut ? "text-red-600" : "text-emerald-600"}`}>{av} beschikbaar</span>{soldOut && <span className="text-red-600"> {"\u00b7"} niet beschikbaar in deze periode</span>}</p>
                 {isSet && expanded && <p className="text-xs text-gray-600 mt-2 bg-purple-50 rounded-lg px-3 py-2 whitespace-pre-line">{i.composition?.trim() ? i.composition : "(geen samenstelling vastgelegd)"}</p>}
               </div>
               <div className="flex items-center gap-2">
@@ -371,7 +376,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
                   onChange={(e) => setCartQty(i, e.target.value)}
                   className={`w-14 h-10 rounded-xl border text-lg font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500 " + (isSet?"text-purple-600":"text-blue-600")}`}
                 />}
-                <button onClick={() => addToCart(i)} disabled={inC >= MAX_QTY} className={`w-10 h-10 rounded-xl text-white font-bold text-lg disabled:opacity-30 flex items-center justify-center ${isSet?"bg-purple-600 hover:bg-purple-700":"bg-blue-600 hover:bg-blue-700"}`}>+</button>
+                <button onClick={() => addToCart(i)} disabled={inC >= MAX_QTY || soldOut} className={`w-10 h-10 rounded-xl text-white font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center ${isSet?"bg-purple-600 hover:bg-purple-700":"bg-blue-600 hover:bg-blue-700"}`}>+</button>
               </div>
             </div>
             {over && <p className="mt-2 text-xs font-medium text-red-600">Max {av} beschikbaar in deze periode</p>}

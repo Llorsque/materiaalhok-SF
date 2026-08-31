@@ -7,6 +7,40 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.20.3] - 2026-08-31
+
+Materiaal en sets die in de gekozen periode volledig bezet zijn, worden
+in de leen-/reserveer-lijst niet langer verborgen. Ze staan er nu bij
+met "0 beschikbaar" en een uitgeschakelde +knop, zodat de gebruiker
+ziet dat het item bestaat maar in deze periode niet vrij is. Dit sluit
+de bedoeling van v1.20.0 (datum-afhankelijke beschikbaarheid) beter aan
+op de gebruikers­beleving.
+
+### Gewijzigd
+- **0-beschikbaar-items zijn zichtbaar.** In `LoanFlow.jsx` is de filter
+  `getAvailForItem(i) > 0` uit `availableForPeriod` verwijderd (nieuw
+  hernoemd naar `visibleForPeriod`, want de lijst weerspiegelt niet meer
+  alleen wat leenbaar is). Kind-filter, zoekterm en categoriekeuze
+  blijven onveranderd filteren. Werkt in `LoanFlow` én dus automatisch
+  in `AdminBonFlow` en `ExternalBonFlow` die `LoanFlow` intern gebruiken.
+- **Weergave bij 0 beschikbaar.** Het item toont "0 beschikbaar · niet
+  beschikbaar in deze periode" in rood, en de tile krijgt een gedempte
+  uitstraling (`opacity-60`, alleen als er niets in de cart zit) zodat
+  hij visueel minder aanwezig is naast de leenbare items. De +knop is
+  `disabled` (met `cursor-not-allowed`) — je kunt niets aan de cart
+  toevoegen wat er in deze periode niet is.
+- **Lege-staat-tekst versimpeld naar "Niets gevonden".** Voorheen kon
+  de lijst leeg zijn omdat álles 0 beschikbaar was; die reden bestaat
+  niet meer. De banner verschijnt nu alleen nog wanneer er echt geen
+  enkel item aan de zoek-/categoriefilters voldoet.
+
+### Ongewijzigd
+- Items met `av > 0` gedragen zich identiek aan v1.20.2: +knop tot
+  `MAX_QTY` (999), zachte grens boven `av`, rode "Max X beschikbaar in
+  deze periode"-melding bij overschrijding, aanmaak-knop geblokkeerd
+  bij `hasOverage`. Backend `checkStock`, schema en rekenlogica: geen
+  wijziging.
+
 ## [1.20.2] - 2026-08-31
 
 Kleine vervolg-verfijning op v1.20.1 in de leen-/reserveer-flow. De
