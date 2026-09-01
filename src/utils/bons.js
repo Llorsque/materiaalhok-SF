@@ -149,10 +149,42 @@ export function availSetQty(item, bons, startDate, returnDate, opts) {
   );
 }
 
+// Retourdeadline is 18:00 Europe/Amsterdam op de return_date. Een bon met
+// return_date "2026-09-01" mag die dag tot 18:00 NL nog worden ingeleverd,
+// pas daarna is 'ie te laat. Zonder deze zone-bewuste vergelijking zou
+// `new Date("2026-09-01")` als 00:00 UTC (= 02:00 CEST) worden gelezen en
+// zou de bon al vanaf 02:00 's nachts te laat lijken. Werkt DST-veilig via
+// Intl.DateTimeFormat — nooit een hardgecodeerde offset gebruiken.
+function deadlineEpochMs(ymd, hour) {
+  const m = String(ymd).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  const y = +m[1], mo = +m[2], d = +m[3];
+  // Truc: bereken wat de Amsterdamse klok aanwijst als we het "lokale" moment
+  // per ongeluk als UTC interpreteren. Het verschil is precies de offset op
+  // dat moment, en die trekken we er af om terug te schalen naar echte UTC.
+  const guess = Date.UTC(y, mo - 1, d, hour, 0, 0);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Amsterdam',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(guess)).reduce((a, p) => {
+    if (p.type !== 'literal') a[p.type] = p.value;
+    return a;
+  }, {});
+  const amsAsUtc = Date.UTC(
+    +parts.year, +parts.month - 1, +parts.day,
+    +parts.hour, +parts.minute, +parts.second,
+  );
+  return guess - (amsAsUtc - guess);
+}
+
 export function bonIsOverdue(b) {
   if (!b || b.status === "completed") return false;
   if (!b.return_date) return false;
-  return new Date(b.return_date) < new Date();
+  const deadline = deadlineEpochMs(b.return_date, 18);
+  if (deadline == null) return false;
+  return Date.now() > deadline;
 }
 
 export function bonRemaining(b) {

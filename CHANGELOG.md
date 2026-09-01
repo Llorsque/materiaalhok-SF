@@ -7,6 +7,41 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+## [1.20.4] - 2026-09-01
+
+Bugfix in de te-laat-detectie en dashboard-weergave van bonnen. Een bon
+met retourdatum "vandaag" werd al vanaf 02:00 's nachts als te laat
+gemarkeerd (in zomertijd) doordat `new Date("YYYY-MM-DD")` in JavaScript
+als middernacht UTC wordt gelezen. De retourdeadline is nu expliciet
+18:00 Europe/Amsterdam op de retourdag, DST-veilig via
+`Intl.DateTimeFormat` — geen hardgecodeerde offset. Opslag, scheduler en
+overlap-berekening blijven ongewijzigd (die werken op kalenderdagen).
+
+### Opgelost
+- **`bonIsOverdue` (`src/utils/bons.js`).** Interpreteerde `return_date`
+  via `new Date(b.return_date) < new Date()`, waardoor "2026-09-01"
+  gelezen werd als 00:00 UTC (= 02:00 CEST). Vervangen door een
+  timezone-bewuste helper `deadlineEpochMs(ymd, 18)` die 18:00
+  Europe/Amsterdam op de retourdag berekent en de bon pas na dat moment
+  te laat noemt. Werkt correct in zomer- én wintertijd en op de
+  DST-overgangsdagen (laatste zondag maart/oktober).
+- **`fmtDT` (`src/utils/date.js`).** Toonde bij een kale YYYY-MM-DD (zoals
+  `b.return_date`) ten onrechte "01 sep 02:00" — een gevolg van dezelfde
+  UTC-midnight-parse. `fmtDT` detecteert nu of de invoer een kale datum
+  of een volledige ISO-timestamp is: kale datums krijgen alleen "01 sep",
+  echte timestamps (`created_at`, `reported_at`, `resolved_at`, log
+  `date`) tonen datum + tijd zoals voorheen.
+
+### Ongewijzigd
+- Opslag: `return_date` blijft `TEXT` in YYYY-MM-DD-formaat; geen
+  database-migratie nodig. Bestaande bonnen worden vanzelf correct
+  geïnterpreteerd.
+- Backend: `server/routes/bons.js` (opslag + `checkStock` string-compare
+  op YYYY-MM-DD) en `server/mail/scheduler.js` (werkt via SQLite
+  `date()` op kalenderdagen) hoeven niet aangepast.
+- Overlap-berekening `bonOverlapsPeriod`: onveranderd — de deadline-tijd
+  raakt de dag-overlap niet.
+
 ## [1.20.3] - 2026-08-31
 
 Materiaal en sets die in de gekozen periode volledig bezet zijn, worden
