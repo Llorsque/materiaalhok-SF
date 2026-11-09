@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useState } from "react";
 import { Modal } from "../../components/Modal";
 import { BonBadge } from "../../components/BonBadge";
@@ -57,7 +58,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
   const toneClass = {
     emerald: "bg-emerald-100 text-emerald-800 border-emerald-200",
     amber:   "bg-amber-100 text-amber-900 border-amber-200",
-    purple:  "bg-purple-100 text-purple-800 border-purple-200",
+    purple:  "bg-slate-100 text-slate-800 border-slate-200",
   }[phaseLabel?.tone || "amber"];
 
   return <Modal open={!!bonDetail} onClose={()=>{setBonDetail(null);setDateError(null);setConfirmPay(false);}} title={bonDetail?`Bon ${bonDetail.bon_number}`:""} wide>
@@ -65,27 +66,27 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
       <div className="flex items-center justify-between">
         <div>
           {isExternal
-            ? <p className="text-sm text-slate-500">{"\ud83c\udfe2"} {bonDetail.external_org || "Externe huurder"}</p>
-            : <p className="text-sm text-slate-500">{"\ud83d\udc64"} {bonDetail.user_name || "-"}</p>}
+            ? <p className="text-sm text-slate-500">{<Icon name="building"/>} {bonDetail.external_org || "Externe huurder"}</p>
+            : <p className="text-sm text-slate-500">{<Icon name="user"/>} {bonDetail.user_name || "-"}</p>}
           <p className="text-sm text-slate-500">{fmtDate(bonDetail.start_date)} {"\u2192"} {fmtDate(bonDetail.return_date)}</p>
           {!isExternal && bonDetail.created_by_admin_id && <p className="text-xs text-amber-700 mt-1">
             <span className="text-amber-500 font-bold">*</span> Aangemaakt door {bonDetail.created_by_admin_name || "een admin"} namens {bonDetail.user_name || "gebruiker"}
           </p>}
-          {isExternal && bonDetail.created_by_admin_name && <p className="text-xs text-purple-700 mt-1">
+          {isExternal && bonDetail.created_by_admin_name && <p className="text-xs text-slate-700 mt-1">
             Aangemaakt door {bonDetail.created_by_admin_name}
           </p>}
         </div>
         <div className="flex items-center gap-2">
-          {isExternal && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[11px] font-semibold">Extern</span>}
+          {isExternal && <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-semibold">Extern</span>}
           <BonBadge bon={bonDetail}/>
         </div>
       </div>
 
-      {isExternal && <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 space-y-2">
-        <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide">Huurdergegevens</p>
-        {bonDetail.external_contact && <p className="text-sm text-slate-800">{"\ud83d\udc64"} {bonDetail.external_contact}</p>}
-        {bonDetail.external_email   && <p className="text-sm text-slate-800">{"\u2709\ufe0f"} {bonDetail.external_email}</p>}
-        {bonDetail.external_phone   && <p className="text-sm text-slate-800">{"\ud83d\udcde"} {bonDetail.external_phone}</p>}
+      {isExternal && <div className="bg-slate-100 border border-slate-200 rounded-xl p-4 space-y-2">
+        <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Huurdergegevens</p>
+        {bonDetail.external_contact && <p className="text-sm text-slate-800">{<Icon name="user"/>} {bonDetail.external_contact}</p>}
+        {bonDetail.external_email   && <p className="text-sm text-slate-800">{<Icon name="mail"/>} {bonDetail.external_email}</p>}
+        {bonDetail.external_phone   && <p className="text-sm text-slate-800">{<Icon name="phone"/>} {bonDetail.external_phone}</p>}
         <div className="grid grid-cols-2 gap-2 pt-2">
           <div className="bg-white rounded-lg px-3 py-2">
             <p className="text-[11px] text-slate-500">Huurprijs</p>
@@ -98,7 +99,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
         </div>
         {bonDetail.payment_status && <div className="pt-2 flex items-center gap-2 flex-wrap">
           {paymentPaid
-            ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">{"\u2705"} Betaald</span>
+            ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">{<Icon name="check"/>} Betaald</span>
             : <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">{"\u23f3"} Betaling openstaand</span>}
         </div>}
       </div>}
@@ -111,13 +112,13 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
           worden opgehaald/geretourneerd — een externe huurder heeft geen
           account. Interne bonnen lopen via het gebruikersportaal en
           krijgen deze knoppen niet. */}
-      {isExternal && bonDetail.status === "reserved" && onOpenPickupFlow && <div className="rounded-xl border border-purple-200 bg-white p-4 space-y-3">
+      {isExternal && bonDetail.status === "reserved" && onOpenPickupFlow && <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
         <div>
           <p className="text-sm font-semibold text-slate-800">Materiaal ophalen</p>
           <p className="text-xs text-slate-500 mt-0.5">Scan of vink af wat de huurder meeneemt. De bon wordt daarna actief.</p>
         </div>
-        <button onClick={() => onOpenPickupFlow(bonDetail)} className="w-full py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700">
-          {"\ud83d\udce6"} Ophalen
+        <button onClick={() => onOpenPickupFlow(bonDetail)} className="w-full py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90">
+          {<Icon name="package"/>} Ophalen
         </button>
       </div>}
 
@@ -127,7 +128,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
           <p className="text-xs text-slate-500 mt-0.5">Scan wat er teruggebracht wordt, of meld per stuk kwijt/kapot.</p>
         </div>
         <button onClick={() => onOpenReturnFlow(bonDetail)} className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">
-          {"\ud83d\udce5"} Retourneren
+          {<Icon name="in"/>} Retourneren
         </button>
       </div>}
 
@@ -138,7 +139,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
         </div>
         {!confirmPay
           ? <button onClick={() => setConfirmPay(true)} className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">
-              {"\ud83d\udcb0"} Markeer als betaald
+              {<Icon name="euro"/>} Markeer als betaald
             </button>
           : <div className="flex gap-2">
               <button onClick={() => setConfirmPay(false)} className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200">Annuleer</button>
@@ -165,7 +166,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
                 <div className="min-w-0">
                   <p className="text-sm font-medium flex items-center gap-2 flex-wrap">
                     <span>{itemDisplayName(bi)}</span>
-                    {isAdded && <span className="text-[10px] font-semibold uppercase tracking-wide bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">toegevoegd bij ophalen</span>}
+                    {isAdded && <span className="text-[10px] font-semibold uppercase tracking-wide bg-slate-100 text-accent px-1.5 py-0.5 rounded">toegevoegd bij ophalen</span>}
                     {wasLost   && <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">kwijt</span>}
                     {wasBroken && <span className="text-[10px] font-semibold uppercase tracking-wide bg-red-100 text-red-800 px-1.5 py-0.5 rounded">kapot</span>}
                   </p>
@@ -174,8 +175,8 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
                 <div className="flex items-center gap-2">
                   {isReturned
                     ? (wasLost || wasBroken
-                        ? <span className={`text-xs ${wasLost ? "text-amber-700" : "text-red-700"}`}>{"\u26a0"} {wasLost ? "kwijt" : "kapot"}</span>
-                        : <span className="text-xs text-emerald-600">{"\u2705"} retour</span>)
+                        ? <span className={`text-xs ${wasLost ? "text-amber-700" : "text-red-700"}`}>{<Icon name="alert"/>} {wasLost ? "kwijt" : "kapot"}</span>
+                        : <span className="text-xs text-emerald-600">{<Icon name="check"/>} retour</span>)
                     : <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-full">open</span>}
                   {bonDetail.status === "active" && !isReturned && <button onClick={() => onItemReturn(bonDetail.id, bi.id)} className="px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs hover:bg-emerald-200">Retour</button>}
                 </div>
@@ -204,13 +205,13 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Startdatum</label>
-            <input type="date" className={`w-full px-3 py-2 rounded-xl border bg-slate-50 text-sm focus:outline-none focus:ring-2 ${dateError?.field === "start_date" ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500"}`}
+            <input type="date" className={`w-full px-3 py-2 rounded-xl border bg-slate-50 text-sm focus:outline-none focus:ring-2 ${dateError?.field === "start_date" ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-accent/40"}`}
               value={(bonDetail.start_date||"").slice(0,10)}
               onChange={e=>changeDate("start_date", e.target.value)}/>
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Retourdatum</label>
-            <input type="date" className={`w-full px-3 py-2 rounded-xl border bg-slate-50 text-sm focus:outline-none focus:ring-2 ${dateError?.field === "return_date" ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500"}`}
+            <input type="date" className={`w-full px-3 py-2 rounded-xl border bg-slate-50 text-sm focus:outline-none focus:ring-2 ${dateError?.field === "return_date" ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-accent/40"}`}
               value={(bonDetail.return_date||"").slice(0,10)}
               onChange={e=>changeDate("return_date", e.target.value)}/>
           </div>

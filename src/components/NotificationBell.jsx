@@ -1,3 +1,4 @@
+import { Icon } from "./Icon";
 import { useEffect, useRef, useState } from "react";
 
 // Domme presentatie-component: krijgt een lijst notificaties en toont
@@ -14,11 +15,11 @@ import { useEffect, useRef, useState } from "react";
 // }]
 
 const GROUP_META = {
-  backup:            { label: "Geen recente backup",        icon: "\ud83d\uddc4\ufe0f" },
-  overdue:           { label: "Bonnen te laat",              icon: "\u23f0" },
-  external_payment:  { label: "Externe verhuur wacht op betaling", icon: "\ud83d\udcb0" },
-  damage:            { label: "Kwijt / schade gemeld",       icon: "\u26a0\ufe0f" },
-  incomplete:        { label: "Incomplete retouren",         icon: "\ud83d\udce6" },
+  backup:            { label: "Geen recente backup",        icon: <Icon name="archive"/> },
+  overdue:           { label: "Bonnen te laat",              icon: <Icon name="clock"/> },
+  external_payment:  { label: "Externe verhuur wacht op betaling", icon: <Icon name="euro"/> },
+  damage:            { label: "Kwijt / schade gemeld",       icon: <Icon name="alert"/> },
+  incomplete:        { label: "Incomplete retouren",         icon: <Icon name="package"/> },
 };
 const GROUP_ORDER = ["backup", "overdue", "external_payment", "damage", "incomplete"];
 
@@ -75,7 +76,7 @@ export function NotificationBell({ notifications }) {
         <span className="text-xs text-slate-500">{total} {total === 1 ? "melding" : "meldingen"}</span>
       </div>
       {total === 0 ? <div className="px-4 py-8 text-center">
-        <div className="text-3xl mb-2">{"\ud83d\ude4c"}</div>
+        <div className="text-3xl mb-2">{<Icon name="sparkles"/>}</div>
         <p className="text-sm text-slate-500">Geen meldingen — alles onder controle.</p>
       </div> : <div className="max-h-[65vh] overflow-y-auto divide-y divide-slate-50">
         {GROUP_ORDER.filter((g) => grouped[g]?.length > 0).map((g) => {

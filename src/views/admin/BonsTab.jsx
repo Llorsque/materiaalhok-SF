@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useMemo, useState } from "react";
 import { BonCard } from "../../components/BonCard";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
@@ -72,10 +73,10 @@ export function BonsTab({
     <div className="flex flex-wrap items-center gap-2 justify-between">
       <div className="flex gap-2 overflow-x-auto">
         {[["active","Actief"],["reserved","Gereserveerd"],["overdue","Te laat"],["completed","Afgerond"],["all","Alle"]].map(([k,l]) =>
-          <button key={k} onClick={() => setBonFilter(k)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap ${bonFilter === k ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{l}</button>
+          <button key={k} onClick={() => setBonFilter(k)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap ${bonFilter === k ? "bg-accent text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{l}</button>
         )}
       </div>
-      {onNewBon && <button onClick={onNewBon} className="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 whitespace-nowrap">{"\u2795"} Nieuwe bon</button>}
+      {onNewBon && <button onClick={onNewBon} className="px-4 py-2 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent/90 whitespace-nowrap">{<Icon name="plus"/>} Nieuwe bon</button>}
     </div>
 
     <div className="flex flex-wrap items-center gap-2 justify-between">
@@ -84,7 +85,7 @@ export function BonsTab({
           value={userKey}
           onChange={(e) => setUserKey(e.target.value)}
           aria-label="Filter op gebruiker"
-          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent/40"
         >
           <option value={ALL_KEY}>Alle gebruikers ({bons.length})</option>
           {userOptions.externalCount > 0 && <option value={EXTERNAL_KEY}>Externe bonnen ({userOptions.externalCount})</option>}
@@ -94,7 +95,7 @@ export function BonsTab({
           value={sortOrder}
           onChange={(e) => setSort(e.target.value)}
           aria-label="Sorteren"
-          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent/40"
         >
           <option value="newest">Nieuwste eerst</option>
           <option value="oldest">Oudste eerst</option>
@@ -132,7 +133,7 @@ export function BonsTab({
               key={b.id}
               onClick={() => onBonClick(b)}
               title={b.bon_number}
-              titleClassName="font-mono text-sm font-bold text-blue-600 truncate"
+              titleClassName="font-mono text-sm font-bold text-accent truncate"
               subtitle={displayName}
               badges={badges}
             />;

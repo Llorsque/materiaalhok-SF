@@ -8,6 +8,7 @@
    mechanisch omgezet naar dezelfde tinten. */
 
 @layer base {
+  :root { --accent: 37 99 235; }
   html { -webkit-text-size-adjust: 100%; }
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
@@ -27,11 +28,11 @@
 @layer components {
   .card { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
   .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed; }
-  .btn-primary { @apply btn bg-slate-900 text-white hover:bg-slate-700; }
+  .btn-primary { @apply btn bg-accent text-white hover:bg-accent/90; }
   .btn-secondary { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50; }
   .btn-ghost { @apply btn text-slate-600 hover:bg-slate-100; }
   .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
-  .input { @apply w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-400; }
+  .input { @apply w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/40; }
   .label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
   .chip { @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold; }
   /* Horizontaal scrollende rij zonder zichtbare balk (tabs, filterchips). */

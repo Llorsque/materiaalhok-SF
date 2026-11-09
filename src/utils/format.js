@@ -1,6 +1,9 @@
+import { createElement } from "react";
+import { Icon } from "../components/Icon";
 export const fmt = (n) => typeof n === "number" && n > 0 ? "\u20ac" + n.toFixed(2).replace(".", ",") : "-";
 
-export const getIcon = (c) => ({ Atletiek: "\ud83c\udfc3", Circus: "\ud83c\udfaa", Racketsport: "\ud83c\udff8", "Ballen": "\ud83c\udfc0", "Sport sets": "\u26bd", Gymmateriaal: "\ud83e\udd38", Extra: "\ud83d\udce6" }[c] || "\ud83c\udfc5");
+// v2: categorie-icoon is een neutraal lijnicoontje (was: emoji per categorie).
+export const getIcon = () => createElement(Icon, { name: "package", className: "text-slate-400" });
 
 export function readFile(file, cb) {
   const r = new FileReader();

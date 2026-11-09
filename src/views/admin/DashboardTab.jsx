@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useMemo, useState } from "react";
 import { Modal } from "../../components/Modal";
 import { NewBonButton } from "../../components/NewBonButton";
@@ -108,7 +109,7 @@ export function DashboardTab({
       {/* 1) Eerstvolgende reserveringen */}
       <OverviewCard
         title="Eerstvolgende reserveringen"
-        icon={"\ud83d\udcc5"}
+        icon={<Icon name="calendar"/>}
         accent="purple"
         count={upcomingReservations.length}
         empty="Geen reserveringen"
@@ -127,7 +128,7 @@ export function DashboardTab({
       {/* 2) Retouren binnen 24 uur */}
       <OverviewCard
         title="Retour binnen 24 uur"
-        icon={"\u23f0"}
+        icon={<Icon name="clock"/>}
         accent="amber"
         count={dueSoon.length}
         empty="Niets binnen 24 uur"
@@ -146,7 +147,7 @@ export function DashboardTab({
       {/* 3) Actieve bonnen */}
       <OverviewCard
         title="Actieve bonnen"
-        icon={"\ud83d\udce4"}
+        icon={<Icon name="out"/>}
         accent="blue"
         count={activeBons.length}
         empty="Geen actieve bonnen"
@@ -168,7 +169,7 @@ export function DashboardTab({
       {/* 4) Externe verhuur (v1.15.0) */}
       <OverviewCard
         title="Externe verhuur"
-        icon={"\ud83c\udfe2"}
+        icon={<Icon name="building"/>}
         accent="external"
         count={openExternal.length}
         empty="Geen lopende externe verhuur"
@@ -181,13 +182,13 @@ export function DashboardTab({
     {/* Cijferpop-up */}
     <Modal open={statsOpen} onClose={() => setStatsOpen(false)} title="Cijfers en totalen">
       <div className="grid grid-cols-2 gap-3">
-        <StatTile label="Voorraad totaal" value={totalStock} color="text-slate-800" icon={"\ud83d\udce6"}/>
-        <StatTile label="Beschikbaar" value={Math.max(0, totalStock - totalUnavail)} color="text-emerald-600" icon={"\u2705"}/>
-        <StatTile label="Materialen" value={materialCount} color="text-indigo-600" icon={"\ud83e\uddf1"}/>
-        <StatTile label="Sets" value={setCount} color="text-purple-600" icon={"\ud83c\udff7\ufe0f"}/>
-        <StatTile label="Actieve bonnen" value={activeBons.length} color="text-amber-600" icon={"\ud83d\udce4"}/>
-        <StatTile label="Reserveringen" value={reservedBons.length} color="text-purple-600" icon={"\ud83d\udcc5"}/>
-        <StatTile label="Waarde" value={fmt(totalValue)} color="text-slate-700" icon={"\ud83d\udcb0"} span={2}/>
+        <StatTile label="Voorraad totaal" value={totalStock} color="text-slate-800" icon={<Icon name="package"/>}/>
+        <StatTile label="Beschikbaar" value={Math.max(0, totalStock - totalUnavail)} color="text-emerald-600" icon={<Icon name="check"/>}/>
+        <StatTile label="Materialen" value={materialCount} color="text-accent" icon={<Icon name="layers"/>}/>
+        <StatTile label="Sets" value={setCount} color="text-accent" icon={<Icon name="tag"/>}/>
+        <StatTile label="Actieve bonnen" value={activeBons.length} color="text-amber-600" icon={<Icon name="out"/>}/>
+        <StatTile label="Reserveringen" value={reservedBons.length} color="text-accent" icon={<Icon name="calendar"/>}/>
+        <StatTile label="Waarde" value={fmt(totalValue)} color="text-slate-700" icon={<Icon name="euro"/>} span={2}/>
       </div>
     </Modal>
   </div>;
@@ -197,10 +198,10 @@ export function DashboardTab({
 
 function OverviewCard({ title, icon, accent, count, empty, seeAll, children }) {
   const accentClass = {
-    purple:   "bg-purple-50 text-purple-700",
+    purple:   "bg-slate-100 text-slate-700",
     amber:    "bg-amber-50 text-amber-700",
-    blue:     "bg-blue-50 text-blue-700",
-    external: "bg-purple-50 text-purple-700",
+    blue:     "bg-slate-100 text-accent",
+    external: "bg-slate-100 text-slate-700",
   }[accent] || "bg-slate-50 text-slate-700";
   const items = [].concat(children).filter(Boolean);
   return <section className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
@@ -219,7 +220,7 @@ function OverviewCard({ title, icon, accent, count, empty, seeAll, children }) {
         : items}
     </div>
     {seeAll && <footer className="px-5 py-2.5 border-t border-slate-100 bg-slate-50/60 text-right">
-      <button type="button" onClick={seeAll.onClick} className="text-xs font-semibold text-blue-600 hover:underline">
+      <button type="button" onClick={seeAll.onClick} className="text-xs font-semibold text-accent hover:underline">
         {seeAll.label} {"\u2192"}
       </button>
     </footer>}
@@ -233,7 +234,7 @@ function BonRow({ onClick, left, rightMono }) {
     className="w-full px-5 py-3 flex items-center justify-between gap-3 text-left hover:bg-slate-50"
   >
     <div className="min-w-0 flex-1">{left}</div>
-    <span className="font-mono text-xs font-bold text-blue-600 flex-shrink-0">{rightMono}</span>
+    <span className="font-mono text-xs font-bold text-accent flex-shrink-0">{rightMono}</span>
   </button>;
 }
 
@@ -255,11 +256,11 @@ function ExternalBonRow({ bon, onClick }) {
     <div className="min-w-0 flex-1">
       <p className="text-sm font-semibold text-slate-900 truncate">{bon.external_org || "\u2014"}</p>
       <p className={`text-xs truncate ${phaseText}`}>
-        {waiting && <span className="mr-1">{"\u26a0\ufe0f"}</span>}{phase}
+        {waiting && <span className="mr-1">{<Icon name="alert"/>}</span>}{phase}
       </p>
     </div>
     <div className="text-right flex-shrink-0">
-      <span className="font-mono text-xs font-bold text-blue-600 block">{bon.bon_number}</span>
+      <span className="font-mono text-xs font-bold text-accent block">{bon.bon_number}</span>
       <span className={`text-xs ${price > 0 ? "text-slate-700 font-medium" : "text-slate-400"}`}>{price > 0 ? fmt(price) : "geen bedrag"}</span>
     </div>
   </button>;

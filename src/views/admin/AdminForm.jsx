@@ -23,7 +23,7 @@ export function AdminForm({ item, onSave, onCancel }) {
   const [error, setError] = useState("");
   const u = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
-  const ic = "w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const ic = "w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40";
   const lc = "block text-sm font-medium text-slate-700 mb-1.5";
 
   const submit = () => {
@@ -126,7 +126,7 @@ export function AdminForm({ item, onSave, onCancel }) {
     </div>
 
     <div className="flex gap-3 pt-2">
-      <button onClick={submit} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">{item ? "Opslaan" : "Toevoegen"}</button>
+      <button onClick={submit} className="flex-1 py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90">{item ? "Opslaan" : "Toevoegen"}</button>
       <button onClick={onCancel} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium text-sm hover:bg-slate-50">Annuleren</button>
     </div>
   </div>;

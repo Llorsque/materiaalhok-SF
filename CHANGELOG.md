@@ -36,9 +36,24 @@ Vervolgversie v2 (in ontwikkeling op branch `v2`, nog niet in productie).
   titel wordt ingekort, de kopbalk blijft bovenaan staan), de tabs scrollen
   horizontaal zonder dat de pagina uit beeld schuift, de backup-banner stapelt
   netjes en invoervelden zijn op telefoons 16px, zodat iOS niet inzoomt.
-- **Huisstijl, eerste stap:** één koele neutrale tint (slate) in de hele app,
-  geen kleurverlopen meer op de achtergrond, rustigere schaduwen en vaste
-  bouwstenen (`.card`, `.btn-*`, `.input`) in `src/index.css`.
+- **Nieuwe huisstijl: rustig en zakelijk.**
+  - Eén koele neutrale tint (slate) en één accentkleur. Die accentkleur is de
+    branding-kleur uit Instellingen (Tailwind-kleur `accent` via de CSS-
+    variabele `--accent`). Wie de kleur aanpast, ziet de hele app meekleuren.
+  - Het mengsel van blauw, paars en oranje voor knoppen is vervangen door die
+    ene accentkleur. Kleur wordt alleen nog gebruikt voor status: groen voor
+    beschikbaar of retour, rood voor te laat of kwijt, amber voor
+    waarschuwingen en violet voor de badge "gereserveerd".
+  - Emoji's zijn vervangen door strakke lijnicoontjes (`src/components/Icon.jsx`,
+    gebaseerd op Lucide). Die zien er op elk apparaat hetzelfde uit, ook op de
+    Windows-laptop.
+  - Geen kleurverlopen meer op de achtergrond, rustigere schaduwen en vaste
+    bouwstenen (`.card`, `.btn-*`, `.input`) in `src/index.css`.
+- **Startscherm voor gebruikers:** vier rustige actiekaarten (Lenen,
+  Reserveren, Ophalen, Retourneren), elk met een korte uitleg.
+- **Inlogscherm:** wie de tool op afstand opent (telefoon, thuis) begint met
+  e-mail en wachtwoord. Op de scan-laptop (localhost) blijft scannen de
+  standaard.
 - De retourdag telt niet meer als bezet (dankzij de overdrachtstijden).
 - Een bon is te laat na de inlevertijd op de retourdag (was: 18:00).
 - Een actieve bon die te laat is, houdt het materiaal bezet tot en met

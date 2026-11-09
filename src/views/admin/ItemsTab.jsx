@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useState } from "react";
 import { CATS } from "../../data/defaults";
 import { getIcon } from "../../utils/format";
@@ -28,7 +29,7 @@ export function ItemsTab({ eq, bons, q, setQ, cat, setCat, onItemClick }) {
       setQ("");
       setScanMsg(null);
     } else {
-      setScanMsg({ ok: false, text: `\u274c Geen item met barcode "${trimmed}"` });
+      setScanMsg({ ok: false, text: `Geen item met barcode "${trimmed}"` });
       setTimeout(() => setScanMsg(null), 2500);
     }
   };
@@ -57,16 +58,16 @@ export function ItemsTab({ eq, bons, q, setQ, cat, setCat, onItemClick }) {
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input
           type="search"
-          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
           placeholder="Zoek op naam of barcode..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
       </div>
       <div className="flex gap-1.5 overflow-x-auto">
-        {CATS.map((c) => <button key={c} onClick={() => setCat(c)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap ${cat === c ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{c}</button>)}
+        {CATS.map((c) => <button key={c} onClick={() => setCat(c)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap ${cat === c ? "bg-accent text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{c}</button>)}
       </div>
-      <p className="text-xs text-slate-400">{"\ud83d\udcf3"} Scan een barcode om direct een item te openen — een handscanner werkt overal op deze pagina.</p>
+      <p className="text-xs text-slate-400">{<Icon name="scan"/>} Scan een barcode om direct een item te openen — een handscanner werkt overal op deze pagina.</p>
     </div>
 
     {scanMsg && <div className={`rounded-2xl px-4 py-2.5 text-sm font-medium ${scanMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{scanMsg.text}</div>}
@@ -93,7 +94,7 @@ export function ItemsTab({ eq, bons, q, setQ, cat, setCat, onItemClick }) {
             <div className="flex items-center gap-1.5 text-xs flex-shrink-0">
               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">{av}</span>
               {lo > 0 && <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">{lo} uit</span>}
-              {res > 0 && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">{res} res</span>}
+              {res > 0 && <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">{res} res</span>}
             </div>
           </div>
         </div>;

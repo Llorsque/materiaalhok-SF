@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { Stat } from "../../components/Stat";
 import { getIcon } from "../../utils/format";
 
@@ -59,20 +60,20 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
 
     {/* Overview stats */}
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <Stat label="Bonnen" value={yearBons.length} color="text-blue-600" icon={"\ud83d\udcdd"}/>
-      <Stat label="Items uitgeleend" value={allItems.reduce((s, i) => s + i.totalLoaned, 0)} color="text-amber-600" icon={"\ud83d\udce4"}/>
-      <Stat label="Unieke items" value={allItems.filter(i => i.totalLoaned > 0).length} color="text-emerald-600" icon={"\ud83d\udce6"}/>
-      <Stat label="Nooit gebruikt" value={neverUsed.length} color="text-slate-500" icon={"\ud83d\udca4"}/>
+      <Stat label="Bonnen" value={yearBons.length} color="text-accent" icon={<Icon name="pencil"/>}/>
+      <Stat label="Items uitgeleend" value={allItems.reduce((s, i) => s + i.totalLoaned, 0)} color="text-amber-600" icon={<Icon name="out"/>}/>
+      <Stat label="Unieke items" value={allItems.filter(i => i.totalLoaned > 0).length} color="text-emerald-600" icon={<Icon name="package"/>}/>
+      <Stat label="Nooit gebruikt" value={neverUsed.length} color="text-slate-500" icon={<Icon name="moon"/>}/>
     </div>
 
     {/* Monthly chart */}
     {months.length > 0 && <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-      <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udcc8"} Uitleningen per maand</h4>
+      <h4 className="font-semibold text-slate-800 mb-4">{<Icon name="chart"/>} Uitleningen per maand</h4>
       <div className="space-y-2">
         {months.map(([m, count]) => <div key={m} className="flex items-center gap-3">
           <span className="text-xs text-slate-500 w-16 flex-shrink-0">{new Date(m + "-01").toLocaleDateString("nl-NL", { month: "short", year: "2-digit" })}</span>
           <div className="flex-1 bg-slate-100 rounded-full h-6 overflow-hidden">
-            <div className="h-full bg-blue-500 rounded-full flex items-center justify-end pr-2 transition-all" style={{ width: barW(count, maxMonth) }}>
+            <div className="h-full bg-accent rounded-full flex items-center justify-end pr-2 transition-all" style={{ width: barW(count, maxMonth) }}>
               <span className="text-xs text-white font-bold">{count}</span>
             </div>
           </div>
@@ -82,7 +83,7 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
 
     {/* Category breakdown */}
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-      <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udcca"} Gebruik per categorie</h4>
+      <h4 className="font-semibold text-slate-800 mb-4">{<Icon name="chart"/>} Gebruik per categorie</h4>
       <div className="space-y-3">
         {Object.entries(catStats).sort((a, b) => b[1].totalLoaned - a[1].totalLoaned).map(([cat, s]) => {
           const maxCat = Math.max(1, ...Object.values(catStats).map(c => c.totalLoaned));
@@ -105,7 +106,7 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
     <div className="grid md:grid-cols-2 gap-6">
       {/* Most used */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-        <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udd25"} Meest uitgeleend</h4>
+        <h4 className="font-semibold text-slate-800 mb-4">{<Icon name="flame"/>} Meest uitgeleend</h4>
         <div className="space-y-3">
           {mostUsed.filter(i => i.totalLoaned > 0).slice(0, 15).map((i, idx) => <div key={i.name} className="flex items-center gap-3">
             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx < 3 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>{idx + 1}</span>
@@ -123,7 +124,7 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
 
       {/* Least used */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-        <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udca4"} Minst uitgeleend</h4>
+        <h4 className="font-semibold text-slate-800 mb-4">{<Icon name="moon"/>} Minst uitgeleend</h4>
         {neverUsed.length > 0 && <div className="mb-4 bg-slate-50 rounded-xl px-4 py-3">
           <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Nooit gebruikt ({neverUsed.length})</p>
           <div className="flex flex-wrap gap-1">
@@ -145,14 +146,14 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
 
     {/* User stats */}
     {Object.keys(userStats).length > 0 && <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-      <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udc65"} Gebruik per gebruiker</h4>
+      <h4 className="font-semibold text-slate-800 mb-4">{<Icon name="users"/>} Gebruik per gebruiker</h4>
       <div className="space-y-3">
         {Object.entries(userStats).sort((a, b) => b[1].items - a[1].items).map(([user, s]) => {
           const maxUser = Math.max(1, ...Object.values(userStats).map(u => u.items));
           return <div key={user} className="flex items-center gap-3">
             <span className="text-sm font-medium text-slate-900 w-32 flex-shrink-0 truncate">{user}</span>
             <div className="flex-1 bg-slate-100 rounded-full h-5 overflow-hidden">
-              <div className="h-full bg-purple-400 rounded-full flex items-center justify-end pr-2 transition-all" style={{ width: barW(s.items, maxUser) }}>
+              <div className="h-full bg-accent/70 rounded-full flex items-center justify-end pr-2 transition-all" style={{ width: barW(s.items, maxUser) }}>
                 {s.items > 0 && <span className="text-xs text-white font-bold">{s.items}</span>}
               </div>
             </div>
@@ -164,7 +165,7 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
 
     {/* Usage rate */}
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-      <h4 className="font-semibold text-slate-800 mb-2">{"\ud83d\udcca"} Gebruikspercentage</h4>
+      <h4 className="font-semibold text-slate-800 mb-2">{<Icon name="chart"/>} Gebruikspercentage</h4>
       <p className="text-xs text-slate-500 mb-4">Hoeveel van de voorraad is het afgelopen jaar minstens 1x uitgeleend</p>
       <div className="flex items-center gap-4">
         <div className="relative w-24 h-24">

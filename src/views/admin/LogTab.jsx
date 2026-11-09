@@ -65,7 +65,7 @@ export function LogTab() {
       <div className="relative flex-1">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input
-          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 shadow-sm"
           placeholder="Zoek in omschrijving..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -74,7 +74,7 @@ export function LogTab() {
       <select
         value={action}
         onChange={(e) => setAction(e.target.value)}
-        className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+        className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 shadow-sm"
       >
         {ACTION_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
@@ -83,7 +83,7 @@ export function LogTab() {
     {error && <p className="text-sm text-red-600">{error}</p>}
 
     {isTrulyEmpty && <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-6 py-12 text-center">
-      <div className="text-4xl mb-3">📖</div>
+      <div className="text-4xl mb-3"></div>
       <p className="text-slate-700 font-medium">Nog geen logregels</p>
       <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
         Zodra er met de tool gewerkt wordt — bonnen aangemaakt, materialen bijgewerkt,

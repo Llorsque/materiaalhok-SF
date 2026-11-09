@@ -37,7 +37,7 @@ export function NewBonButton({ options }) {
     return <button
       type="button"
       onClick={() => only.onSelect()}
-      className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 shadow-md hover:shadow-lg transition-shadow"
+      className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-accent text-white font-semibold text-sm hover:bg-accent/90 shadow-md hover:shadow-lg transition-shadow"
     >
       <span className="text-lg leading-none">{"\u002b"}</span>
       <span>{only.label}</span>
@@ -48,7 +48,7 @@ export function NewBonButton({ options }) {
     <button
       type="button"
       onClick={() => setOpen((s) => !s)}
-      className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 shadow-md hover:shadow-lg transition-shadow"
+      className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-accent text-white font-semibold text-sm hover:bg-accent/90 shadow-md hover:shadow-lg transition-shadow"
     >
       <span className="text-lg leading-none">{"\u002b"}</span>
       <span>Nieuwe bon aanmaken</span>
@@ -59,7 +59,7 @@ export function NewBonButton({ options }) {
         key={opt.key}
         type="button"
         onClick={() => { setOpen(false); opt.onSelect(); }}
-        className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-slate-50 last:border-0"
+        className="w-full px-4 py-3 text-left hover:bg-slate-100 border-b border-slate-50 last:border-0"
       >
         <p className="text-sm font-semibold text-slate-900">{opt.label}</p>
         {opt.description && <p className="text-xs text-slate-500 mt-0.5">{opt.description}</p>}

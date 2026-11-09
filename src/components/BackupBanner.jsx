@@ -1,3 +1,4 @@
+import { Icon } from "./Icon";
 import { useEffect, useState, useCallback } from "react";
 import { getBackupStatus, runBackup } from "../api/client";
 
@@ -81,7 +82,7 @@ export function BackupBanner() {
     <div className={`border rounded-2xl px-4 sm:px-5 py-4 mb-4 ${wrapClass}`}>
       <div className="flex flex-col sm:flex-row sm:items-start gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-        <span className="text-lg flex-shrink-0">{"\u26a0\ufe0f"}</span>
+        <span className="text-lg flex-shrink-0">{<Icon name="alert"/>}</span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium">{message}</p>
           {runError && (

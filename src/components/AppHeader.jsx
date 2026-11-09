@@ -1,3 +1,4 @@
+import { Icon } from "./Icon";
 // v2: kopbalk die ook op een telefoon past. Op smalle schermen wordt de titel
 // ingekort, krimpt "+ Nieuw" tot een plusje en toont Uitloggen alleen het
 // icoon. Op de laptop blijft alles zoals het was.
@@ -5,7 +6,7 @@ export function AppHeader({ branding, role, onLogout, children, onAdd, user, onP
   return <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
     <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0">
-        {branding.logo ? <img src={branding.logo} className="rounded-xl object-contain flex-shrink-0" style={{width:branding.logoSize||40,height:branding.logoSize||40}} alt=""/> : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg flex-shrink-0" style={{backgroundColor:branding.color}}>{"🏅"}</div>}
+        {branding.logo ? <img src={branding.logo} className="rounded-xl object-contain flex-shrink-0" style={{width:branding.logoSize||40,height:branding.logoSize||40}} alt=""/> : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg flex-shrink-0" style={{backgroundColor:branding.color}}>{<Icon name="award"/>}</div>}
         <div className="min-w-0">
           <h1 className="text-lg sm:text-xl font-bold text-slate-900 truncate">{branding.title}</h1>
           <p className="text-xs text-slate-500 truncate">{role === "admin" ? "Beheerder" : branding.subtitle}</p>

@@ -209,7 +209,7 @@ export function BarcodesTab({ eq, sets }) {
                     type="checkbox"
                     checked={sel}
                     onChange={() => toggle(i.id)}
-                    className="w-4 h-4 accent-blue-600 flex-shrink-0"
+                    className="w-4 h-4 accent-accent flex-shrink-0"
                   />
                   <span className="font-mono text-xs text-slate-700 w-24 flex-shrink-0">
                     {i.barcode || "—"}
@@ -224,8 +224,8 @@ export function BarcodesTab({ eq, sets }) {
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
                       i.kind === "set"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-blue-100 text-blue-700"
+                        ? "bg-slate-100 text-slate-700"
+                        : "bg-slate-100 text-accent"
                     }`}
                   >
                     {i.kind === "set" ? "set" : "materiaal"}
@@ -244,7 +244,7 @@ export function BarcodesTab({ eq, sets }) {
         <button
           onClick={handleExport}
           disabled={selected.size === 0}
-          className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Exporteer selectie voor Dymo (CSV)
         </button>

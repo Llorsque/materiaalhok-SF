@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { CATS } from "../../data/defaults";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
@@ -171,18 +172,18 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       const key = cartKey(item.kind, item.id);
       const inC = cart.find((c) => c.key === key)?.qty || 0;
       if (inC >= MAX_QTY) {
-        setLoanScanMsg({ ok: false, text: `\u26a0\ufe0f ${item.name} \u2014 maximaal ${MAX_QTY} per bon` });
+        setLoanScanMsg({ ok: false, text: `${item.name} \u2014 maximaal ${MAX_QTY} per bon` });
       } else {
         addToCart(item);
         const newCount = inC + 1;
         if (newCount > av) {
-          setLoanScanMsg({ ok: true, text: `\u26a0\ufe0f ${item.name} toegevoegd (${newCount}x) \u2014 max ${av} beschikbaar in deze periode` });
+          setLoanScanMsg({ ok: true, text: `${item.name} toegevoegd (${newCount}x) \u2014 max ${av} beschikbaar in deze periode` });
         } else {
-          setLoanScanMsg({ ok: true, text: `\u2705 ${item.name} toegevoegd (${newCount}x)` });
+          setLoanScanMsg({ ok: true, text: `${item.name} toegevoegd (${newCount}x)` });
         }
       }
     } else {
-      setLoanScanMsg({ ok: false, text: "\u274c Niet gevonden" });
+      setLoanScanMsg({ ok: false, text: "Niet gevonden" });
     }
     setLoanScanInput(""); loanScanValue.current = "";
     setTimeout(() => setLoanScanMsg(null), 2500);
@@ -263,15 +264,15 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
   return <div className="min-h-screen bg-slate-50 pb-32">
     <div className="bg-white border-b border-slate-100 shadow-sm">
       <div className="max-w-xl mx-auto px-5 py-4 flex items-center justify-between">
-        <button onClick={()=>{if(loanStep>1)setLoanStep(loanStep-1);else{onCancel();setCart([]);setEndDate("");setStartDate(today());setQ("");setCat("Alle");setLoanStep(1)}}} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>{loanStep>1?"Vorige":"Terug"}</button>
+        <button onClick={()=>{if(loanStep>1)setLoanStep(loanStep-1);else{onCancel();setCart([]);setEndDate("");setStartDate(today());setQ("");setCat("Alle");setLoanStep(1)}}} className="flex items-center gap-2 text-accent text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>{loanStep>1?"Vorige":"Terug"}</button>
         <h2 className="text-lg font-bold text-slate-900">{isReservation?"Reservering":"Nieuwe bon"}</h2>
         <div className="w-16"/>
       </div>
       <div className="max-w-xl mx-auto px-5 pb-3 flex items-center gap-2">
         {resSteps.map((label, idx) => {const s=idx+1; return <div key={s} className="flex items-center gap-2 flex-1">
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${loanStep>=s?isReservation?"bg-purple-600 text-white":"bg-blue-600 text-white":"bg-slate-200 text-slate-500"}`}>{s}</div>
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${loanStep>=s?isReservation?"bg-accent text-white":"bg-accent text-white":"bg-slate-200 text-slate-500"}`}>{s}</div>
           <span className={`text-xs font-medium ${loanStep>=s?"text-slate-900":"text-slate-400"}`}>{label}</span>
-          {s<totalSteps&&<div className={`flex-1 h-0.5 rounded ${loanStep>s?isReservation?"bg-purple-600":"bg-blue-600":"bg-slate-200"}`}/>}
+          {s<totalSteps&&<div className={`flex-1 h-0.5 rounded ${loanStep>s?isReservation?"bg-accent":"bg-accent":"bg-slate-200"}`}/>}
         </div>;})}
       </div>
     </div>
@@ -285,38 +286,38 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         mag de gebruiker beide kiezen. */}
     {loanStep===1 && <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
-        <h3 className="font-bold text-slate-900 text-lg">{"\ud83d\udcc5"} {isReservation ? "Wanneer heb je het materiaal nodig?" : "Wanneer breng je het terug?"}</h3>
+        <h3 className="font-bold text-slate-900 text-lg">{<Icon name="calendar"/>} {isReservation ? "Wanneer heb je het materiaal nodig?" : "Wanneer breng je het terug?"}</h3>
         {isReservation ? <>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Ophaaldatum</label>
-            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${startDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-purple-500"}`} value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${startDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-accent/40"}`} value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/>
             {startDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_START}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Retourdatum</label>
-            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-purple-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-accent/40"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/>
             {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
           </div>
         </> : <>
           <p className="text-sm text-slate-600">Ophaaldatum: <span className="font-medium text-slate-900">{fmtDate(startDate)}</span> (vandaag)</p>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Retourdatum</label>
-            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={today()}/>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-accent/40"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={today()}/>
             {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
           </div>
         </>}
-        {startDate && endDate && !startDateInvalid && !endDateInvalid && <p className={`text-sm rounded-xl px-4 py-3 ${isReservation ? "text-purple-700 bg-purple-50" : "text-blue-700 bg-blue-50"}`}>{"\ud83d\udcc6"} Periode: {fmtDate(startDate)} t/m {fmtDate(endDate)} ({Math.max(1,Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24)))} dagen)</p>}
+        {startDate && endDate && !startDateInvalid && !endDateInvalid && <p className={`text-sm rounded-xl px-4 py-3 ${isReservation ? "text-slate-700 bg-slate-100" : "text-accent bg-slate-100"}`}>{<Icon name="calendar"/>} Periode: {fmtDate(startDate)} t/m {fmtDate(endDate)} ({Math.max(1,Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24)))} dagen)</p>}
       </div>
-      <p className="text-xs text-slate-500 px-1">{"\u23f0"} Ophalen kan vanaf {avail.handover?.pickup_from || "13:00"}, terugbrengen vóór {avail.handover?.return_before || "12:00"} op de retourdag. Daardoor kan iemand anders het materiaal dezelfde dag weer meenemen.</p>
-      <button onClick={()=>setLoanStep(2)} disabled={!startDate||!endDate||startDateInvalid||endDateInvalid} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-600 hover:bg-blue-700"}`}>
+      <p className="text-xs text-slate-500 px-1">{<Icon name="clock"/>} Ophalen kan vanaf {avail.handover?.pickup_from || "13:00"}, terugbrengen vóór {avail.handover?.return_before || "12:00"} op de retourdag. Daardoor kan iemand anders het materiaal dezelfde dag weer meenemen.</p>
+      <button onClick={()=>setLoanStep(2)} disabled={!startDate||!endDate||startDateInvalid||endDateInvalid} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-accent hover:bg-accent/90" : "bg-accent hover:bg-accent/90"}`}>
         Bekijk beschikbaarheid {"\u2192"}
       </button>
     </div>}
 
     {/* ITEMS STEP */}
     {loanStep===itemStep && <div className="max-w-xl mx-auto px-5 py-6 space-y-4">
-      <div className={`rounded-2xl px-4 py-3 text-sm font-medium ${isReservation ? "bg-purple-50 text-purple-800" : "bg-blue-50 text-blue-800"}`}>
-        {"\ud83d\udcc5"} {fmtDate(startDate)} t/m {fmtDate(endDate)} {"\u2014"} beschikbaarheid voor deze periode
+      <div className={`rounded-2xl px-4 py-3 text-sm font-medium ${isReservation ? "bg-slate-100 text-slate-800" : "bg-slate-100 text-slate-800"}`}>
+        {<Icon name="calendar"/>} {fmtDate(startDate)} t/m {fmtDate(endDate)} {"\u2014"} beschikbaarheid voor deze periode
       </div>
 
       {avail.error && <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-700 flex items-center justify-between gap-3">
@@ -326,11 +327,11 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       {avail.loading && !avail.data && <div className="text-sm text-slate-500 px-1">Beschikbaarheid laden…</div>}
 
       {/* Scan to add */}
-      <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
-        <label className="block text-sm font-medium text-blue-800 mb-2">{"\ud83d\udcf3"} Scan materiaal of set om toe te voegen</label>
+      <div className="bg-slate-100 rounded-2xl p-4 border border-slate-200">
+        <label className="block text-sm font-medium text-slate-800 mb-2">{<Icon name="scan"/>} Scan materiaal of set om toe te voegen</label>
         <div className="flex gap-2">
-          <input ref={loanScanRef} className="flex-1 px-4 py-3 rounded-xl border border-blue-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Scan barcode..." value={loanScanInput} onChange={e=>{const v=e.target.value;setLoanScanInput(v);loanScanValue.current=v;if(loanScanTimer.current)clearTimeout(loanScanTimer.current);if(v.trim().length>=3)loanScanTimer.current=setTimeout(()=>handleLoanScan(),150)}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();if(loanScanTimer.current)clearTimeout(loanScanTimer.current);handleLoanScan()}}} autoFocus autoComplete="off"/>
-          <button onClick={handleLoanScan} className="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">+</button>
+          <input ref={loanScanRef} className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent/40" placeholder="Scan barcode..." value={loanScanInput} onChange={e=>{const v=e.target.value;setLoanScanInput(v);loanScanValue.current=v;if(loanScanTimer.current)clearTimeout(loanScanTimer.current);if(v.trim().length>=3)loanScanTimer.current=setTimeout(()=>handleLoanScan(),150)}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();if(loanScanTimer.current)clearTimeout(loanScanTimer.current);handleLoanScan()}}} autoFocus autoComplete="off"/>
+          <button onClick={handleLoanScan} className="px-5 py-3 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90">+</button>
         </div>
         {loanScanMsg && <div className={`mt-2 rounded-xl px-4 py-2.5 text-sm font-medium ${loanScanMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{loanScanMsg.text}</div>}
       </div>
@@ -343,17 +344,17 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
 
       <div className="relative">
         <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="Zoek materiaal of set..." value={q} onChange={e=>setQ(e.target.value)}/>
+        <input className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-accent/40 shadow-sm" placeholder="Zoek materiaal of set..." value={q} onChange={e=>setQ(e.target.value)}/>
       </div>
 
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
         {[["both","Beide"],["material","Materialen"],["set","Sets"]].map(([k,l]) => (
-          <button key={k} onClick={()=>setKindFilter(k)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${kindFilter===k?(k==="set"?"bg-purple-600 text-white shadow-sm":k==="material"?"bg-blue-600 text-white shadow-sm":"bg-slate-700 text-white shadow-sm"):"text-slate-600 hover:text-slate-900"}`}>{l}</button>
+          <button key={k} onClick={()=>setKindFilter(k)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${kindFilter===k?(k==="set"?"bg-accent text-white shadow-sm":k==="material"?"bg-accent text-white shadow-sm":"bg-slate-700 text-white shadow-sm"):"text-slate-600 hover:text-slate-900"}`}>{l}</button>
         ))}
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {CATS.map(c => <button key={c} onClick={()=>setCat(c)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${cat===c?"bg-blue-600 text-white shadow-sm":"bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>{c}</button>)}
+        {CATS.map(c => <button key={c} onClick={()=>setCat(c)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${cat===c?"bg-accent text-white shadow-sm":"bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>{c}</button>)}
       </div>
 
       <div className="space-y-3">
@@ -366,18 +367,17 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
           const expanded = isSet && expandedSets.has(i.id);
           const over = inC > av;
           const soldOut = av === 0;
-          return <div key={key} className={`bg-white rounded-2xl px-5 py-4 border-2 transition-all ${inC > 0 ? (isSet?"border-purple-400 shadow-md":"border-blue-400 shadow-md") : (soldOut ? "border-slate-100 opacity-60" : "border-slate-100 hover:border-slate-200")}`}>
+          return <div key={key} className={`bg-white rounded-2xl px-5 py-4 border-2 transition-all ${inC > 0 ? (isSet?"border-accent shadow-md":"border-accent shadow-md") : (soldOut ? "border-slate-100 opacity-60" : "border-slate-100 hover:border-slate-200")}`}>
             <div className="flex items-center gap-4">
               {i.photo ? <img src={i.photo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" alt=""/> : <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center text-2xl flex-shrink-0">{getIcon(i.category)}</div>}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-semibold text-slate-900 text-base">{i.name}</p>
-                  {isSet && <button type="button" onClick={() => toggleSetExpanded(i.id)} className="text-purple-600 hover:text-purple-800 text-sm leading-none px-1" title={expanded ? "Verberg samenstelling" : "Toon samenstelling"} aria-label={expanded ? "Verberg samenstelling" : "Toon samenstelling"}>{expanded ? "\u2304" : "\u25b8"}</button>}
+                  {isSet && <button type="button" onClick={() => toggleSetExpanded(i.id)} className="text-accent hover:text-slate-900 text-sm leading-none px-1" title={expanded ? "Verberg samenstelling" : "Toon samenstelling"} aria-label={expanded ? "Verberg samenstelling" : "Toon samenstelling"}>{expanded ? "\u2304" : "\u25b8"}</button>}
                   <KindBadge kind={i.kind}/>
                 </div>
                 <p className="text-sm text-slate-500 mt-0.5">{i.category || "\u2014"} {"\u00b7"} <span className={`font-medium ${soldOut ? "text-red-600" : "text-emerald-600"}`}>{av} beschikbaar</span>{soldOut && <span className="text-red-600"> {"\u00b7"} niet beschikbaar in deze periode</span>}</p>
-                <AvailabilityInfo info={avail.infoFor(i)} unit={i.unit}/>
-                {isSet && expanded && <p className="text-xs text-slate-600 mt-2 bg-purple-50 rounded-lg px-3 py-2 whitespace-pre-line">{i.composition?.trim() ? i.composition : "(geen samenstelling vastgelegd)"}</p>}
+                {isSet && expanded && <p className="text-xs text-slate-600 mt-2 bg-slate-100 rounded-lg px-3 py-2 whitespace-pre-line">{i.composition?.trim() ? i.composition : "(geen samenstelling vastgelegd)"}</p>}
               </div>
               <div className="flex items-center gap-2">
                 {inC > 0 && <button onClick={() => removeFromCart(key)} className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 font-bold text-lg hover:bg-slate-200 flex items-center justify-center">-</button>}
@@ -387,12 +387,13 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
                   max={MAX_QTY}
                   value={inC}
                   onChange={(e) => setCartQty(i, e.target.value)}
-                  className={`w-14 h-10 rounded-xl border text-lg font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500 " + (isSet?"text-purple-600":"text-blue-600")}`}
+                  className={`w-14 h-10 rounded-xl border text-lg font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-slate-200 focus:ring-accent/40 " + (isSet?"text-accent":"text-accent")}`}
                 />}
-                <button onClick={() => addToCart(i)} disabled={inC >= MAX_QTY || soldOut} className={`w-10 h-10 rounded-xl text-white font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center ${isSet?"bg-purple-600 hover:bg-purple-700":"bg-blue-600 hover:bg-blue-700"}`}>+</button>
+                <button onClick={() => addToCart(i)} disabled={inC >= MAX_QTY || soldOut} className={`w-10 h-10 rounded-xl text-white font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center ${isSet?"bg-accent hover:bg-accent/90":"bg-accent hover:bg-accent/90"}`}>+</button>
               </div>
             </div>
             {over && <p className="mt-2 text-xs font-medium text-red-600">Max {av} beschikbaar in deze periode</p>}
+            <AvailabilityInfo info={avail.infoFor(i)} unit={i.unit}/>
           </div>;
         })}
       </div>
@@ -402,7 +403,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     {loanStep===confirmStep && <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
       {confirmExtras}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-        <h3 className="font-bold text-slate-900 text-lg mb-4">{isReservation ? "\ud83d\udcc5 Reservering overzicht" : "\ud83d\uddd2 Bon overzicht"}</h3>
+        <h3 className="font-bold text-slate-900 text-lg mb-4">{isReservation ? "Reservering overzicht" : "Bon overzicht"}</h3>
         <div className="space-y-3">
           {cart.map((c) => {
             const lookup = c.kind === "set" ? (sets || []) : eq;
@@ -412,7 +413,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
             const composition = isSet ? (item?.composition || "").trim() : "";
             const over = c.qty > av;
             const itemForCart = item ? { ...item, kind: c.kind } : null;
-            return <div key={c.key} className={`rounded-xl px-4 py-3 ${isSet?"bg-purple-50":"bg-blue-50"}`}>
+            return <div key={c.key} className={`rounded-xl px-4 py-3 ${isSet?"bg-slate-100":"bg-slate-100"}`}>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-slate-900">{c.itemName}</span>
@@ -426,21 +427,21 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
                     max={MAX_QTY}
                     value={c.qty}
                     onChange={(e) => { if (itemForCart) setCartQty(itemForCart, e.target.value); }}
-                    className={`w-12 h-8 rounded-lg border text-sm font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500 " + (isSet?"text-purple-700":"text-blue-700")}`}
+                    className={`w-12 h-8 rounded-lg border text-sm font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-slate-200 focus:ring-accent/40 " + (isSet?"text-slate-700":"text-accent")}`}
                   />
                   <button onClick={()=>{if(itemForCart)addToCart(itemForCart)}} disabled={c.qty>=MAX_QTY} className="w-8 h-8 rounded-lg bg-white text-slate-600 font-bold text-sm hover:bg-slate-100 flex items-center justify-center border border-slate-200 disabled:opacity-30">+</button>
                   <button onClick={() => setCart((p) => p.filter((x) => x.key !== c.key))} className="text-red-400 hover:text-red-600 p-1 ml-1"><svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 5L5 13M5 5l8 8"/></svg></button>
                 </div>
               </div>
               {over && <p className="mt-2 text-xs font-medium text-red-600">Max {av} beschikbaar in deze periode</p>}
-              {isSet && <p className="text-xs text-purple-900/80 mt-2 bg-white/60 rounded-lg px-3 py-2 whitespace-pre-line">{composition || "(geen samenstelling vastgelegd)"}</p>}
+              {isSet && <p className="text-xs text-slate-600 mt-2 bg-white/60 rounded-lg px-3 py-2 whitespace-pre-line">{composition || "(geen samenstelling vastgelegd)"}</p>}
             </div>;
           })}
         </div>
       </div>
 
-      <div className={`rounded-2xl px-5 py-4 text-sm ${isReservation ? "bg-purple-50 text-purple-800" : "bg-blue-50 text-blue-800"}`}>
-        <p className="font-semibold">{"\ud83d\udcc5"} {isReservation ? "Reserveringsperiode" : "Leenperiode"}</p>
+      <div className={`rounded-2xl px-5 py-4 text-sm ${isReservation ? "bg-slate-100 text-slate-800" : "bg-slate-100 text-slate-800"}`}>
+        <p className="font-semibold">{<Icon name="calendar"/>} {isReservation ? "Reserveringsperiode" : "Leenperiode"}</p>
         <p className="mt-1">Ophalen: {fmtDate(startDate)} {"\u2014"} Retour: {fmtDate(endDate)}</p>
       </div>
 
@@ -457,8 +458,8 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         Pas de aantallen aan: minstens één item overschrijdt het beschikbare voor deze periode.
       </div>}
 
-      <button onClick={submitBon} disabled={cart.length === 0 || !endDate || submitting || startDateInvalid || endDateInvalid || hasOverage} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-amber-500 hover:bg-amber-600"}`}>
-        {submitting ? "Bezig..." : (isReservation ? "\ud83d\udcc5 Reservering bevestigen" : "\ud83d\udce4 Bon aanmaken")} ({totalCartQty} items)
+      <button onClick={submitBon} disabled={cart.length === 0 || !endDate || submitting || startDateInvalid || endDateInvalid || hasOverage} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-accent hover:bg-accent/90" : "bg-accent hover:bg-accent/90"}`}>
+        {submitting ? "Bezig..." : (isReservation ? "Reservering bevestigen" : "Bon aanmaken")} ({totalCartQty} items)
       </button>
     </div>}
 
@@ -469,7 +470,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
           {cart.length > 0 ? <p className="font-semibold text-slate-900">{totalCartQty} item{totalCartQty !== 1 ? "s" : ""} geselecteerd</p> : <p className="text-slate-400">Selecteer materiaal of set</p>}
           {cart.length > 0 && <p className="text-xs text-slate-500 mt-0.5">{cart.map(c => `${c.qty}x ${c.itemName}`).join(", ")}</p>}
         </div>
-        <button onClick={() => setLoanStep(confirmStep)} disabled={cart.length === 0} className={`px-6 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-30 shadow-sm ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-600 hover:bg-blue-700"}`}>
+        <button onClick={() => setLoanStep(confirmStep)} disabled={cart.length === 0} className={`px-6 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-30 shadow-sm ${isReservation ? "bg-accent hover:bg-accent/90" : "bg-accent hover:bg-accent/90"}`}>
           Ga verder {"\u2192"}
         </button>
       </div>

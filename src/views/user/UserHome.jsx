@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useState } from "react";
 import { AppHeader } from "../../components/AppHeader";
 import { Modal } from "../../components/Modal";
@@ -34,7 +35,7 @@ function Toggle({ checked, disabled, onChange, id }) {
     aria-checked={checked}
     disabled={disabled}
     onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${checked ? "bg-blue-600" : "bg-slate-300"} disabled:opacity-40`}
+    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${checked ? "bg-accent" : "bg-slate-300"} disabled:opacity-40`}
   >
     <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}/>
   </button>;
@@ -107,7 +108,7 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
           const totalItems = userBons.reduce((s,b)=>s+bonActiveItems(b).reduce((t,i)=>t+i.quantity,0),0);
           return <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-blue-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-blue-600">{userBons.length}</p><p className="text-xs text-slate-500">Bonnen</p></div>
+              <div className="bg-slate-100 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-accent">{userBons.length}</p><p className="text-xs text-slate-500">Bonnen</p></div>
               <div className="bg-amber-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-amber-600">{active.length}</p><p className="text-xs text-slate-500">Actief</p></div>
               <div className="bg-emerald-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-emerald-600">{totalItems}</p><p className="text-xs text-slate-500">Items geleend</p></div>
             </div>
@@ -115,7 +116,7 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
             {active.length>0 && <div>
               <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Actieve bonnen</p>
               <div className="space-y-2">{active.map(b=><div key={b.id} className={`rounded-xl p-3 border ${bonIsOverdue(b)?"border-red-200 bg-red-50":"border-slate-200 bg-slate-50"}`}>
-                <div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-blue-600">{b.bon_number}</span><BonBadge bon={b}/></div>
+                <div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-accent">{b.bon_number}</span><BonBadge bon={b}/></div>
                 <p className="text-xs text-slate-500 mt-1">{fmtDate(b.start_date)} {"\u2192"} {fmtDate(b.return_date)}</p>
                 <p className="text-xs text-slate-400 mt-1">{shortItems(b)}</p>
               </div>)}</div>
@@ -124,7 +125,7 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
             {completed.length>0 && <div>
               <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Geschiedenis ({completed.length})</p>
               <div className="space-y-2 max-h-64 overflow-y-auto">{completed.slice(0,20).map(b=><button key={b.id} type="button" onClick={()=>setSelectedBonId(b.id)} className="w-full text-left rounded-xl p-3 border border-slate-100 bg-white hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
-                <div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-slate-400">{b.bon_number}</span><span className="text-xs text-emerald-600">{"\u2705"} Compleet</span></div>
+                <div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-slate-400">{b.bon_number}</span><span className="text-xs text-emerald-600">{<Icon name="check"/>} Compleet</span></div>
                 <p className="text-xs text-slate-500 mt-1">{fmtDate(b.start_date)} {"\u2192"} {fmtDate(b.return_date)}</p>
                 <p className="text-xs text-slate-400 mt-1">{shortItems(b)}</p>
               </button>)}</div>
@@ -155,7 +156,7 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
       </div>
     </Modal>
 
-    {done&&<div className="max-w-4xl mx-auto mt-4 px-5"><div className={`rounded-2xl px-5 py-4 text-center font-semibold border text-base ${done.action==="loan"?"bg-blue-50 text-blue-800 border-blue-200":done.action==="return"?"bg-emerald-50 text-emerald-800 border-emerald-200":done.action==="reservation"?"bg-purple-50 text-purple-800 border-purple-200":"bg-amber-50 text-amber-800 border-amber-200"}`}>{done.text}</div></div>}
+    {done&&<div className="max-w-4xl mx-auto mt-4 px-5"><div className={`rounded-2xl px-5 py-4 text-center font-semibold border text-base ${done.action==="loan"?"bg-slate-100 text-slate-800 border-slate-200":done.action==="return"?"bg-emerald-50 text-emerald-800 border-emerald-200":done.action==="reservation"?"bg-slate-100 text-slate-800 border-slate-200":"bg-amber-50 text-amber-800 border-amber-200"}`}>{done.text}</div></div>}
 
     <div className="max-w-4xl mx-auto w-full px-5 py-8 space-y-6">
       <ConnectionBanner loading={bonsLoading} error={bonsError} onRetry={refreshBons} resource="Bonnen"/>
@@ -164,19 +165,17 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
           gescheiden zodat de gebruiker weet welke flow 'ie ingaat. Altijd
           bovenaan de pagina, direct onder de header: dit is waarvoor
           gebruikers de tool openen. */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <button onClick={()=>onModeChange("loan", false)} className="py-10 rounded-3xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udce4"}</span><span className="text-lg">Materiaal lenen</span>
-        </button>
-        <button onClick={()=>onModeChange("loan", true)} className="py-10 rounded-3xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udcc5"}</span><span className="text-lg">Reserveren</span>
-        </button>
-        <button onClick={()=>onModeChange("pickup", false)} className="py-10 rounded-3xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udce6"}</span><span className="text-lg">Ophalen</span>
-        </button>
-        <button onClick={()=>onModeChange("return", false)} className="py-10 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95">
-          <span className="text-4xl block mb-2">{"\ud83d\udce5"}</span><span className="text-lg">Retourneren</span>
-        </button>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        {[
+          { key: "loan", res: false, icon: "out", label: "Lenen", sub: "Nu meenemen" },
+          { key: "loan", res: true, icon: "calendar", label: "Reserveren", sub: "Voor later vastleggen" },
+          { key: "pickup", res: false, icon: "package", label: "Ophalen", sub: "Reservering meenemen" },
+          { key: "return", res: false, icon: "in", label: "Retourneren", sub: "Terugbrengen" },
+        ].map((a) => <button key={a.label} onClick={()=>onModeChange(a.key, a.res)} className="group text-left p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-accent hover:shadow-md active:scale-[0.98] transition-all">
+          <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-2xl sm:text-3xl mb-3 ${a.key === "return" ? "bg-emerald-50 text-emerald-600" : "bg-accent/10 text-accent"}`}><Icon name={a.icon}/></span>
+          <span className="block text-base sm:text-lg font-bold text-slate-900">{a.label}</span>
+          <span className="block text-xs sm:text-sm text-slate-500 mt-0.5">{a.sub}</span>
+        </button>)}
       </div>
 
       {/* Mijn actieve uitleningen — overzicht onder de acties. */}
@@ -186,7 +185,7 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {myBons.map(b=><button key={b.id} type="button" onClick={()=>setSelectedBonId(b.id)} className={`text-left rounded-xl p-4 border transition-all cursor-pointer hover:shadow-md ${bonIsOverdue(b)?"border-red-200 bg-red-50 hover:border-red-300":"border-slate-100 bg-slate-50 hover:border-slate-300 hover:bg-white"}`}>
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-sm font-bold text-blue-600">{b.bon_number}</span>
+                <span className="font-mono text-sm font-bold text-accent">{b.bon_number}</span>
                 <BonBadge bon={b}/>
               </div>
               <p className="text-xs text-slate-400 mt-2 break-words">{shortItems(b)}</p>

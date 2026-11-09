@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useState } from "react";
 import { Modal } from "../../components/Modal";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
@@ -52,7 +53,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
       setResetBusy(false);
     }
   };
-  const ic = "w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const ic = "w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40";
   const lc = "block text-sm font-medium text-slate-700 mb-1.5";
 
   const addUser = async () => {
@@ -190,15 +191,15 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
     <div className="flex items-center justify-between gap-3">
       <h3 className="text-lg font-bold text-slate-900">Gebruikers ({users.length})</h3>
       <div className="flex items-center gap-2">
-        <button onClick={printAllBadges} className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">{"\ud83d\udda8"} Print alle badges</button>
-        <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 whitespace-nowrap">{"\u2795"} Nieuwe gebruiker</button>
+        <button onClick={printAllBadges} className="px-4 py-2 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent/90">{<Icon name="printer"/>} Print alle badges</button>
+        <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent/90 whitespace-nowrap">{<Icon name="plus"/>} Nieuwe gebruiker</button>
       </div>
     </div>
 
     <TileGrid>
       {users.map(u => {
         const isAdmin = u.role === "admin";
-        const media = <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm ${isAdmin ? "bg-blue-600" : "bg-slate-500"}`}>
+        const media = <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm ${isAdmin ? "bg-accent" : "bg-slate-500"}`}>
           {(u.name || "?").charAt(0).toUpperCase()}
         </div>;
         return <Tile
@@ -217,13 +218,13 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
     <Modal open={!!activeUser} onClose={() => setActiveUser(null)} title={activeUser ? activeUser.name : "Gebruiker"}>
       {activeUser && <div className="space-y-5">
         <div className="flex items-center gap-3">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl ${activeUser.role === "admin" ? "bg-blue-600" : "bg-slate-500"}`}>
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl ${activeUser.role === "admin" ? "bg-accent" : "bg-slate-500"}`}>
             {(activeUser.name || "?").charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-slate-900">{activeUser.name}</p>
             <p className="text-xs text-slate-500 truncate">{activeUser.email}</p>
-            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${activeUser.role === "admin" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-700"}`}>
+            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${activeUser.role === "admin" ? "bg-slate-100 text-accent" : "bg-slate-100 text-slate-700"}`}>
               {activeUser.role === "admin" ? "Beheerder" : "Gebruiker"}
             </span>
           </div>
@@ -257,8 +258,8 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
         </div>
 
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <button onClick={() => printBadge(activeUser)} className="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200">{"\ud83d\udda8"} Print badge</button>
-          <button onClick={() => openEditFromDetail(activeUser)} className="px-3 py-2 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100">Bewerken</button>
+          <button onClick={() => printBadge(activeUser)} className="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200">{<Icon name="printer"/>} Print badge</button>
+          <button onClick={() => openEditFromDetail(activeUser)} className="px-3 py-2 rounded-xl bg-slate-100 text-accent text-sm font-medium hover:bg-slate-200">Bewerken</button>
           <button onClick={() => openResetFromDetail(activeUser)} className="px-3 py-2 rounded-xl bg-amber-50 text-amber-700 text-sm font-medium hover:bg-amber-100">Wachtwoord resetten</button>
           <button onClick={() => handleDelete(activeUser)} className="px-3 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100">Verwijder</button>
         </div>
@@ -278,7 +279,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
         </div>
         <p className="text-xs text-slate-400">Er wordt automatisch een unieke badge-code aangemaakt</p>
         <div className="flex gap-3 pt-2">
-          <button onClick={addUser} disabled={!newUser.name?.trim()||!newUser.email?.trim()||!newUser.password?.trim()} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Gebruiker toevoegen</button>
+          <button onClick={addUser} disabled={!newUser.name?.trim()||!newUser.email?.trim()||!newUser.password?.trim()} className="flex-1 py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90 disabled:opacity-40">Gebruiker toevoegen</button>
           <button onClick={() => setAddOpen(false)} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium text-sm hover:bg-slate-50">Annuleren</button>
         </div>
       </div>
@@ -310,7 +311,7 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
           Wachtwoord van <span className="font-semibold">{resetDone.name}</span> is bijgewerkt.
           Actieve sessies zijn ongeldig gemaakt.
         </div>
-        <button onClick={closeReset} className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Sluiten</button>
+        <button onClick={closeReset} className="w-full py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90">Sluiten</button>
       </div>}
     </Modal>
 
@@ -329,12 +330,12 @@ export function UsersTab({ users, usersLoading, usersError, setUsersError, refre
             ["notify_pickup", "Ophaalbevestiging"],
             ["notify_reminder", "Retourherinnering"],
           ].map(([key, label]) => <label key={key} className="flex items-center gap-3 py-1.5 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={!!editUser[key]} onChange={e=>setEditUser(p=>({...p, [key]: e.target.checked ? 1 : 0}))}/>
+            <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-accent focus:ring-accent/40" checked={!!editUser[key]} onChange={e=>setEditUser(p=>({...p, [key]: e.target.checked ? 1 : 0}))}/>
             <span className="text-sm text-slate-700">{label}</span>
           </label>)}
         </div>
         <div className="flex gap-3 pt-2">
-          <button onClick={saveUser} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Opslaan</button>
+          <button onClick={saveUser} className="flex-1 py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90">Opslaan</button>
           <button onClick={()=>setEditUser(null)} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium text-sm hover:bg-slate-50">Annuleren</button>
         </div>
       </div>}

@@ -18,9 +18,9 @@ export function BonCard({ bon, onClick, showUser, showAdminMark }) {
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-mono text-sm font-bold text-blue-600">{bon.bon_number}{byAdmin && <span className="text-amber-500 ml-0.5" title={adminTitle}>*</span>}</span>
+          <span className="font-mono text-sm font-bold text-accent">{bon.bon_number}{byAdmin && <span className="text-amber-500 ml-0.5" title={adminTitle}>*</span>}</span>
           <BonBadge bon={bon}/>
-          {isExternal && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[11px] font-semibold">Extern</span>}
+          {isExternal && <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-semibold">Extern</span>}
         </div>
         <p className="text-xs text-slate-500 mt-1">{showUser && <><span className="font-medium">{displayName}</span> {"\u00b7"} </>}{fmtDate(bon.start_date)} {"\u2192"} {fmtDate(bon.return_date)}{bon.status !== "completed" && <> {"\u00b7"} {rem.length} open</>}</p>
         {byAdmin && <p className="text-[11px] text-amber-700 mt-0.5">Aangemaakt door {bon.created_by_admin_name || "admin"} namens {bon.user_name}</p>}

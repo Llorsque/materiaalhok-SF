@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { BonBadge } from "../../components/BonBadge";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
@@ -174,13 +175,13 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
         return next;
       });
       const total = (scannedCounts.get(hit.id) || 0) + 1;
-      setScanMsg({ ok: true, text: `\u2705 ${itemDisplayName(hit)} ${total}/${hit.quantity}` });
+      setScanMsg({ ok: true, text: `${itemDisplayName(hit)} ${total}/${hit.quantity}` });
     } else if (reason === "already") {
-      setScanMsg({ ok: false, text: `\u26a0\ufe0f ${name} — al helemaal afgevinkt of niet meenemen` });
+      setScanMsg({ ok: false, text: `${name} — al helemaal afgevinkt of niet meenemen` });
     } else if (reason === "not-on-bon") {
-      setScanMsg({ ok: false, text: `\u26a0\ufe0f ${name} — niet op deze reservering. Voeg 'm eventueel toe via 'Extra materiaal'.` });
+      setScanMsg({ ok: false, text: `${name} — niet op deze reservering. Voeg 'm eventueel toe via 'Extra materiaal'.` });
     } else {
-      setScanMsg({ ok: false, text: "\u274c Niet gevonden" });
+      setScanMsg({ ok: false, text: "Niet gevonden" });
     }
     setScanInput(""); scanValue.current = "";
     setTimeout(() => setScanMsg(null), 3000);
@@ -298,12 +299,12 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
       const av = getAvailForAdd(hit);
       if (av > 0) {
         addToCart(hit);
-        setAdderScanMsg({ ok: true, text: `\u2705 ${hit.name} toegevoegd` });
+        setAdderScanMsg({ ok: true, text: `${hit.name} toegevoegd` });
       } else {
-        setAdderScanMsg({ ok: false, text: `\u26a0\ufe0f ${hit.name} — niet beschikbaar` });
+        setAdderScanMsg({ ok: false, text: `${hit.name} — niet beschikbaar` });
       }
     } else {
-      setAdderScanMsg({ ok: false, text: "\u274c Niet gevonden" });
+      setAdderScanMsg({ ok: false, text: "Niet gevonden" });
     }
     setAdderScanInput(""); adderScanValue.current = "";
     setTimeout(() => setAdderScanMsg(null), 2500);
@@ -371,20 +372,20 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
   // ── BON-KEUZE ──────────────────────────────────────────────────────────
   if (!activeBon) return <div className="min-h-screen bg-slate-50">
     <div className="bg-white border-b border-slate-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-      <button onClick={onCancel} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
+      <button onClick={onCancel} className="flex items-center gap-2 text-accent text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
       <h2 className="text-lg font-bold text-slate-900">Kies een reservering</h2><div className="w-16"/>
     </div></div>
     <div className="max-w-lg mx-auto px-4 py-6 space-y-3">
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
-      {myReservations.length === 0 ? <div className="text-center py-12"><p className="text-4xl mb-3">{"\ud83d\udcc5"}</p><p className="text-slate-500">Geen openstaande reserveringen</p></div>
-      : myReservations.map((b) => <div key={b.id} onClick={() => setActiveBon(b)} className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-purple-200 hover:border-purple-300 cursor-pointer hover:shadow-md">
+      {myReservations.length === 0 ? <div className="text-center py-12"><p className="text-4xl mb-3">{<Icon name="calendar"/>}</p><p className="text-slate-500">Geen openstaande reserveringen</p></div>
+      : myReservations.map((b) => <div key={b.id} onClick={() => setActiveBon(b)} className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2"><span className="font-mono text-sm font-bold text-blue-600">{b.bon_number}</span><BonBadge bon={b}/></div>
+            <div className="flex items-center gap-2"><span className="font-mono text-sm font-bold text-accent">{b.bon_number}</span><BonBadge bon={b}/></div>
             <p className="text-xs text-slate-500 mt-1">{fmtDate(b.start_date)} {"\u2192"} {fmtDate(b.return_date)}</p>
             <p className="text-xs text-slate-500 mt-1">{(b.items || []).filter(isActiveItem).map(itemDisplayName).join(", ")}</p>
           </div>
-          <span className="text-xs font-medium px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700">Ophalen</span>
+          <span className="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">Ophalen</span>
         </div>
       </div>)}
     </div>
@@ -396,15 +397,15 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
   const onBack = () => { if (presetBon) onCancel(); else setActiveBon(null); };
   return <div className="min-h-screen bg-slate-50">
     <div className="bg-white border-b border-slate-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-      <button onClick={onBack} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
+      <button onClick={onBack} className="flex items-center gap-2 text-accent text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
       <h2 className="text-lg font-bold text-slate-900">Ophalen {activeBon.bon_number}</h2><div className="w-16"/>
     </div></div>
 
     <div className="max-w-lg mx-auto px-4 py-6 space-y-4 pb-40">
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
 
-      <div className="bg-purple-50 rounded-2xl px-5 py-4 text-sm text-purple-800">
-        <p className="font-semibold">{"\ud83d\udcc5"} Scan wat je meeneemt</p>
+      <div className="bg-slate-100 rounded-2xl px-5 py-4 text-sm text-slate-800">
+        <p className="font-semibold">{<Icon name="calendar"/>} Scan wat je meeneemt</p>
         <p className="mt-1">Elke scan telt één stuk mee. Neem je iets bewust niet mee? Gebruik "Niet meenemen". Retour uiterlijk {fmtDate(activeBon.return_date)}.</p>
       </div>
 
@@ -414,7 +415,7 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
         <div className="flex gap-2">
           <input
             ref={scanRef}
-            className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent/40"
             placeholder="Scan barcode..."
             value={scanInput}
             onChange={(e) => {
@@ -432,7 +433,7 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
             }}
             autoFocus autoComplete="off"
           />
-          <button onClick={handleScan} className="px-5 py-3 rounded-xl text-white font-semibold text-sm bg-purple-500 hover:bg-purple-600">{"\ud83d\udce6"}</button>
+          <button onClick={handleScan} className="px-5 py-3 rounded-xl text-white font-semibold text-sm bg-accent hover:bg-accent/90">{<Icon name="package"/>}</button>
         </div>
         {scanMsg && <div className={`mt-3 rounded-xl px-4 py-3 text-sm font-medium ${scanMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{scanMsg.text}</div>}
       </div>
@@ -478,7 +479,7 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
                   type="button"
                   onClick={() => incScanned(bi)}
                   disabled={removed || scanned >= bi.quantity}
-                  className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 font-bold text-sm hover:bg-purple-200 disabled:opacity-30"
+                  className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 font-bold text-sm hover:bg-slate-200 disabled:opacity-30"
                   aria-label="Eén meer"
                 >+</button>
               </div>
@@ -511,16 +512,16 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
                 : `${totalAdded} extra item${totalAdded === 1 ? "" : "s"} in de cart`}
             </p>
           </div>
-          <span className={`text-2xl text-blue-500 transition-transform ${showAdder ? "rotate-45" : ""}`}>{"\u002b"}</span>
+          <span className={`text-2xl text-accent transition-transform ${showAdder ? "rotate-45" : ""}`}>{"\u002b"}</span>
         </button>
 
         {showAdder && <div className="px-5 pb-5 space-y-3">
-          <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-            <label className="block text-xs font-medium text-blue-800 mb-2">{"\ud83d\udcf3"} Scan of typ</label>
+          <div className="bg-slate-100 rounded-xl p-3 border border-slate-200">
+            <label className="block text-xs font-medium text-slate-800 mb-2">{<Icon name="scan"/>} Scan of typ</label>
             <div className="flex gap-2">
               <input
                 ref={adderScanRef}
-                className="flex-1 px-3 py-2 rounded-xl border border-blue-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent/40"
                 placeholder="Scan barcode..."
                 value={adderScanInput}
                 onChange={(e) => {
@@ -538,30 +539,30 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
                 }}
                 autoComplete="off"
               />
-              <button onClick={handleAdderScan} className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">+</button>
+              <button onClick={handleAdderScan} className="px-4 py-2 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90">+</button>
             </div>
             {adderScanMsg && <div className={`mt-2 rounded-xl px-3 py-2 text-xs font-medium ${adderScanMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>{adderScanMsg.text}</div>}
           </div>
 
           <div className="relative">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Zoek op naam..." value={adderQ} onChange={(e) => setAdderQ(e.target.value)}/>
+            <input className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" placeholder="Zoek op naam..." value={adderQ} onChange={(e) => setAdderQ(e.target.value)}/>
           </div>
 
           <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
             {[["both","Beide"],["material","Materiaal"],["set","Sets"]].map(([k,l]) => (
-              <button key={k} onClick={() => setAdderKindFilter(k)} className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${adderKindFilter===k?(k==="set"?"bg-purple-600 text-white":k==="material"?"bg-blue-600 text-white":"bg-slate-700 text-white"):"text-slate-600 hover:text-slate-900"}`}>{l}</button>
+              <button key={k} onClick={() => setAdderKindFilter(k)} className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${adderKindFilter===k?(k==="set"?"bg-accent text-white":k==="material"?"bg-accent text-white":"bg-slate-700 text-white"):"text-slate-600 hover:text-slate-900"}`}>{l}</button>
             ))}
           </div>
 
-          <div className="flex gap-1.5 overflow-x-auto">{CATS.map((c) => <button key={c} onClick={() => setAdderCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${adderCat === c ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{c}</button>)}</div>
+          <div className="flex gap-1.5 overflow-x-auto">{CATS.map((c) => <button key={c} onClick={() => setAdderCat(c)} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${adderCat === c ? "bg-accent text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{c}</button>)}</div>
 
           <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
             {filteredForAdder.length === 0 ? <p className="text-sm text-slate-400 text-center py-4">Geen beschikbaar materiaal met deze filters</p>
             : filteredForAdder.slice(0, 30).map((i) => {
               const av = getAvailForAdd(i);
               const inC = addedCart.find((c) => c.key === cartKey(i.kind, i.id))?.qty || 0;
-              return <div key={cartKey(i.kind, i.id)} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 border ${inC > 0 ? "border-blue-300 bg-blue-50" : "border-slate-100 bg-white"}`}>
+              return <div key={cartKey(i.kind, i.id)} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 border ${inC > 0 ? "border-slate-300 bg-slate-100" : "border-slate-100 bg-white"}`}>
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-sm flex-shrink-0">{getIcon(i.category)}</div>
                   <div className="min-w-0">
@@ -569,7 +570,7 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
                     <p className="text-xs text-emerald-600">{av} beschikbaar</p>
                   </div>
                 </div>
-                <button onClick={() => addToCart(i)} disabled={av === 0} className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 disabled:opacity-30 flex items-center justify-center flex-shrink-0">+</button>
+                <button onClick={() => addToCart(i)} disabled={av === 0} className="w-8 h-8 rounded-lg bg-accent text-white font-bold text-sm hover:bg-accent/90 disabled:opacity-30 flex items-center justify-center flex-shrink-0">+</button>
               </div>;
             })}
             {filteredForAdder.length > 30 && <p className="text-xs text-slate-400 text-center">…nog {filteredForAdder.length - 30} verborgen. Zoek of scan om er sneller bij te komen.</p>}
@@ -577,13 +578,13 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
         </div>}
       </div>
 
-      {addedCart.length > 0 && <div className="bg-white rounded-2xl shadow-sm border border-blue-200">
-        <div className="px-5 py-3 border-b border-blue-100"><h3 className="font-bold text-blue-900 text-sm">Toegevoegd bij ophalen</h3></div>
+      {addedCart.length > 0 && <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
+        <div className="px-5 py-3 border-b border-slate-200"><h3 className="font-bold text-slate-900 text-sm">Toegevoegd bij ophalen</h3></div>
         {addedCart.map((c) => <div key={c.key} className="px-5 py-3 flex items-center justify-between gap-2 border-b border-slate-50 last:border-0">
           <p className="text-sm font-medium flex items-center gap-2 flex-wrap"><span>{c.qty}x {c.itemName}</span><KindBadge kind={c.kind} compact/></p>
           <div className="flex items-center gap-2">
             <button onClick={() => decCart(c.key)} className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 font-bold text-sm hover:bg-slate-200">-</button>
-            <span className="w-6 text-center font-bold text-blue-700">{c.qty}</span>
+            <span className="w-6 text-center font-bold text-accent">{c.qty}</span>
             <button onClick={() => removeFromCart(c.key)} className="text-red-400 hover:text-red-600" aria-label="Verwijderen"><svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 5L5 13M5 5l8 8"/></svg></button>
           </div>
         </div>)}
@@ -617,7 +618,7 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
         <button
           onClick={submit}
           disabled={submitting || untouchedItems.length > 0 || (totalScanned === 0 && totalAdded === 0)}
-          className="px-6 py-3 rounded-xl bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 disabled:opacity-40"
+          className="px-6 py-3 rounded-xl bg-accent text-white font-bold text-sm hover:bg-accent/90 disabled:opacity-40"
         >
           {submitting ? "Bezig..." : "Ophalen bevestigen"}
         </button>

@@ -102,7 +102,7 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
             <button
               onClick={handlePreview}
               disabled={!file || busy}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {busy ? "Bestand verwerken..." : "Voorvertonen"}
             </button>
@@ -132,13 +132,13 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
           <h4 className="font-semibold text-slate-800">Stap 2 — preview</h4>
           <div className="grid sm:grid-cols-2 gap-3">
-            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
-              <p className="text-2xl font-bold text-blue-700">{preview.materialsCount}</p>
-              <p className="text-sm text-blue-800">materialen worden aangemaakt of bijgewerkt</p>
+            <div className="bg-slate-100 border border-slate-200 rounded-xl px-4 py-3">
+              <p className="text-2xl font-bold text-accent">{preview.materialsCount}</p>
+              <p className="text-sm text-slate-800">materialen worden aangemaakt of bijgewerkt</p>
             </div>
-            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
-              <p className="text-2xl font-bold text-blue-700">{preview.setsCount}</p>
-              <p className="text-sm text-blue-800">sets worden aangemaakt of bijgewerkt</p>
+            <div className="bg-slate-100 border border-slate-200 rounded-xl px-4 py-3">
+              <p className="text-2xl font-bold text-accent">{preview.setsCount}</p>
+              <p className="text-sm text-slate-800">sets worden aangemaakt of bijgewerkt</p>
             </div>
           </div>
           {preview.skippedRows > 0 && (
@@ -177,7 +177,7 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
             <button
               onClick={handleExecute}
               disabled={busy || (preview.materialsCount === 0 && preview.setsCount === 0)}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {busy ? "Importeren..." : "Importeren bevestigen"}
             </button>
@@ -204,7 +204,7 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
           </div>
           <button
             onClick={reset}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+            className="px-4 py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/90"
           >
             Nieuwe import
           </button>

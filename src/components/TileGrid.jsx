@@ -8,16 +8,16 @@
 const TONE_CLASSES = {
   emerald: "bg-emerald-100 text-emerald-700",
   amber:   "bg-amber-100 text-amber-700",
-  purple:  "bg-purple-100 text-purple-700",
+  purple:  "bg-slate-100 text-slate-700",
   red:     "bg-red-100 text-red-700",
-  blue:    "bg-blue-100 text-blue-700",
+  blue:    "bg-slate-100 text-accent",
   gray:    "bg-slate-100 text-slate-700",
 };
 
 export function ViewToggle({ view, onChange, accent = "blue" }) {
   const activeClass = accent === "purple"
-    ? "bg-purple-600 text-white"
-    : "bg-blue-600 text-white";
+    ? "bg-accent text-white"
+    : "bg-accent text-white";
   const inactiveClass = "text-slate-600 hover:bg-slate-200";
   return <div className="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-medium" role="tablist" aria-label="Weergave">
     <button

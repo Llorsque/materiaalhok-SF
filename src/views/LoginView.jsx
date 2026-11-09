@@ -1,9 +1,16 @@
+import { Icon } from "../components/Icon";
 import { useState, useEffect, useRef } from "react";
 import { ConnectionBanner } from "../components/ConnectionBanner";
 import { login as apiLogin, loginByBarcode } from "../api/client";
 
 export function LoginView({ onLogin, branding, usersLoading, usersError, refreshUsers, sessionExpired, onDismissSessionExpired }) {
-  const [mode, setMode] = useState("scan");
+  const [mode, setMode] = useState(() => {
+    // v2: op de scan-laptop (localhost) start het scherm in scanmodus; op
+    // afstand (telefoon, thuis via materiaalhokopwest.com) is er geen scanner,
+    // dus begint het met e-mail en wachtwoord.
+    const h = typeof window !== "undefined" ? window.location.hostname : "localhost";
+    return (h === "localhost" || h === "127.0.0.1") ? "scan" : "manual";
+  });
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
@@ -129,9 +136,9 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
   }, [mode, welcome]);
 
   // Welcome screen
-  if (welcome) return <div className="min-h-screen flex items-center justify-center p-4" style={{background: `linear-gradient(135deg, ${branding.color}20, #f8fafc, ${branding.color}15)`}}>
-    <div className="bg-white rounded-3xl shadow-md w-full max-w-sm p-10 text-center">
-      <div className="text-6xl mb-4">{"\ud83d\udc4b"}</div>
+  if (welcome) return <div className="min-h-screen flex items-center justify-center p-4" >
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm w-full max-w-sm p-10 text-center">
+      <div className="text-5xl mb-4" style={{color:branding.color}}><Icon name="hand"/></div>
       <h1 className="text-3xl font-bold text-slate-900 mb-2">Welkom</h1>
       <p className="text-xl font-semibold" style={{color:branding.color}}>{welcome.name}</p>
       <p className="text-sm text-slate-400 mt-4">Even geduld...</p>
@@ -142,10 +149,10 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
     </div>
   </div>;
 
-  return <div className="min-h-screen flex items-center justify-center p-4" style={{background: branding.loginBg ? `url(${branding.loginBg}) center/cover` : `linear-gradient(135deg, ${branding.color}15, #f8fafc, ${branding.color}10)`}}>
-    <div className="bg-white rounded-3xl shadow-md w-full max-w-sm p-8">
+  return <div className="min-h-screen flex items-center justify-center p-4" style={branding.loginBg ? {background: `url(${branding.loginBg}) center/cover`} : undefined}>
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm w-full max-w-sm p-6 sm:p-8">
       <div className="text-center mb-6">
-        {branding.logo ? <img src={branding.logo} className="rounded-2xl object-contain mx-auto mb-4" style={{width:branding.loginLogoSize||64,height:branding.loginLogoSize||64}} alt=""/> : <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-4" style={{backgroundColor:branding.color}}>{"\ud83c\udfc5"}</div>}
+        {branding.logo ? <img src={branding.logo} className="rounded-2xl object-contain mx-auto mb-4" style={{width:branding.loginLogoSize||64,height:branding.loginLogoSize||64}} alt=""/> : <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-4" style={{backgroundColor:branding.color}}>{<Icon name="award"/>}</div>}
         <h1 className="text-2xl font-bold text-slate-900">{branding.title}</h1>
         <p className="text-sm text-slate-500 mt-1">{branding.subtitle}</p>
       </div>
@@ -158,8 +165,8 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
       </div>}
 
       <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
-        <button onClick={()=>{setMode("scan");setError("");setScanBuffer("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="scan"?"bg-white shadow-sm text-slate-900":"text-slate-500"}`}>{"\ud83d\udcf7"} Scan badge</button>
-        <button onClick={()=>{setMode("manual");setError("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="manual"?"bg-white shadow-sm text-slate-900":"text-slate-500"}`}>{"\ud83d\udd11"} Inloggen</button>
+        <button onClick={()=>{setMode("scan");setError("");setScanBuffer("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="scan"?"bg-white shadow-sm text-slate-900":"text-slate-500"}`}><Icon name="scan"/> Scan badge</button>
+        <button onClick={()=>{setMode("manual");setError("")}} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode==="manual"?"bg-white shadow-sm text-slate-900":"text-slate-500"}`}>{<Icon name="key"/>} Inloggen</button>
       </div>
 
       {error&&<div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700">{error}</div>}
@@ -167,13 +174,13 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
       {mode === "scan" ? (
         <div className="space-y-4 text-center">
           <div className="py-6">
-            <div className="text-5xl mb-3">{"\ud83d\udcf3"}</div>
+            <div className="text-5xl mb-3 text-slate-400"><Icon name="scan"/></div>
             <p className="text-slate-700 font-medium">Scan je persoonlijke badge</p>
             <p className="text-slate-400 text-sm mt-1">Richt de scanner op je barcode</p>
           </div>
           <input
             ref={scanInputRef}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-accent/40"
             placeholder="Wacht op scan..."
             value={scanBuffer}
             onChange={e => handleScanChange(e.target.value)}
@@ -186,8 +193,8 @@ export function LoginView({ onLogin, branding, usersLoading, usersError, refresh
         </div>
       ) : (
         <div className="space-y-4">
-          <div><label className="block text-sm font-medium text-slate-700 mb-1.5">E-mailadres</label><input type="email" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={email} onChange={e=>{setEmail(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()} autoComplete="email"/></div>
-          <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Wachtwoord</label><input type="password" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={pass} onChange={e=>{setPass(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()} autoComplete="current-password"/></div>
+          <div><label className="block text-sm font-medium text-slate-700 mb-1.5">E-mailadres</label><input type="email" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={email} onChange={e=>{setEmail(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()} autoComplete="email"/></div>
+          <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Wachtwoord</label><input type="password" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={pass} onChange={e=>{setPass(e.target.value);setError("")}} onKeyDown={e=>e.key==="Enter"&&go()} autoComplete="current-password"/></div>
           <button onClick={go} disabled={busy} className="w-full py-3 rounded-xl text-white font-semibold hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed" style={{backgroundColor:branding.color}}>{busy ? "Bezig..." : "Inloggen"}</button>
         </div>
       )}

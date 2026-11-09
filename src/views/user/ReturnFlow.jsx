@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { BonBadge } from "../../components/BonBadge";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
@@ -111,9 +112,9 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
     if (bi) {
       inc(bi, "returned");
       const c = cur(bi.id);
-      setScanMsg({ ok: true, text: `\u2705 ${itemDisplayName(bi)} ${(c.returned + 1)}/${bi.quantity} retour` });
+      setScanMsg({ ok: true, text: `${itemDisplayName(bi)} ${(c.returned + 1)}/${bi.quantity} retour` });
     } else {
-      setScanMsg({ ok: false, text: "\u274c Niet gevonden of alles al afgehandeld" });
+      setScanMsg({ ok: false, text: "Niet gevonden of alles al afgehandeld" });
     }
     setScanInput(""); scanValue.current = "";
     setTimeout(() => setScanMsg(null), 2500);
@@ -165,16 +166,16 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
   // BON-KEUZE
   if (!activeBon) return <div className="min-h-screen bg-slate-50">
     <div className="bg-white border-b border-slate-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-      <button onClick={onCancel} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
+      <button onClick={onCancel} className="flex items-center gap-2 text-accent text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
       <h2 className="text-lg font-bold text-slate-900">Kies een bon om te retourneren</h2><div className="w-16"/>
     </div></div>
     <div className="max-w-lg mx-auto px-4 py-6 space-y-3">
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
-      {myBons.length===0 ? <div className="text-center py-12"><p className="text-4xl mb-3">{"\ud83d\udce6"}</p><p className="text-slate-500">Geen actieve bonnen om te retourneren</p></div>
+      {myBons.length===0 ? <div className="text-center py-12"><p className="text-4xl mb-3">{<Icon name="package"/>}</p><p className="text-slate-500">Geen actieve bonnen om te retourneren</p></div>
       : myBons.map(b => <div key={b.id} onClick={()=>setActiveBon(b)} className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100 hover:border-slate-200 cursor-pointer hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2"><span className="font-mono text-sm font-bold text-blue-600">{b.bon_number}</span><BonBadge bon={b}/></div>
+            <div className="flex items-center gap-2"><span className="font-mono text-sm font-bold text-accent">{b.bon_number}</span><BonBadge bon={b}/></div>
             <p className="text-xs text-slate-500 mt-1">{(b.items||[]).filter(isActiveItem).map((i) => itemDisplayName(i)).join(", ")}</p>
           </div>
           <span className="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700">Retour</span>
@@ -186,14 +187,14 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
   const onBack = () => { if (presetBon) onCancel(); else setActiveBon(null); };
   return <div className="min-h-screen bg-slate-50 pb-40">
     <div className="bg-white border-b border-slate-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-      <button onClick={onBack} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
+      <button onClick={onBack} className="flex items-center gap-2 text-accent text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
       <h2 className="text-lg font-bold text-slate-900">Retour {activeBon.bon_number}</h2><div className="w-16"/>
     </div></div>
     <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
 
       <div className="bg-emerald-50 rounded-2xl px-5 py-3 text-sm text-emerald-800">
-        <p className="font-semibold">{"\ud83d\udce5"} Scan wat je terugbrengt</p>
+        <p className="font-semibold">{<Icon name="in"/>} Scan wat je terugbrengt</p>
         <p className="mt-1">Elke scan telt één stuk retour. Iets kwijt of kapot? Klik dat handmatig aan bij het item — de voorraad wordt dan direct bijgewerkt.</p>
       </div>
 
@@ -201,7 +202,7 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
         <label className="block text-sm font-medium text-slate-700 mb-2">Scan materiaal</label>
         <div className="flex gap-2">
           <input ref={scanRef} className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Scan barcode..." value={scanInput} onChange={e=>{const v=e.target.value;setScanInput(v);scanValue.current=v;if(scanTimer.current)clearTimeout(scanTimer.current);if(v.trim().length>=3)scanTimer.current=setTimeout(()=>handleReturnScan(),150)}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();if(scanTimer.current)clearTimeout(scanTimer.current);handleReturnScan()}}} autoFocus autoComplete="off"/>
-          <button onClick={handleReturnScan} className="px-5 py-3 rounded-xl text-white font-semibold text-sm bg-emerald-500 hover:bg-emerald-600">{"\ud83d\udce5"}</button>
+          <button onClick={handleReturnScan} className="px-5 py-3 rounded-xl text-white font-semibold text-sm bg-emerald-500 hover:bg-emerald-600">{<Icon name="in"/>}</button>
         </div>
         {scanMsg && <div className={`mt-3 rounded-xl px-4 py-3 text-sm font-medium ${scanMsg.ok?"bg-emerald-50 text-emerald-800":"bg-red-50 text-red-800"}`}>{scanMsg.text}</div>}
       </div>
@@ -216,7 +217,7 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
           const someDamage = c.lost > 0 || c.broken > 0;
           const rowBg = done
             ? (someDamage ? "bg-amber-50/60" : "bg-emerald-50/60")
-            : (total(bi.id) > 0 ? "bg-blue-50/60" : "bg-white");
+            : (total(bi.id) > 0 ? "bg-slate-50" : "bg-white");
           return <div key={bi.id} className={`px-5 py-3 border-b border-slate-50 last:border-0 ${rowBg}`}>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="min-w-0">
@@ -257,7 +258,7 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
       </div>
 
       {(totalLost > 0 || totalBroken > 0) && <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-sm text-amber-900">
-        <p className="font-semibold mb-1">{"\u26a0\ufe0f"} Voorraadwijziging bij bevestigen</p>
+        <p className="font-semibold mb-1">{<Icon name="alert"/>} Voorraadwijziging bij bevestigen</p>
         <ul className="space-y-0.5">
           {totalLost > 0   && <li>• {totalLost} stuk{totalLost   === 1 ? "" : "s"} gemeld als <strong>kwijt</strong> — worden van de voorraad afgeboekt.</li>}
           {totalBroken > 0 && <li>• {totalBroken} stuk{totalBroken === 1 ? "" : "s"} gemeld als <strong>kapot</strong> — worden van de voorraad afgeboekt (tot een admin ze afhandelt).</li>}
@@ -289,7 +290,7 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
 function ConditionCounter({ label, color, value, canInc, disabled, onInc, onDec }) {
   const colorMap = {
     emerald: { text: "text-emerald-700", plus: "bg-emerald-500 hover:bg-emerald-600" },
-    amber:   { text: "text-amber-700",   plus: "bg-amber-500 hover:bg-amber-600" },
+    amber:   { text: "text-amber-700",   plus: "bg-accent hover:bg-accent/90" },
     red:     { text: "text-red-700",     plus: "bg-red-500 hover:bg-red-600" },
   }[color];
   return <div className="border border-slate-200 rounded-xl p-2 flex flex-col items-center gap-1">

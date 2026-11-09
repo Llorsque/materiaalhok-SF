@@ -122,7 +122,7 @@ export function SettingsTab({ branding, setBranding }) {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Logo formaat header ({branding.logoSize || 40}px)</label>
           <div className="flex items-center gap-4">
-            <input type="range" min="20" max="80" value={branding.logoSize || 40} onChange={e => setBranding(p => ({...p, logoSize: parseInt(e.target.value)}))} className="flex-1 accent-blue-600"/>
+            <input type="range" min="20" max="80" value={branding.logoSize || 40} onChange={e => setBranding(p => ({...p, logoSize: parseInt(e.target.value)}))} className="flex-1 accent-accent"/>
             <div className="bg-slate-100 rounded-xl p-2 flex items-center justify-center" style={{width:80,height:80}}>
               <img src={branding.logo} className="rounded-lg object-contain" style={{width:branding.logoSize||40,height:branding.logoSize||40}} alt="preview"/>
             </div>
@@ -131,15 +131,15 @@ export function SettingsTab({ branding, setBranding }) {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Logo formaat loginscherm ({branding.loginLogoSize || 64}px)</label>
           <div className="flex items-center gap-4">
-            <input type="range" min="32" max="160" value={branding.loginLogoSize || 64} onChange={e => setBranding(p => ({...p, loginLogoSize: parseInt(e.target.value)}))} className="flex-1 accent-blue-600"/>
+            <input type="range" min="32" max="160" value={branding.loginLogoSize || 64} onChange={e => setBranding(p => ({...p, loginLogoSize: parseInt(e.target.value)}))} className="flex-1 accent-accent"/>
             <div className="bg-slate-100 rounded-xl p-2 flex items-center justify-center" style={{width:100,height:100}}>
               <img src={branding.logo} className="rounded-lg object-contain" style={{width:branding.loginLogoSize||64,height:branding.loginLogoSize||64}} alt="preview"/>
             </div>
           </div>
         </div>
       </>}
-      <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Titel</label><input className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.title} onChange={e=>setBranding(p=>({...p,title:e.target.value}))}/></div>
-      <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Ondertitel</label><input className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.subtitle} onChange={e=>setBranding(p=>({...p,subtitle:e.target.value}))}/></div>
+      <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Titel</label><input className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={branding.title} onChange={e=>setBranding(p=>({...p,title:e.target.value}))}/></div>
+      <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Ondertitel</label><input className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40" value={branding.subtitle} onChange={e=>setBranding(p=>({...p,subtitle:e.target.value}))}/></div>
       <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Kleur</label><div className="flex items-center gap-3"><input type="color" value={branding.color} onChange={e=>setBranding(p=>({...p,color:e.target.value}))} className="w-10 h-10 rounded-lg cursor-pointer border-0"/><span className="text-sm text-slate-500">{branding.color}</span></div></div>
       <ImageUpload value={branding.loginBg} onChange={v=>setBranding(p=>({...p,loginBg:v}))} label="Login achtergrond"/>
     </div>
@@ -152,15 +152,15 @@ export function SettingsTab({ branding, setBranding }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Inleveren vóór</label>
-          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={handover.handover_return_before} onChange={e=>setHandover(p=>({...p,handover_return_before:e.target.value}))}/>
+          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-base focus:outline-none focus:ring-2 focus:ring-accent/40" value={handover.handover_return_before} onChange={e=>setHandover(p=>({...p,handover_return_before:e.target.value}))}/>
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Ophalen vanaf</label>
-          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={handover.handover_pickup_from} onChange={e=>setHandover(p=>({...p,handover_pickup_from:e.target.value}))}/>
+          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-base focus:outline-none focus:ring-2 focus:ring-accent/40" value={handover.handover_pickup_from} onChange={e=>setHandover(p=>({...p,handover_pickup_from:e.target.value}))}/>
         </div>
       </div>
       {handoverInvalid && <p className="text-sm text-red-600">De ophaaltijd moet ná de inlevertijd liggen.</p>}
-      <button onClick={saveHandover} disabled={!handoverDirty || handoverInvalid || settingsSaving} className="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Tijden opslaan</button>
+      <button onClick={saveHandover} disabled={!handoverDirty || handoverInvalid || settingsSaving} className="px-4 py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90 disabled:opacity-40">Tijden opslaan</button>
     </div>
 
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
@@ -170,7 +170,7 @@ export function SettingsTab({ branding, setBranding }) {
       </div>
       <textarea
         rows={8}
-        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 font-mono"
         placeholder="Bijv. 'Materiaal wordt schoon en droog geretourneerd. Bij verlies of schade wordt de dagprijs in rekening gebracht...'"
         value={rentalTerms}
         onChange={(e) => setRentalTerms(e.target.value)}
@@ -182,7 +182,7 @@ export function SettingsTab({ branding, setBranding }) {
         <button
           onClick={saveRentalTerms}
           disabled={!rentalTermsDirty || settingsLoading || settingsSaving}
-          className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-40"
+          className="px-4 py-2 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent/90 disabled:opacity-40"
         >
           {settingsSaving ? "Opslaan\u2026" : "Opslaan"}
         </button>
@@ -238,7 +238,7 @@ export function SettingsTab({ branding, setBranding }) {
           </ul>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-900 space-y-1">
+        <div className="bg-slate-100 border border-slate-200 rounded-xl p-4 text-sm text-slate-900 space-y-1">
           <p>• Bonnummers beginnen daarna weer bij 1.</p>
           <p>• Er wordt automatisch een backup gemaakt in <code className="text-xs">server/backups/</code> vóór de reset.</p>
         </div>
@@ -293,7 +293,7 @@ export function SettingsTab({ branding, setBranding }) {
         <div className="flex justify-end">
           <button
             onClick={() => { setResetOpen(false); window.location.reload(); }}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+            className="px-4 py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/90"
           >
             Sluiten en herladen
           </button>

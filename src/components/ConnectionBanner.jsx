@@ -1,3 +1,4 @@
+import { Icon } from "./Icon";
 // Toont een laad- of foutbalk bovenaan een scherm dat backend-data gebruikt.
 // `resource` bepaalt het label in de loading-indicator ("Materialen laden...",
 // "Gebruikers laden...", etc.).
@@ -19,7 +20,7 @@ export function ConnectionBanner({ loading, error, onRetry, resource = "Material
     if (isValidation) {
       return (
         <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-3 mb-4 flex items-start gap-3">
-          <span className="text-lg flex-shrink-0">{"\u26a0\ufe0f"}</span>
+          <span className="text-lg flex-shrink-0">{<Icon name="alert"/>}</span>
           <p className="text-sm text-red-800 flex-1 min-w-0">{message}</p>
         </div>
       );
@@ -28,7 +29,7 @@ export function ConnectionBanner({ loading, error, onRetry, resource = "Material
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-4">
         <div className="flex items-start gap-3">
-          <span className="text-lg flex-shrink-0">{"\u26a0\ufe0f"}</span>
+          <span className="text-lg flex-shrink-0">{<Icon name="alert"/>}</span>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-red-800">
               Geen verbinding met de server. Zet de laptop in het materiaalhok aan en wacht tot 'ie volledig is opgestart. Probeer daarna opnieuw.
@@ -47,8 +48,8 @@ export function ConnectionBanner({ loading, error, onRetry, resource = "Material
   }
   if (loading) {
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-3 mb-4 text-sm text-blue-700 flex items-center gap-3">
-        <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
+      <div className="bg-slate-100 border border-slate-200 rounded-2xl px-5 py-3 mb-4 text-sm text-accent flex items-center gap-3">
+        <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-600 rounded-full animate-spin" />
         {resource} laden...
       </div>
     );

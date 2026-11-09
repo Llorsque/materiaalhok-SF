@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { useMemo, useState } from "react";
 import { LoanFlow } from "../user/LoanFlow";
 
@@ -46,7 +47,7 @@ export function AdminBonFlow({ users, eq, materialsLoading, materialsError, refr
   return <div className="min-h-screen bg-slate-50 pb-24">
     <div className="bg-white border-b border-slate-100 shadow-sm">
       <div className="max-w-xl mx-auto px-5 py-4 flex items-center justify-between">
-        <button onClick={onCancel} className="flex items-center gap-2 text-blue-600 text-sm font-medium">
+        <button onClick={onCancel} className="flex items-center gap-2 text-accent text-sm font-medium">
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
           Terug
         </button>
@@ -67,7 +68,7 @@ export function AdminBonFlow({ users, eq, materialsLoading, materialsError, refr
         <div className="relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40"
             placeholder="Zoek op naam of e-mail..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -81,13 +82,13 @@ export function AdminBonFlow({ users, eq, materialsLoading, materialsError, refr
                 key={u.id}
                 type="button"
                 onClick={() => setSelectedUser(u)}
-                className={`w-full text-left px-4 py-3 hover:bg-blue-50 ${selectedUser?.id === u.id ? "bg-blue-50" : "bg-white"}`}
+                className={`w-full text-left px-4 py-3 hover:bg-slate-100 ${selectedUser?.id === u.id ? "bg-slate-100" : "bg-white"}`}
               >
                 <p className="text-sm font-semibold text-slate-900">{u.name}</p>
                 <p className="text-xs text-slate-500">{u.email}</p>
               </button>)}
             </div>}
-        {selectedUser && <p className="text-sm text-blue-700 bg-blue-50 rounded-xl px-4 py-2">
+        {selectedUser && <p className="text-sm text-accent bg-slate-100 rounded-xl px-4 py-2">
           Gekozen: <span className="font-semibold">{selectedUser.name}</span>
         </p>}
       </div>
@@ -97,16 +98,16 @@ export function AdminBonFlow({ users, eq, materialsLoading, materialsError, refr
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setMode("loan")}
-            className="py-6 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md"
+            className="py-6 rounded-2xl bg-accent hover:bg-accent/90 text-white font-bold shadow-md"
           >
-            <span className="text-3xl block mb-1">{"\ud83d\udce4"}</span>
+            <span className="text-3xl block mb-1">{<Icon name="out"/>}</span>
             <span className="text-sm">Direct lenen</span>
           </button>
           <button
             onClick={() => setMode("reservation")}
-            className="py-6 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-md"
+            className="py-6 rounded-2xl bg-accent hover:bg-accent/90 text-white font-bold shadow-md"
           >
-            <span className="text-3xl block mb-1">{"\ud83d\udcc5"}</span>
+            <span className="text-3xl block mb-1">{<Icon name="calendar"/>}</span>
             <span className="text-sm">Reserveren</span>
           </button>
         </div>

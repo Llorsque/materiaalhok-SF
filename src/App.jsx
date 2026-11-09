@@ -151,6 +151,14 @@ export default function App() {
 
   useEffect(() => { if (ok) store.set("mhok-brand", branding); }, [branding, ok]);
 
+  // v2: de branding-kleur wordt de accentkleur van de hele app (Tailwind
+  // 'accent' leest de CSS-variabele --accent als "r g b").
+  useEffect(() => {
+    const m = String(branding?.color || "").match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (!m) return;
+    document.documentElement.style.setProperty("--accent", `${parseInt(m[1], 16)} ${parseInt(m[2], 16)} ${parseInt(m[3], 16)}`);
+  }, [branding?.color]);
+
   // Backwards-compatible addLog: sinds v1.2.0 logt de backend zelf. Deze
   // callback triggert alleen nog een refresh zodat het dashboard de zojuist
   // geschreven regel direct ziet. Alleen admins mogen /api/logs bevragen —

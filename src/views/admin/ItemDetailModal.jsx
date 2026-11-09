@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { Modal } from "../../components/Modal";
 import { BarcodeSVG } from "../../components/BarcodeSVG";
 import { BonCard } from "../../components/BonCard";
@@ -35,7 +36,7 @@ export function ItemDetailModal({ detail, setDetail, bons, eq, addLog, getItemSt
           <div className="flex justify-between"><span className="text-slate-500">Uitgeleend</span><span className="font-medium text-amber-600">{loanedQty(bons,detail.id)}</span></div>
           <div className="flex justify-between"><span className="text-slate-500">Prijs</span><span className="font-medium">{fmt(detail.pricePerUnit)}</span></div>
           <div className="flex justify-between"><span className="text-slate-500">Uitgeleend (jaar)</span><span className="font-medium">{stats.count}x</span></div>
-          {Object.keys(stats.borrowers).length>0&&<div><span className="text-slate-500">Door:</span><div className="mt-1 flex flex-wrap gap-1">{Object.entries(stats.borrowers).sort((a,b)=>b[1]-a[1]).map(([n,c])=><span key={n} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs">{n} ({c}x)</span>)}</div></div>}
+          {Object.keys(stats.borrowers).length>0&&<div><span className="text-slate-500">Door:</span><div className="mt-1 flex flex-wrap gap-1">{Object.entries(stats.borrowers).sort((a,b)=>b[1]-a[1]).map(([n,c])=><span key={n} className="px-2 py-0.5 bg-slate-100 text-accent rounded-full text-xs">{n} ({c}x)</span>)}</div></div>}
         </div>
 
         {/* Ronde B blok 2 — schade/verlies-samenvatting per materiaal */}
@@ -57,9 +58,9 @@ export function ItemDetailModal({ detail, setDetail, bons, eq, addLog, getItemSt
 
         {itemBons.length>0&&<div><p className="text-xs font-semibold text-slate-500 uppercase mb-2">Bonnen met dit item</p>{itemBons.map(b=><BonCard key={b.id} bon={b} onClick={()=>{setDetail(null);onOpenBon(b)}} showUser showAdminMark/>)}</div>}
         <div className="flex gap-2 pt-2">
-          <button onClick={()=>{onEdit(detail);setDetail(null)}} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700">Bewerken</button>
-          <button onClick={()=>onRegenBarcode(detail.id)} className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-200" title="Nieuwe barcode">{"\ud83d\udd04"}</button>
-          <button onClick={()=>onPrint([detail])} className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm">{"\ud83d\udda8"}</button>
+          <button onClick={()=>{onEdit(detail);setDetail(null)}} className="flex-1 py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90">Bewerken</button>
+          <button onClick={()=>onRegenBarcode(detail.id)} className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-200" title="Nieuwe barcode">{<Icon name="refresh"/>}</button>
+          <button onClick={()=>onPrint([detail])} className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm">{<Icon name="printer"/>}</button>
           <button onClick={()=>onDelete(detail.id)} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm border border-red-200">Verwijder</button>
         </div>
       </div>;

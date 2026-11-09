@@ -1,3 +1,4 @@
+import { Icon } from "../../components/Icon";
 import { Modal } from "../../components/Modal";
 import { BarcodeSVG } from "../../components/BarcodeSVG";
 import { BonCard } from "../../components/BonCard";
@@ -13,7 +14,7 @@ export function SetDetailModal({ detail, setDetail, bons, onEdit, onDelete, onPr
       const setBons = bons.filter(b => b.status !== "completed" && (b.items || []).some(bi => bi.set_id === detail.id));
       return <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-2xl">{getIcon(detail.category)}</div>
+          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl">{getIcon(detail.category)}</div>
           <div className="flex-1">
             <h3 className="font-bold text-slate-900">{detail.name}</h3>
             <p className="text-sm text-slate-500">{detail.category || "\u2014"} {"\u00b7"} {detail.stock} set{detail.stock !== 1 ? "s" : ""}</p>
@@ -25,14 +26,14 @@ export function SetDetailModal({ detail, setDetail, bons, onEdit, onDelete, onPr
           <div className="flex justify-between"><span className="text-slate-500">Barcode</span><span className="font-mono font-medium text-slate-900">{detail.barcode || "geen"}</span></div>
           <div className="flex justify-between"><span className="text-slate-500">Beschikbaar</span><span className="font-medium text-emerald-600">{av}</span></div>
           <div className="flex justify-between"><span className="text-slate-500">Uitgeleend</span><span className="font-medium text-amber-600">{lo}</span></div>
-          <div className="flex justify-between"><span className="text-slate-500">Gereserveerd</span><span className="font-medium text-purple-600">{res}</span></div>
+          <div className="flex justify-between"><span className="text-slate-500">Gereserveerd</span><span className="font-medium text-accent">{res}</span></div>
           {detail.location && <div className="flex justify-between"><span className="text-slate-500">Locatie</span><span className="font-medium">{detail.location}</span></div>}
-          {detail.purchase_link && <div className="flex justify-between gap-2"><span className="text-slate-500">Inkooplink</span><a href={detail.purchase_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-[220px]">{detail.purchase_link}</a></div>}
+          {detail.purchase_link && <div className="flex justify-between gap-2"><span className="text-slate-500">Inkooplink</span><a href={detail.purchase_link} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline truncate max-w-[220px]">{detail.purchase_link}</a></div>}
         </div>
 
         <div>
           <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Samenstelling</p>
-          <div className="bg-purple-50 rounded-xl px-4 py-3 text-sm text-purple-900 whitespace-pre-line">
+          <div className="bg-slate-100 rounded-xl px-4 py-3 text-sm text-slate-800 whitespace-pre-line">
             {detail.composition?.trim() ? detail.composition : <span className="text-slate-400 italic">Nog geen samenstelling vastgelegd</span>}
           </div>
         </div>
@@ -48,9 +49,9 @@ export function SetDetailModal({ detail, setDetail, bons, onEdit, onDelete, onPr
         </div>}
 
         <div className="flex gap-2 pt-2">
-          <button onClick={() => { onEdit(detail); setDetail(null); }} className="flex-1 py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700">Bewerken</button>
-          <button onClick={() => onRegenBarcode(detail.id)} className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-200" title="Nieuwe barcode">{"\ud83d\udd04"}</button>
-          <button onClick={() => onPrint([detail])} className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm">{"\ud83d\udda8"}</button>
+          <button onClick={() => { onEdit(detail); setDetail(null); }} className="flex-1 py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/90">Bewerken</button>
+          <button onClick={() => onRegenBarcode(detail.id)} className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-700 text-sm border border-amber-200" title="Nieuwe barcode">{<Icon name="refresh"/>}</button>
+          <button onClick={() => onPrint([detail])} className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm">{<Icon name="printer"/>}</button>
           <button onClick={() => onDelete(detail.id)} className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm border border-red-200">Verwijder</button>
         </div>
       </div>;
