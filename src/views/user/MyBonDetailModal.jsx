@@ -3,6 +3,7 @@ import { BonBadge } from "../../components/BonBadge";
 import { KindBadge } from "../../components/KindBadge";
 import { fmtDate } from "../../utils/date";
 import { itemDisplayName, bonActiveItems } from "../../utils/bons";
+import { ExtendBonPanel } from "../../components/ExtendBonPanel";
 
 function itemStatus(bi) {
   if (bi.returned) return { label: "retour", color: "bg-emerald-100 text-emerald-700" };
@@ -10,7 +11,7 @@ function itemStatus(bi) {
   return { label: "open", color: "bg-gray-100 text-gray-600" };
 }
 
-export function MyBonDetailModal({ bon, sets, userName, onClose }) {
+export function MyBonDetailModal({ bon, sets, userName, onClose, onChanged }) {
   if (!bon) return null;
   // Voor de gebruiker verbergen we soft-deleted items — die staan alleen
   // in het admin-detail als audit-regel.
@@ -65,6 +66,8 @@ export function MyBonDetailModal({ bon, sets, userName, onClose }) {
           })}
         </div>
       </div>
+
+      <ExtendBonPanel bon={bon} onExtended={() => onChanged && onChanged()}/>
 
       <button onClick={onClose} className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm hover:bg-gray-200">Sluiten</button>
     </div>

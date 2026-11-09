@@ -9,21 +9,16 @@
 // uitsluitend bestaan voor de audit-trail in het admin bon-detail.
 const isActiveBonItem = (it) => it && it.removed_at_pickup !== 1;
 
-// v1.20.0: beschikbaarheid is datum-afhankelijk. Een bon telt alleen mee
-// als hij OVERLAPT met de gevraagde periode.
+// v2: de leen-, reserveer- en ophaalschermen vragen de beschikbaarheid aan
+// de server (GET /api/availability, zie server/availability.js). De helpers
+// hieronder worden alleen nog gebruikt voor de admin-overzichten "vandaag"
+// (admins krijgen alle bonnen binnen). Ze volgen dezelfde regels als de
+// server:
+//   * een bon bezet de dagen [start_date, return_date) — de retourdag zelf
+//     is vrij dankzij de vaste overdrachtstijden;
+//   * een actieve bon die te laat is, bezet het materiaal t/m vandaag.
 //
-// LET OP — SYNCHRONISATIE VERPLICHT met backend checkStock() in
-// server/routes/bons.js (rond regel 120-131). De overlap-regel is:
-//   status IN ('active','reserved')
-//   AND b.start_date <= period.return_date
-//   AND b.return_date >= period.start_date
-// (inclusieve grenzen; de leendag en retourdag tellen als bezet). Bij
-// aanpassing van deze regel moet OOK checkStock bijgewerkt worden — anders
-// tonen we op de frontend andere getallen dan wat de backend weigert.
-//
-// Als er geen periode wordt meegegeven, geldt "vandaag" (start=return=today).
-// Dat is wat het dashboard en de admin-lijsten tonen onder het label
-// "Beschikbaar".
+// Als er geen periode wordt meegegeven, geldt "vandaag".
 function todayYmd() {
   const d = new Date();
   const y = d.getFullYear();
@@ -32,12 +27,22 @@ function todayYmd() {
   return `${y}-${m}-${dd}`;
 }
 
+// periode = de dagen startDate t/m returnDate (inclusief, zoals de admin-
+// lijsten het bedoelen: "vandaag" = start=ret=vandaag).
 function bonOverlapsPeriod(b, startDate, returnDate) {
   // Ontbrekende datums op een bon zouden alles kunnen matchen; behandel ze
-  // defensief als "telt niet mee" — bons zonder datums horen niet voor te
-  // komen (backend valideert bij POST) maar we willen geen spookbezetting.
+  // defensief als "telt niet mee".
   if (!b.start_date || !b.return_date) return false;
-  return b.start_date <= returnDate && b.return_date >= startDate;
+  const s = b.start_date.slice(0, 10);
+  let end = b.return_date.slice(0, 10); // exclusief
+  const t = todayYmd();
+  if (b.status === "active" && end <= t) end = addDay(t); // te laat: bezet t/m vandaag
+  return s <= returnDate && end > startDate;
+}
+
+function addDay(ymd) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 }
 
 function normalizePeriod(startDate, returnDate) {
@@ -149,20 +154,30 @@ export function availSetQty(item, bons, startDate, returnDate, opts) {
   );
 }
 
-// Retourdeadline is 18:00 Europe/Amsterdam op de return_date. Een bon met
-// return_date "2026-09-01" mag die dag tot 18:00 NL nog worden ingeleverd,
-// pas daarna is 'ie te laat. Zonder deze zone-bewuste vergelijking zou
+// v2: de retourdeadline is de instelbare inlevertijd (standaard 12:00)
+// Europe/Amsterdam op de return_date. App.jsx zet de waarde na het inloggen
+// via setReturnDeadline(). Tot v1.20.4 was dit vast 18:00.
+let RETURN_H = 12, RETURN_M = 0;
+export function setReturnDeadline(hhmm) {
+  const m = String(hhmm || "").match(/^(\d{2}):(\d{2})$/);
+  if (m) { RETURN_H = +m[1]; RETURN_M = +m[2]; }
+}
+export function returnDeadlineLabel() {
+  return `${String(RETURN_H).padStart(2, "0")}:${String(RETURN_M).padStart(2, "0")}`;
+}
+// Oorspronkelijke toelichting: een bon met return_date "2026-09-01" mag die
+// dag tot de deadline nog worden ingeleverd, pas daarna is 'ie te laat. Zonder deze zone-bewuste vergelijking zou
 // `new Date("2026-09-01")` als 00:00 UTC (= 02:00 CEST) worden gelezen en
 // zou de bon al vanaf 02:00 's nachts te laat lijken. Werkt DST-veilig via
 // Intl.DateTimeFormat — nooit een hardgecodeerde offset gebruiken.
-function deadlineEpochMs(ymd, hour) {
+function deadlineEpochMs(ymd, hour, minute = 0) {
   const m = String(ymd).match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) return null;
   const y = +m[1], mo = +m[2], d = +m[3];
   // Truc: bereken wat de Amsterdamse klok aanwijst als we het "lokale" moment
   // per ongeluk als UTC interpreteren. Het verschil is precies de offset op
   // dat moment, en die trekken we er af om terug te schalen naar echte UTC.
-  const guess = Date.UTC(y, mo - 1, d, hour, 0, 0);
+  const guess = Date.UTC(y, mo - 1, d, hour, minute, 0);
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Amsterdam',
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -182,7 +197,7 @@ function deadlineEpochMs(ymd, hour) {
 export function bonIsOverdue(b) {
   if (!b || b.status === "completed") return false;
   if (!b.return_date) return false;
-  const deadline = deadlineEpochMs(b.return_date, 18);
+  const deadline = deadlineEpochMs(b.return_date, RETURN_H, RETURN_M);
   if (deadline == null) return false;
   return Date.now() > deadline;
 }

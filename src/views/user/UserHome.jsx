@@ -196,7 +196,7 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
         }
       </div>
 
-      <MyBonDetailModal bon={selectedBon} sets={sets} userName={user.name} onClose={()=>setSelectedBonId(null)}/>
+      <MyBonDetailModal bon={selectedBon} sets={sets} userName={user.name} onClose={()=>setSelectedBonId(null)} onChanged={refreshBons}/>
 
       {/* Andere uitleningen in het hok (nieuw) — read-only */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">

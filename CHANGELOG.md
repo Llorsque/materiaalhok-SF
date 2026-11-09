@@ -7,6 +7,44 @@ en dit project houdt zich aan [Semantic Versioning](https://semver.org/lang/nl/)
 
 ## [Unreleased]
 
+Vervolgversie v2 (in ontwikkeling op branch `v2`, nog niet in productie).
+
+### Toegevoegd
+- **Beschikbaarheid per dag op de server** (`server/availability.js`, nieuw
+  endpoint `GET /api/availability`). Eén bron van waarheid voor de leen-,
+  reserveer- en ophaalschermen.
+- **Verlengen.** Een gebruiker kan zijn eigen bon verlengen vanuit het
+  bon-detail (`POST /api/bons/:id/extend`). Dat lukt alleen als alle
+  openstaande items in de extra dagen vrij zijn, ook ten opzichte van
+  reserveringen van anderen. Lukt het niet, dan zie je wie het materiaal
+  heeft. De herinneringsmail wordt voor de nieuwe datum opnieuw verstuurd.
+- **Vaste overdrachtstijden.** Inleveren vóór 12:00 en ophalen vanaf 13:00,
+  instelbaar in admin → Instellingen. Op de retourdag kan iemand anders het
+  materiaal dus dezelfde dag weer ophalen. De tijden staan in de leenflow
+  en in de mails.
+- **Wie heeft het en vrij per dag.** In de leen- en reserveerlijst klap je
+  per item open wie het in jouw periode heeft (naam, aantal, retourdatum) en,
+  als het per dag verschilt, hoeveel er per dag vrij is.
+
+### Gewijzigd
+- De retourdag telt niet meer als bezet (dankzij de overdrachtstijden).
+- Een bon is te laat na de inlevertijd op de retourdag (was: 18:00).
+- Een actieve bon die te laat is, houdt het materiaal bezet tot en met
+  vandaag. Voorheen gold het al als vrij terwijl het fysiek nog weg was.
+- Admin: een latere retourdatum in het bon-detail wordt nu op voorraad
+  gecontroleerd. Een conflict verschijnt in de modal zelf.
+
+### Opgelost
+- **Gewone gebruikers zagen een te hoge beschikbaarheid.** Het scherm
+  rekende alleen met hun eigen bonnen en zag reserveringen van anderen dus
+  niet. De server weigerde pas bij het opslaan.
+- **Te strenge controle bij niet-overlappende bonnen.** Twee bonnen van 5
+  stuks op ma–di en do–vr gaven voor ma–vr "0 vrij" (bij 10 stuks), terwijl
+  er elke dag 5 vrij waren. Er wordt nu per dag gerekend.
+- Admin kon de retourdatum verschuiven zonder voorraadcontrole, met een
+  risico op dubbele boekingen.
+- `today()` gaf tussen 00:00 en 02:00 nog de datum van gisteren (UTC).
+
 ## [1.20.4] - 2026-09-01
 
 Bugfix in de te-laat-detectie en dashboard-weergave van bonnen. Een bon

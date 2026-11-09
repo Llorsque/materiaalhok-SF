@@ -206,8 +206,12 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
       const updated = await updateBon(bonId, payload);
       await refreshBons();
       setBonDetail(updated);
+      return null;
     } catch (err) {
+      // v2: een voorraadconflict (409) tonen we in de modal zelf.
+      if (err.status === 409) return err;
       setBonsError(err);
+      return null;
     }
   };
 

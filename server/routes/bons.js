@@ -71,81 +71,17 @@ function generateBonNumber() {
   return `${prefix}${String(next).padStart(4, '0')}`;
 }
 
-// Voor elk item (mat/set), bereken reserved-quantity in overlappende bonnen
-// met status 'active' of 'reserved'. excludeBonId laat eigen bon buiten beeld
-// bij toekomstige re-checks (nu ongebruikt — PUT raakt items niet aan).
-function checkStock(items, period, excludeBonId = null) {
-  // Aggregeer aanvragen per (kind, id), zodat dezelfde material/set die
-  // meerdere keren in items voorkomt correct opgeteld wordt.
-  const aggregated = new Map();
-  for (const it of items) {
-    const kind = it.material_id != null ? 'material' : 'set';
-    const id = it.material_id ?? it.set_id;
-    const key = `${kind}:${id}`;
-    if (!aggregated.has(key)) aggregated.set(key, { kind, id, quantity: 0 });
-    aggregated.get(key).quantity += it.quantity;
-  }
+// v2: beschikbaarheid wordt per dag berekend in ../availability.js. Zie de
+// uitleg bovenin dat bestand (retourdag telt niet als bezet dankzij de
+// vaste overdrachtstijden; te late bonnen blokkeren t/m vandaag).
+const { checkStock, todayNL, ymd } = require('../availability');
 
-  const conflicts = [];
-  for (const req of aggregated.values()) {
-    const table = req.kind === 'material' ? 'materials' : 'sets';
-    const idCol = req.kind === 'material' ? 'material_id' : 'set_id';
-    const nameCol = req.kind === 'material' ? 'material_name' : 'set_name';
-
-    const item = db.prepare(`SELECT id, name, stock, available_status FROM ${table} WHERE id = ?`).get(req.id);
-    if (!item) {
-      conflicts.push({
-        [idCol]: req.id,
-        [nameCol]: null,
-        gevraagd: req.quantity,
-        beschikbaar: 0,
-        reden: `${req.kind === 'material' ? 'materiaal' : 'set'} bestaat niet`,
-      });
-      continue;
-    }
-    // Ronde B: unieke items die kwijt of kapot zijn, staan buiten dienst.
-    // Beschikbaarheid is dan 0 ongeacht stock — een reservering kan er niet
-    // op landen tot een admin de schade afhandelt.
-    if (item.available_status === 'out_of_service') {
-      conflicts.push({
-        [idCol]: req.id,
-        [nameCol]: item.name,
-        gevraagd: req.quantity,
-        beschikbaar: 0,
-        reden: 'buiten dienst (kwijt/kapot)',
-      });
-      continue;
-    }
-
-    let sql = `
-      SELECT COALESCE(SUM(bi.quantity), 0) AS reserved
-      FROM bon_items bi
-      JOIN bons b ON b.id = bi.bon_id
-      WHERE bi.${idCol} = ?
-        AND bi.returned = 0
-        AND bi.removed_at_pickup = 0
-        AND b.status IN ('active', 'reserved')
-        AND b.start_date <= ?
-        AND b.return_date >= ?
-    `;
-    const params = [req.id, period.return_date, period.start_date];
-    if (excludeBonId != null) {
-      sql += ' AND b.id != ?';
-      params.push(excludeBonId);
-    }
-    const { reserved } = db.prepare(sql).get(...params);
-    const available = item.stock - reserved;
-
-    if (req.quantity > available) {
-      conflicts.push({
-        [idCol]: req.id,
-        [nameCol]: item.name,
-        gevraagd: req.quantity,
-        beschikbaar: available,
-      });
-    }
-  }
-  return conflicts;
+// Openstaande regels van een bon (niet retour, niet verwijderd bij ophalen).
+function openItemsOf(bonId) {
+  return db.prepare(`
+    SELECT material_id, set_id, quantity FROM bon_items
+    WHERE bon_id = ? AND returned = 0 AND removed_at_pickup = 0
+  `).all(bonId);
 }
 
 // is_external is een afgeleide vlag (1/0) op basis van user_id. De frontend
@@ -570,6 +506,21 @@ router.put('/:id', requireAdmin, (req, res) => {
   const status       = existing.status;
   const completed_at = existing.completed_at;
 
+  // v2: een datumwijziging op een lopende bon moet passen in de voorraad.
+  // Tot v1.20.x werd dit niet gecontroleerd, waardoor een admin per ongeluk
+  // dubbel kon boeken. We toetsen alleen de dagen vanaf vandaag: het verleden
+  // valt niet meer te veranderen.
+  const datesChanged = start_date !== existing.start_date || return_date !== existing.return_date;
+  if (datesChanged && existing.status !== 'completed') {
+    const from = ymd(start_date) > todayNL() ? ymd(start_date) : todayNL();
+    if (from < ymd(return_date)) {
+      const conflicts = checkStock(openItemsOf(existing.id), { start_date: from, return_date }, existing.id);
+      if (conflicts.length > 0) {
+        return res.status(409).json({ error: 'onvoldoende voorraad in de nieuwe periode', details: conflicts });
+      }
+    }
+  }
+
   db.prepare(`
     UPDATE bons SET
       user_id = @user_id, start_date = @start_date, return_date = @return_date,
@@ -589,6 +540,47 @@ router.put('/:id', requireAdmin, (req, res) => {
   if (changes.length > 0) {
     logAction('bon_update', `${updated.bon_number} bijgewerkt: ${changes.join(', ')}`, req.user.id);
   }
+  res.json(updated);
+});
+
+// ---------------------------------------------------------------------------
+// v2: verlengen. De eigenaar van de bon (of een admin) kiest een latere
+// retourdatum. Dat mag alleen als alle openstaande regels in de extra dagen
+// vrij zijn — inclusief reserveringen van anderen die dan zouden beginnen.
+// Externe bonnen (geen user_id) kunnen alleen door een admin verlengd worden;
+// dat volgt vanzelf uit assertOwnBonOrAdmin.
+router.post('/:id/extend', (req, res) => {
+  const bon = db.prepare('SELECT * FROM bons WHERE id = ?').get(req.params.id);
+  if (!assertOwnBonOrAdmin(req, res, bon)) return;
+  if (bon.status === 'completed') {
+    return res.status(400).json({ error: 'Deze bon is al afgerond en kan niet meer verlengd worden.' });
+  }
+  const newReturn = ymd(req.body && req.body.return_date);
+  if (!newReturn || !parseDate(newReturn)) {
+    return res.status(400).json({ error: "veld 'return_date' moet een geldige datum (YYYY-MM-DD) zijn" });
+  }
+  const oldReturn = ymd(bon.return_date);
+  if (newReturn <= oldReturn) {
+    return res.status(400).json({ error: 'De nieuwe retourdatum moet later zijn dan de huidige.' });
+  }
+  if (isWeekendDate(parseDate(newReturn))) {
+    return res.status(400).json({ error: 'Retourdatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.' });
+  }
+  const items = openItemsOf(bon.id);
+  if (items.length === 0) {
+    return res.status(400).json({ error: 'Er staat niets meer open op deze bon.' });
+  }
+  // Te late bon: toets vanaf vandaag, niet vanaf de oude retourdatum.
+  const from = oldReturn > todayNL() ? oldReturn : todayNL();
+  const conflicts = from < newReturn ? checkStock(items, { start_date: from, return_date: newReturn }, bon.id) : [];
+  if (conflicts.length > 0) {
+    return res.status(409).json({ error: 'Verlengen kan niet: niet alles is beschikbaar in de extra dagen.', details: conflicts });
+  }
+  // reminder_sent_at leegmaken zodat er voor de nieuwe datum weer een
+  // herinnering uitgaat.
+  db.prepare('UPDATE bons SET return_date = ?, reminder_sent_at = NULL WHERE id = ?').run(newReturn, bon.id);
+  const updated = loadBonWithItems(bon.id);
+  logAction('bon_extend', `${bon.bon_number} verlengd: retour ${oldReturn} → ${newReturn}`, req.user.id);
   res.json(updated);
 });
 

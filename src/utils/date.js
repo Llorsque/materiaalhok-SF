@@ -14,7 +14,22 @@ export const fmtDT = (d) => {
   }
   return new Date(d).toLocaleDateString("nl-NL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 };
-export const today = () => new Date().toISOString().split("T")[0];
+// Lokale kalenderdag (niet UTC): tussen 00:00 en 02:00 NL-tijd gaf de oude
+// toISOString-variant nog de dag ervoor.
+export const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+export const addDaysYmd = (ymd, n) => {
+  const [y, m, d] = String(ymd).slice(0, 10).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
+// "ma 16 nov" voor een YYYY-MM-DD, zonder UTC-verschuiving.
+export const fmtDay = (ymd) => {
+  if (!ymd) return "";
+  const [y, m, d] = String(ymd).slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
+};
 export const isoNow = () => new Date().toISOString();
 
 // Zaterdag/zondag-check. Werkt op YYYY-MM-DD strings uit HTML date-inputs

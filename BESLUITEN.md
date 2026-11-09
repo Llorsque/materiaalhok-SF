@@ -218,6 +218,26 @@ veertien dagen historie.
   bestaande `mail_failed`-tile zorgt dat we falende mail wél in het zicht
   houden.
 
+## v2 — beschikbaarheid, verlengen en overdrachtstijden (9 nov 2026)
+
+- **De server rekent, de schermen tonen.** Beschikbaarheid wordt per
+  kalenderdag op de server berekend (`server/availability.js`). Reden: alleen
+  de server kent alle bonnen. Gewone gebruikers krijgen alleen hun eigen
+  bonnen binnen.
+- **Vaste overdrachtstijden in plaats van vrije tijdstippen.** Inleveren vóór
+  12:00, ophalen vanaf 13:00 (instelbaar). Een bon bezet daardoor de dagen
+  [ophaaldag, retourdag): de retourdag is vrij voor een volgende ophaler.
+  Dagdelen of vrije tijdstippen zijn overwogen en afgewezen: meer klikken en
+  meer kans op fouten, voor weinig winst op deze schaal.
+- **Te laat = bezet t/m vandaag.** Wanneer het terugkomt is onbekend, dus
+  latere dagen blokkeren we niet. Het dashboard laat de te late bon zien.
+- **Namen zichtbaar voor iedereen.** Elke ingelogde gebruiker ziet wie
+  materiaal heeft dat bezet is (naam, aantal, retourdatum), zodat collega's
+  onderling kunnen afstemmen.
+- **Verlengen mag de gebruiker zelf**, mits alles in de extra dagen vrij is.
+  Het logboek legt het vast (`bon_extend`). Admins kunnen altijd verlengen,
+  ook via de datums in het bon-detail, met dezelfde voorraadcontrole.
+
 ## Wat we expliciet niet doen (nu)
 
 - Eigen desktop-app op de scan-laptop (browser in kioskmodus volstaat).

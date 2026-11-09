@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ImageUpload } from "../../components/ImageUpload";
 import { Modal } from "../../components/Modal";
 import { getResetPreview, executeReset, getSettings, updateSettings } from "../../api/client";
+import { setReturnDeadline } from "../../utils/bons";
 
 export function SettingsTab({ branding, setBranding }) {
   const [resetOpen, setResetOpen] = useState(false);
@@ -22,6 +23,9 @@ export function SettingsTab({ branding, setBranding }) {
   const [settingsError, setSettingsError] = useState(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsToast, setSettingsToast] = useState(null);
+  // v2: vaste overdrachtstijden (inleveren vóór / ophalen vanaf).
+  const [handover, setHandover] = useState({ handover_return_before: "", handover_pickup_from: "" });
+  const [savedHandover, setSavedHandover] = useState({ handover_return_before: "", handover_pickup_from: "" });
 
   useEffect(() => {
     setSettingsLoading(true);
@@ -30,6 +34,12 @@ export function SettingsTab({ branding, setBranding }) {
         const v = (data && typeof data.rental_terms === "string") ? data.rental_terms : "";
         setRentalTerms(v);
         setSavedRentalTerms(v);
+        const h = {
+          handover_return_before: data?.handover_return_before || "12:00",
+          handover_pickup_from: data?.handover_pickup_from || "13:00",
+        };
+        setHandover(h);
+        setSavedHandover(h);
       })
       .catch((err) => setSettingsError(err.message || "Kon instellingen niet laden"))
       .finally(() => setSettingsLoading(false));
@@ -53,6 +63,26 @@ export function SettingsTab({ branding, setBranding }) {
     }
   };
   const rentalTermsDirty = rentalTerms !== savedRentalTerms;
+  const handoverDirty = handover.handover_return_before !== savedHandover.handover_return_before
+    || handover.handover_pickup_from !== savedHandover.handover_pickup_from;
+  const handoverInvalid = handover.handover_pickup_from <= handover.handover_return_before;
+  const saveHandover = async () => {
+    setSettingsSaving(true);
+    setSettingsError(null);
+    try {
+      const data = await updateSettings(handover);
+      const h = { handover_return_before: data.handover_return_before, handover_pickup_from: data.handover_pickup_from };
+      setHandover(h);
+      setSavedHandover(h);
+      setReturnDeadline(h.handover_return_before);
+      setSettingsToast("Overdrachtstijden opgeslagen.");
+      setTimeout(() => setSettingsToast(null), 2500);
+    } catch (err) {
+      setSettingsError(err.message || "Opslaan mislukt");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (!resetOpen) return;
@@ -112,6 +142,25 @@ export function SettingsTab({ branding, setBranding }) {
       <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Ondertitel</label><input className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.subtitle} onChange={e=>setBranding(p=>({...p,subtitle:e.target.value}))}/></div>
       <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Kleur</label><div className="flex items-center gap-3"><input type="color" value={branding.color} onChange={e=>setBranding(p=>({...p,color:e.target.value}))} className="w-10 h-10 rounded-lg cursor-pointer border-0"/><span className="text-sm text-gray-500">{branding.color}</span></div></div>
       <ImageUpload value={branding.loginBg} onChange={v=>setBranding(p=>({...p,loginBg:v}))} label="Login achtergrond"/>
+    </div>
+
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
+      <div>
+        <h4 className="font-semibold text-gray-800">Ophalen en terugbrengen</h4>
+        <p className="text-xs text-gray-500 mt-1">Materiaal moet op de retourdag vóór de inlevertijd terug zijn. Vanaf de ophaaltijd kan iemand anders het dezelfde dag meenemen. Na de inlevertijd telt een bon als te laat.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Inleveren vóór</label>
+          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={handover.handover_return_before} onChange={e=>setHandover(p=>({...p,handover_return_before:e.target.value}))}/>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Ophalen vanaf</label>
+          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={handover.handover_pickup_from} onChange={e=>setHandover(p=>({...p,handover_pickup_from:e.target.value}))}/>
+        </div>
+      </div>
+      {handoverInvalid && <p className="text-sm text-red-600">De ophaaltijd moet ná de inlevertijd liggen.</p>}
+      <button onClick={saveHandover} disabled={!handoverDirty || handoverInvalid || settingsSaving} className="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Tijden opslaan</button>
     </div>
 
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">

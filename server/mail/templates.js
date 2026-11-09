@@ -1,3 +1,9 @@
+// v2: inlevertijd (instelbaar, standaard 12:00) voor in de mails. Lazy
+// require om een circulaire import met db/availability te voorkomen.
+function returnBefore() {
+  try { return require('../availability').handoverTimes().return_before; } catch { return '12:00'; }
+}
+
 // Mail-templates voor materiaalhok-SF.
 //
 // Elke template exporteert een functie die { subject, html, text } teruggeeft.
@@ -191,7 +197,7 @@ function bonConfirmation(bon, { rentalTerms = '' } = {}) {
         <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">${isReservation ? 'Ophaaldatum' : 'Aangemaakt op'}</div>
         <div>${esc(formatDateNL(bon.start_date))}</div>
         <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px;">Retour uiterlijk</div>
-        <div>${esc(formatDateNL(bon.return_date))}</div>
+        <div>${esc(formatDateNL(bon.return_date))}, vóór ${esc(returnBefore())}</div>
       </td></tr>
     </table>
     <p style="font-weight:600;margin-bottom:6px;">Op deze bon:</p>
@@ -210,7 +216,7 @@ function bonConfirmation(bon, { rentalTerms = '' } = {}) {
     `Bonnummer: ${bon.bon_number}`,
     isExternal ? `Huurder: ${bon.external_org || ''}` : null,
     `${isReservation ? 'Ophaaldatum' : 'Aangemaakt op'}: ${formatDateNL(bon.start_date)}`,
-    `Retour uiterlijk: ${formatDateNL(bon.return_date)}`,
+    `Retour uiterlijk: ${formatDateNL(bon.return_date)}, vóór ${returnBefore()}`,
     '',
     'Op deze bon:',
     itemsListText,
@@ -257,7 +263,7 @@ function returnReminder(bon, { catchup = false } = {}) {
   }
   const greetLine = greetingName ? `Hoi ${greetingName},` : 'Hoi,';
 
-  const retourStr = formatDateNL(bon.return_date);
+  const retourStr = `${formatDateNL(bon.return_date)} vóór ${returnBefore()}`;
   const introBodyHtml = catchup
     ? `Kleine herinnering: het materiaal op bon <strong>${esc(bon.bon_number)}</strong> moet binnenkort weer terug in het materiaalhok. Uiterlijk op <strong>${esc(retourStr)}</strong>.`
     : `Kleine herinnering: het materiaal op bon <strong>${esc(bon.bon_number)}</strong> moet <strong>${esc(retourStr)}</strong> weer terug in het materiaalhok.`;

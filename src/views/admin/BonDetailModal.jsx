@@ -17,7 +17,11 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
       return;
     }
     setDateError(null);
-    onUpdateBon(bonDetail.id, { [field]: value });
+    Promise.resolve(onUpdateBon(bonDetail.id, { [field]: value })).then((err) => {
+      if (!err) return;
+      const det = Array.isArray(err.details) ? err.details.map((c) => `${c.material_name || c.set_name}: ${c.beschikbaar} van ${c.gevraagd} vrij${c.bezet_door?.length ? ` (bezet door ${c.bezet_door.join(", ")})` : ""}`).join("; ") : "";
+      setDateError({ field, msg: `${err.message}${det ? ` — ${det}` : ""}` });
+    });
   };
   const isExternal = bonDetail && (bonDetail.is_external === 1 || bonDetail.is_external === true);
   // v1.14.0 externe verhuur stap 3: fase-tekst voor externe bonnen met een
@@ -196,7 +200,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
 
       {bonDetail.status!=="completed" && <div className="bg-white rounded-xl p-4 border border-gray-200 space-y-3">
         <h4 className="text-sm font-semibold text-gray-700">Datums aanpassen</h4>
-        <p className="text-xs text-gray-500">Status wordt opnieuw berekend op basis van de nieuwe datums (door de backend).</p>
+        <p className="text-xs text-gray-500">Een latere retourdatum werkt als verlengen: de voorraad wordt gecontroleerd.</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Startdatum</label>

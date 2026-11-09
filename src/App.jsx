@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { DEFAULT_BRANDING } from "./data/defaults";
 import { store, session } from "./utils/storage";
 import { genItemBarcode, syncBarcodeCounter } from "./utils/barcode";
-import { getMaterials, getUsers, getSets, getBons, getLogs, getDamageReports, logout as apiLogout } from "./api/client";
+import { getMaterials, getUsers, getSets, getBons, getLogs, getDamageReports, logout as apiLogout, getHandoverConfig } from "./api/client";
+import { setReturnDeadline } from "./utils/bons";
 import { LoginView } from "./views/LoginView";
 import { AdminView } from "./views/AdminView";
 import { UserView } from "./views/UserView";
@@ -139,6 +140,8 @@ export default function App() {
     refreshMaterials();
     refreshSets();
     refreshBons();
+    // v2: inlevertijd (bv. 12:00) bepaalt wanneer een bon "te laat" is.
+    getHandoverConfig().then((c) => setReturnDeadline(c?.handover?.return_before)).catch(() => {});
     if (user.role === "admin") {
       refreshUsers();
       refreshLogs();

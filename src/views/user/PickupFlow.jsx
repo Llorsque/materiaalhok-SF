@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { BonBadge } from "../../components/BonBadge";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { KindBadge } from "../../components/KindBadge";
-import { itemDisplayName, availQty, availSetQty } from "../../utils/bons";
+import { itemDisplayName } from "../../utils/bons";
+import { useAvailability } from "../../hooks/useAvailability";
 import { getIcon } from "../../utils/format";
 import { fmtDate } from "../../utils/date";
 import { CATS } from "../../data/defaults";
@@ -232,13 +233,17 @@ export function PickupFlow({ eq, sets, materialsLoading, materialsError, refresh
   // POST /api/bons/:id/pickup. De eigen items op deze bon en cart-items
   // trekken we er lokaal nog vanaf, want die zitten (nog) niet in de globale
   // bons-state maar horen wel bezetting van deze bon te vertegenwoordigen.
+  // v2: de server levert de beschikbaarheid per dag (met de bonnen van
+  // iedereen), exclusief deze bon zelf.
+  const avail = useAvailability(
+    activeBon?.start_date?.slice(0, 10),
+    activeBon?.return_date?.slice(0, 10),
+    { excludeBonId: activeBon?.id ?? null, enabled: !!activeBon && showAdder },
+  );
   const getAvailForAdd = (item) => {
     if (!activeBon) return 0;
     const idField = item.kind === "set" ? "set_id" : "material_id";
-    const availFn = item.kind === "set" ? availSetQty : availQty;
-    let av = availFn(item, bons, activeBon.start_date, activeBon.return_date, {
-      excludeBonId: activeBon.id,
-    });
+    let av = avail.infoFor(item)?.available ?? 0;
     // Wat we van deze eigen bon nog "meenemen": items die we niet als
     // removed hebben aangevinkt. Conservatief telt het volle originele
     // quantity mee — de backend voorkomt via checkStock overshoot bij submit.

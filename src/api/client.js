@@ -220,6 +220,22 @@ export const markBonPaid = (id) => request('PATCH', `/api/bons/${id}/payment`, {
 // items mag undefined zijn (achterwaarts compatibel: alles retour) of een
 // array van { id, condition: 'returned'|'lost'|'broken', quantity }. Meerdere
 // entries voor hetzelfde bon_item mogen; de backend splitst per conditie.
+// v2: verlengen — nieuwe (latere) retourdatum. 409 met details als het
+// materiaal in de extra dagen niet vrij is.
+export const extendBon  = (id, return_date) => request('POST', `/api/bons/${id}/extend`, { return_date });
+
+// --- Beschikbaarheid (v2) ---------------------------------------------------
+// start/end = YYYY-MM-DD; end is de retourdag (telt zelf niet als bezet).
+export const getAvailability = (start, end, excludeBonId) => {
+  const qs = new URLSearchParams();
+  if (start) qs.set('start', start);
+  if (end) qs.set('end', end);
+  if (excludeBonId != null) qs.set('exclude_bon_id', excludeBonId);
+  const s = qs.toString();
+  return request('GET', `/api/availability${s ? `?${s}` : ''}`);
+};
+export const getHandoverConfig = () => request('GET', '/api/availability/config');
+
 export const returnBon  = (id, items) =>
   request('POST', `/api/bons/${id}/return`, items ? { items } : undefined);
 

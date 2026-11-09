@@ -19,6 +19,7 @@ const adminRouter = require('./routes/admin');
 const logsRouter = require('./routes/logs');
 const damageRouter = require('./routes/damage');
 const settingsRouter = require('./routes/settings');
+const availabilityRouter = require('./routes/availability');
 
 const app = express();
 const PORT = 3001;
@@ -74,6 +75,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/logs', logsRouter);
 app.use('/api/damage-reports', damageRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/availability', availabilityRouter);
 
 if (hasDist) {
   // express.static serveert bestaande assets (bv. /materiaalhok-SF/vite.svg,

@@ -3,7 +3,8 @@ import { CATS } from "../../data/defaults";
 import { ConnectionBanner } from "../../components/ConnectionBanner";
 import { getIcon } from "../../utils/format";
 import { fmtDate, today, isWeekend } from "../../utils/date";
-import { availQty, availSetQty } from "../../utils/bons";
+import { useAvailability } from "../../hooks/useAvailability";
+import { AvailabilityInfo } from "../../components/AvailabilityInfo";
 
 const WEEKEND_MSG_START = "Ophaaldatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.";
 const WEEKEND_MSG_END = "Retourdatum kan alleen op een werkdag vallen. Kies maandag t/m vrijdag.";
@@ -72,10 +73,13 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
   // datum gekozen. Voor de materiaal-stap moet endDate dus altijd al gezet
   // zijn — anders gebruiken we een defensieve fallback (vandaag) zodat de
   // helpers geen NaN-gedrag krijgen.
-  const getAvailForItem = (item) => {
-    const availFn = item.kind === "set" ? availSetQty : availQty;
-    return availFn(item, bons, startDate, endDate || startDate);
-  };
+  // v2: de server rekent de beschikbaarheid per dag uit, met de bonnen van
+  // ALLE gebruikers (een gewone gebruiker kent alleen zijn eigen bonnen, dus
+  // de frontend kon dat nooit goed doen). Zolang de data laadt is alles 0 en
+  // staat de +knop uit; de lijst toont dan "laden".
+  const periodReady = loanStep >= 2 && !!startDate && !!endDate;
+  const avail = useAvailability(startDate, endDate, { enabled: periodReady });
+  const getAvailForItem = (item) => avail.infoFor(item)?.available ?? 0;
 
   // v1.20.1: zachte grens. De +knop en het aantal-veld staan overschrijding
   // van het periode-beschikbare aantal TOE — pas dan wordt de melding "Max X
@@ -213,6 +217,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     } catch (err) {
       if (err.status === 409 && Array.isArray(err.details)) {
         setSubmitError({ message: "Niet beschikbaar in deze periode", conflicts: err.details });
+        avail.reload();
       } else {
         setSubmitError({ message: err.message || "Aanmaken mislukt" });
         setBonsError(err);
@@ -302,6 +307,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         </>}
         {startDate && endDate && !startDateInvalid && !endDateInvalid && <p className={`text-sm rounded-xl px-4 py-3 ${isReservation ? "text-purple-700 bg-purple-50" : "text-blue-700 bg-blue-50"}`}>{"\ud83d\udcc6"} Periode: {fmtDate(startDate)} t/m {fmtDate(endDate)} ({Math.max(1,Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24)))} dagen)</p>}
       </div>
+      <p className="text-xs text-gray-500 px-1">{"\u23f0"} Ophalen kan vanaf {avail.handover?.pickup_from || "13:00"}, terugbrengen vóór {avail.handover?.return_before || "12:00"} op de retourdag. Daardoor kan iemand anders het materiaal dezelfde dag weer meenemen.</p>
       <button onClick={()=>setLoanStep(2)} disabled={!startDate||!endDate||startDateInvalid||endDateInvalid} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-600 hover:bg-blue-700"}`}>
         Bekijk beschikbaarheid {"\u2192"}
       </button>
@@ -312,6 +318,12 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       <div className={`rounded-2xl px-4 py-3 text-sm font-medium ${isReservation ? "bg-purple-50 text-purple-800" : "bg-blue-50 text-blue-800"}`}>
         {"\ud83d\udcc5"} {fmtDate(startDate)} t/m {fmtDate(endDate)} {"\u2014"} beschikbaarheid voor deze periode
       </div>
+
+      {avail.error && <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-700 flex items-center justify-between gap-3">
+        <span>Beschikbaarheid kon niet geladen worden.</span>
+        <button onClick={avail.reload} className="font-semibold underline">Opnieuw</button>
+      </div>}
+      {avail.loading && !avail.data && <div className="text-sm text-gray-500 px-1">Beschikbaarheid laden…</div>}
 
       {/* Scan to add */}
       <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
@@ -364,6 +376,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
                   <KindBadge kind={i.kind}/>
                 </div>
                 <p className="text-sm text-gray-500 mt-0.5">{i.category || "\u2014"} {"\u00b7"} <span className={`font-medium ${soldOut ? "text-red-600" : "text-emerald-600"}`}>{av} beschikbaar</span>{soldOut && <span className="text-red-600"> {"\u00b7"} niet beschikbaar in deze periode</span>}</p>
+                <AvailabilityInfo info={avail.infoFor(i)} unit={i.unit}/>
                 {isSet && expanded && <p className="text-xs text-gray-600 mt-2 bg-purple-50 rounded-lg px-3 py-2 whitespace-pre-line">{i.composition?.trim() ? i.composition : "(geen samenstelling vastgelegd)"}</p>}
               </div>
               <div className="flex items-center gap-2">
@@ -435,7 +448,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         <p className="text-sm font-semibold text-red-800">{submitError.message}</p>
         {submitError.conflicts && <ul className="mt-2 space-y-1 text-sm text-red-700">
           {submitError.conflicts.map((c, idx) => <li key={idx}>
-            {"\u2022"} {c.material_name || c.set_name || "item"}: gevraagd {c.gevraagd}, beschikbaar {c.beschikbaar}
+            {"\u2022"} {c.material_name || c.set_name || "item"}: gevraagd {c.gevraagd}, beschikbaar {c.beschikbaar}{c.bezet_door?.length ? ` (bezet door ${c.bezet_door.join(", ")})` : ""}
           </li>)}
         </ul>}
       </div>}
