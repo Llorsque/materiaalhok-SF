@@ -22,8 +22,8 @@ export function SetForm({ item, onSave, onCancel }) {
   const [error, setError] = useState("");
   const u = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
-  const ic = "w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-  const lc = "block text-sm font-medium text-gray-700 mb-1.5";
+  const ic = "w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const lc = "block text-sm font-medium text-slate-700 mb-1.5";
 
   const submit = () => {
     setError("");
@@ -87,7 +87,7 @@ export function SetForm({ item, onSave, onCancel }) {
         onChange={(e) => u("composition", e.target.value)}
         placeholder={"Bijv.\n2x Voetbal\n8x Pion\n4x Hesje"}
       />
-      <p className="text-xs text-gray-400 mt-1">Vrije tekst — beschrijf de inhoud van één set.</p>
+      <p className="text-xs text-slate-400 mt-1">Vrije tekst — beschrijf de inhoud van één set.</p>
     </div>
 
     <div>
@@ -123,7 +123,7 @@ export function SetForm({ item, onSave, onCancel }) {
 
     <div className="flex gap-3 pt-2">
       <button onClick={submit} className="flex-1 py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700">{item ? "Opslaan" : "Toevoegen"}</button>
-      <button onClick={onCancel} className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50">Annuleren</button>
+      <button onClick={onCancel} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium text-sm hover:bg-slate-50">Annuleren</button>
     </div>
   </div>;
 }

@@ -26,7 +26,19 @@ Vervolgversie v2 (in ontwikkeling op branch `v2`, nog niet in productie).
   per item open wie het in jouw periode heeft (naam, aantal, retourdatum) en,
   als het per dag verschilt, hoeveel er per dag vrij is.
 
+- **Kiosk-focus-script** `scripts/windows/kiosk-focus.ps1`. Na de start van
+  Chrome haalt het het kioskvenster naar voren en geeft het de focus, zodat
+  de scanner direct werkt zonder eerst te klikken. Wordt aangeroepen vanuit
+  `start-kiosk.bat` op de laptop. Nog te testen op de laptop zelf.
+
 ### Gewijzigd
+- **Mobiel:** de admin-kopbalk past op een telefoon (compacte knoppen, de
+  titel wordt ingekort, de kopbalk blijft bovenaan staan), de tabs scrollen
+  horizontaal zonder dat de pagina uit beeld schuift, de backup-banner stapelt
+  netjes en invoervelden zijn op telefoons 16px, zodat iOS niet inzoomt.
+- **Huisstijl, eerste stap:** één koele neutrale tint (slate) in de hele app,
+  geen kleurverlopen meer op de achtergrond, rustigere schaduwen en vaste
+  bouwstenen (`.card`, `.btn-*`, `.input`) in `src/index.css`.
 - De retourdag telt niet meer als bezet (dankzij de overdrachtstijden).
 - Een bon is te laat na de inlevertijd op de retourdag (was: 18:00).
 - Een actieve bon die te laat is, houdt het materiaal bezet tot en met

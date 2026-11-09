@@ -65,9 +65,9 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
       <div className="flex items-center justify-between">
         <div>
           {isExternal
-            ? <p className="text-sm text-gray-500">{"\ud83c\udfe2"} {bonDetail.external_org || "Externe huurder"}</p>
-            : <p className="text-sm text-gray-500">{"\ud83d\udc64"} {bonDetail.user_name || "-"}</p>}
-          <p className="text-sm text-gray-500">{fmtDate(bonDetail.start_date)} {"\u2192"} {fmtDate(bonDetail.return_date)}</p>
+            ? <p className="text-sm text-slate-500">{"\ud83c\udfe2"} {bonDetail.external_org || "Externe huurder"}</p>
+            : <p className="text-sm text-slate-500">{"\ud83d\udc64"} {bonDetail.user_name || "-"}</p>}
+          <p className="text-sm text-slate-500">{fmtDate(bonDetail.start_date)} {"\u2192"} {fmtDate(bonDetail.return_date)}</p>
           {!isExternal && bonDetail.created_by_admin_id && <p className="text-xs text-amber-700 mt-1">
             <span className="text-amber-500 font-bold">*</span> Aangemaakt door {bonDetail.created_by_admin_name || "een admin"} namens {bonDetail.user_name || "gebruiker"}
           </p>}
@@ -83,17 +83,17 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
 
       {isExternal && <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 space-y-2">
         <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide">Huurdergegevens</p>
-        {bonDetail.external_contact && <p className="text-sm text-gray-800">{"\ud83d\udc64"} {bonDetail.external_contact}</p>}
-        {bonDetail.external_email   && <p className="text-sm text-gray-800">{"\u2709\ufe0f"} {bonDetail.external_email}</p>}
-        {bonDetail.external_phone   && <p className="text-sm text-gray-800">{"\ud83d\udcde"} {bonDetail.external_phone}</p>}
+        {bonDetail.external_contact && <p className="text-sm text-slate-800">{"\ud83d\udc64"} {bonDetail.external_contact}</p>}
+        {bonDetail.external_email   && <p className="text-sm text-slate-800">{"\u2709\ufe0f"} {bonDetail.external_email}</p>}
+        {bonDetail.external_phone   && <p className="text-sm text-slate-800">{"\ud83d\udcde"} {bonDetail.external_phone}</p>}
         <div className="grid grid-cols-2 gap-2 pt-2">
           <div className="bg-white rounded-lg px-3 py-2">
-            <p className="text-[11px] text-gray-500">Huurprijs</p>
-            <p className="text-sm font-semibold text-gray-900">{fmt(bonDetail.rental_price)}</p>
+            <p className="text-[11px] text-slate-500">Huurprijs</p>
+            <p className="text-sm font-semibold text-slate-900">{fmt(bonDetail.rental_price)}</p>
           </div>
           <div className="bg-white rounded-lg px-3 py-2">
-            <p className="text-[11px] text-gray-500">Borg</p>
-            <p className="text-sm font-semibold text-gray-900">{fmt(bonDetail.deposit)}</p>
+            <p className="text-[11px] text-slate-500">Borg</p>
+            <p className="text-sm font-semibold text-slate-900">{fmt(bonDetail.deposit)}</p>
           </div>
         </div>
         {bonDetail.payment_status && <div className="pt-2 flex items-center gap-2 flex-wrap">
@@ -113,8 +113,8 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
           krijgen deze knoppen niet. */}
       {isExternal && bonDetail.status === "reserved" && onOpenPickupFlow && <div className="rounded-xl border border-purple-200 bg-white p-4 space-y-3">
         <div>
-          <p className="text-sm font-semibold text-gray-800">Materiaal ophalen</p>
-          <p className="text-xs text-gray-500 mt-0.5">Scan of vink af wat de huurder meeneemt. De bon wordt daarna actief.</p>
+          <p className="text-sm font-semibold text-slate-800">Materiaal ophalen</p>
+          <p className="text-xs text-slate-500 mt-0.5">Scan of vink af wat de huurder meeneemt. De bon wordt daarna actief.</p>
         </div>
         <button onClick={() => onOpenPickupFlow(bonDetail)} className="w-full py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700">
           {"\ud83d\udce6"} Ophalen
@@ -123,8 +123,8 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
 
       {isExternal && bonDetail.status === "active" && openItemsCount > 0 && onOpenReturnFlow && <div className="rounded-xl border border-emerald-200 bg-white p-4 space-y-3">
         <div>
-          <p className="text-sm font-semibold text-gray-800">Materiaal retour</p>
-          <p className="text-xs text-gray-500 mt-0.5">Scan wat er teruggebracht wordt, of meld per stuk kwijt/kapot.</p>
+          <p className="text-sm font-semibold text-slate-800">Materiaal retour</p>
+          <p className="text-xs text-slate-500 mt-0.5">Scan wat er teruggebracht wordt, of meld per stuk kwijt/kapot.</p>
         </div>
         <button onClick={() => onOpenReturnFlow(bonDetail)} className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">
           {"\ud83d\udce5"} Retourneren
@@ -133,15 +133,15 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
 
       {paymentOpen && <div className="rounded-xl border border-amber-200 bg-white p-4 space-y-3">
         <div>
-          <p className="text-sm font-semibold text-gray-800">Betaling registreren</p>
-          <p className="text-xs text-gray-500 mt-0.5">Zet de betaalstatus op "betaald" zodra het bedrag is ontvangen. {allBack ? "Materiaal is al retour — de bon wordt hiermee afgerond." : "Materiaal staat nog uit; de bon blijft lopen tot ook het materiaal retour is."}</p>
+          <p className="text-sm font-semibold text-slate-800">Betaling registreren</p>
+          <p className="text-xs text-slate-500 mt-0.5">Zet de betaalstatus op "betaald" zodra het bedrag is ontvangen. {allBack ? "Materiaal is al retour — de bon wordt hiermee afgerond." : "Materiaal staat nog uit; de bon blijft lopen tot ook het materiaal retour is."}</p>
         </div>
         {!confirmPay
           ? <button onClick={() => setConfirmPay(true)} className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">
               {"\ud83d\udcb0"} Markeer als betaald
             </button>
           : <div className="flex gap-2">
-              <button onClick={() => setConfirmPay(false)} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200">Annuleer</button>
+              <button onClick={() => setConfirmPay(false)} className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200">Annuleer</button>
               <button onClick={() => { onMarkPaid(bonDetail.id); setConfirmPay(false); }} className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700">
                 Bevestig betaald
               </button>
@@ -154,7 +154,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
         const kept    = items.filter((bi) => bi.removed_at_pickup !== 1);
         const removed = items.filter((bi) => bi.removed_at_pickup === 1);
         return <>
-          <div className="bg-gray-50 rounded-xl divide-y divide-gray-200">
+          <div className="bg-slate-50 rounded-xl divide-y divide-slate-200">
             {kept.map((bi) => {
               const isReturned = !!bi.returned;
               const isAdded    = bi.added_at_pickup === 1;
@@ -169,7 +169,7 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
                     {wasLost   && <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">kwijt</span>}
                     {wasBroken && <span className="text-[10px] font-semibold uppercase tracking-wide bg-red-100 text-red-800 px-1.5 py-0.5 rounded">kapot</span>}
                   </p>
-                  <p className="text-xs text-gray-500">{bi.quantity} stuk{bi.quantity !== 1 ? "s" : ""}{isReturned ? (wasLost ? " \u2014 kwijt gemeld" : wasBroken ? " \u2014 kapot gemeld" : " \u2014 retour") : ""}{bi.picked_up && !isReturned ? " \u2014 opgehaald" : ""}</p>
+                  <p className="text-xs text-slate-500">{bi.quantity} stuk{bi.quantity !== 1 ? "s" : ""}{isReturned ? (wasLost ? " \u2014 kwijt gemeld" : wasBroken ? " \u2014 kapot gemeld" : " \u2014 retour") : ""}{bi.picked_up && !isReturned ? " \u2014 opgehaald" : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {isReturned
@@ -184,12 +184,12 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
           </div>
 
           {removed.length > 0 && <div className="mt-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-1.5">Niet meegenomen bij ophalen ({removed.length})</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase mb-1.5">Niet meegenomen bij ophalen ({removed.length})</p>
             <div className="bg-red-50/50 border border-red-100 rounded-xl divide-y divide-red-100">
               {removed.map((bi) => <div key={bi.id} className="px-4 py-2.5 flex items-center justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm text-gray-500 line-through">{itemDisplayName(bi)}</p>
-                  <p className="text-xs text-gray-400">{bi.quantity} stuk{bi.quantity !== 1 ? "s" : ""} — stond op reservering</p>
+                  <p className="text-sm text-slate-500 line-through">{itemDisplayName(bi)}</p>
+                  <p className="text-xs text-slate-400">{bi.quantity} stuk{bi.quantity !== 1 ? "s" : ""} — stond op reservering</p>
                 </div>
                 <span className="text-xs font-medium text-red-700 bg-red-100 px-2 py-1 rounded-full">niet meegenomen</span>
               </div>)}
@@ -198,19 +198,19 @@ export function BonDetailModal({ bonDetail, setBonDetail, onForceComplete, onUpd
         </>;
       })()}
 
-      {bonDetail.status!=="completed" && <div className="bg-white rounded-xl p-4 border border-gray-200 space-y-3">
-        <h4 className="text-sm font-semibold text-gray-700">Datums aanpassen</h4>
-        <p className="text-xs text-gray-500">Een latere retourdatum werkt als verlengen: de voorraad wordt gecontroleerd.</p>
+      {bonDetail.status!=="completed" && <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+        <h4 className="text-sm font-semibold text-slate-700">Datums aanpassen</h4>
+        <p className="text-xs text-slate-500">Een latere retourdatum werkt als verlengen: de voorraad wordt gecontroleerd.</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Startdatum</label>
-            <input type="date" className={`w-full px-3 py-2 rounded-xl border bg-gray-50 text-sm focus:outline-none focus:ring-2 ${dateError?.field === "start_date" ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500"}`}
+            <label className="block text-xs font-medium text-slate-500 mb-1">Startdatum</label>
+            <input type="date" className={`w-full px-3 py-2 rounded-xl border bg-slate-50 text-sm focus:outline-none focus:ring-2 ${dateError?.field === "start_date" ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500"}`}
               value={(bonDetail.start_date||"").slice(0,10)}
               onChange={e=>changeDate("start_date", e.target.value)}/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Retourdatum</label>
-            <input type="date" className={`w-full px-3 py-2 rounded-xl border bg-gray-50 text-sm focus:outline-none focus:ring-2 ${dateError?.field === "return_date" ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500"}`}
+            <label className="block text-xs font-medium text-slate-500 mb-1">Retourdatum</label>
+            <input type="date" className={`w-full px-3 py-2 rounded-xl border bg-slate-50 text-sm focus:outline-none focus:ring-2 ${dateError?.field === "return_date" ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500"}`}
               value={(bonDetail.return_date||"").slice(0,10)}
               onChange={e=>changeDate("return_date", e.target.value)}/>
           </div>

@@ -445,18 +445,18 @@ export function AdminView({ eq, setEq, materialsLoading, materialsError, setMate
   const openNewBonFlow = () => { setNewBonToast(null); setNewBonMode(true); };
   const openNewExternalBonFlow = () => { setNewBonToast(null); setNewExternalBonMode(true); };
 
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+  return <div className="min-h-screen bg-slate-50">
     <AppHeader
       branding={branding} role="admin" onLogout={onLogout}
       onAdd={() => tab === "sets" ? setNewSetOpen(true) : setAddOpen(true)}
       notificationSlot={<NotificationBell notifications={notifications}/>}
     >
-      <div className="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto">
-        {tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap ${tab===k?"border-blue-600 text-blue-600":"border-transparent text-gray-500 hover:text-gray-700"}`}>{l}{k==="bons"&&openBons.length>0?` (${openBons.length})`:""}{k==="damage"&&openDamageCount>0?` (${openDamageCount})`:""}</button>)}
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 scroll-row !gap-0">
+        {tabs.map(([k,l])=><button key={k} onClick={(e)=>{setTab(k);e.currentTarget.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"});}} className={`px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ${tab===k?"border-slate-900 text-slate-900":"border-transparent text-slate-500 hover:text-slate-800"}`}>{l}{k==="bons"&&openBons.length>0?` (${openBons.length})`:""}{k==="damage"&&openDamageCount>0?` (${openDamageCount})`:""}</button>)}
       </div>
     </AppHeader>
 
-    <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
       <BackupBanner/>
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
       {tab==="dashboard"&&<DashboardTab

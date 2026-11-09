@@ -72,13 +72,13 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h3 className="text-lg font-bold text-gray-900">Import vanuit Excel</h3>
+      <h3 className="text-lg font-bold text-slate-900">Import vanuit Excel</h3>
 
       {step === "pick" && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-          <h4 className="font-semibold text-gray-800">Stap 1 — bestand kiezen</h4>
-          <p className="text-sm text-gray-600">
-            Upload een <code className="bg-gray-100 px-1 rounded text-xs">.xlsx</code>-bestand.
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+          <h4 className="font-semibold text-slate-800">Stap 1 — bestand kiezen</h4>
+          <p className="text-sm text-slate-600">
+            Upload een <code className="bg-slate-100 px-1 rounded text-xs">.xlsx</code>-bestand.
             Verwachte tabbladen: <strong>"Losse materialen"</strong> en <strong>"Sets"</strong>.
             Het tabblad <strong>"Nog op te lossen"</strong> wordt genegeerd.
           </p>
@@ -86,10 +86,10 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
             type="file"
             accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => handlePick(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
           {file && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-slate-500">
               Geselecteerd: <span className="font-mono">{file.name}</span> ({Math.round(file.size / 1024)} kB)
             </p>
           )}
@@ -111,8 +111,8 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
       )}
 
       {step === "preview" && structuralErrors && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-          <h4 className="font-semibold text-gray-800">Stap 2 — bestand klopt niet</h4>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+          <h4 className="font-semibold text-slate-800">Stap 2 — bestand klopt niet</h4>
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800">
             <p className="font-medium mb-2">Het bestand voldoet niet aan de verwachte structuur:</p>
             <ul className="list-disc list-inside space-y-1">
@@ -121,7 +121,7 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
           </div>
           <button
             onClick={reset}
-            className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+            className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200"
           >
             Probeer een ander bestand
           </button>
@@ -129,8 +129,8 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
       )}
 
       {step === "preview" && preview && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-          <h4 className="font-semibold text-gray-800">Stap 2 — preview</h4>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+          <h4 className="font-semibold text-slate-800">Stap 2 — preview</h4>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
               <p className="text-2xl font-bold text-blue-700">{preview.materialsCount}</p>
@@ -164,7 +164,7 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
             </div>
           )}
           {preview.ignoredSheetFound && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-slate-500">
               Tabblad "Nog op te lossen" gevonden en zoals afgesproken genegeerd.
             </p>
           )}
@@ -184,7 +184,7 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
             <button
               onClick={reset}
               disabled={busy}
-              className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 disabled:opacity-50"
             >
               Annuleren
             </button>
@@ -193,8 +193,8 @@ export function ImportTab({ refreshMaterials, refreshSets }) {
       )}
 
       {step === "done" && executeResult && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-          <h4 className="font-semibold text-gray-800">Stap 3 — import voltooid</h4>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+          <h4 className="font-semibold text-slate-800">Stap 3 — import voltooid</h4>
           <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 space-y-1">
             <p>{executeResult.createdMaterials} materialen aangemaakt, {executeResult.updatedMaterials} bijgewerkt.</p>
             <p>{executeResult.createdSets} sets aangemaakt, {executeResult.updatedSets} bijgewerkt.</p>

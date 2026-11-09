@@ -120,8 +120,8 @@ export function BarcodesTab({ eq, sets }) {
   if (items.length === 0) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-gray-900">Barcodes — export voor Dymo</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className="text-lg font-bold text-slate-900">Barcodes — export voor Dymo</h3>
+        <p className="text-sm text-slate-600">
           Geen items om te exporteren. Importeer eerst een materialenlijst via de Import-tab.
         </p>
       </div>
@@ -131,21 +131,21 @@ export function BarcodesTab({ eq, sets }) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-bold text-gray-900">Barcodes — export voor Dymo</h3>
-        <p className="text-sm text-gray-600 mt-1">
+        <h3 className="text-lg font-bold text-slate-900">Barcodes — export voor Dymo</h3>
+        <p className="text-sm text-slate-600 mt-1">
           Selecteer items en exporteer als CSV voor import in Dymo Label Software.
           Aantal labels per item regel je in Dymo.
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
         <div className="grid sm:grid-cols-3 gap-2">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Type</label>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm"
             >
               <option value="beide">Beide</option>
               <option value="material">Materialen</option>
@@ -153,57 +153,57 @@ export function BarcodesTab({ eq, sets }) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Categorie</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Categorie</label>
             <select
               value={catFilter}
               onChange={(e) => setCatFilter(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm"
             >
               <option value="alle">Alle categorieën</option>
               {categories.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Zoek op naam</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Zoek op naam</label>
             <input
               type="text"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="bv. voetbal"
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm"
             />
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={selectFiltered}
-            className="px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200"
+            className="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200"
           >
             Selecteer alles
           </button>
           <button
             onClick={deselectFiltered}
-            className="px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200"
+            className="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200"
           >
             Deselecteer alles
           </button>
-          <span className="text-xs text-gray-500 ml-auto">{filtered.length} zichtbaar</span>
+          <span className="text-xs text-slate-500 ml-auto">{filtered.length} zichtbaar</span>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         {filtered.length === 0 ? (
-          <p className="text-sm text-gray-500 px-4 py-6 text-center">
+          <p className="text-sm text-slate-500 px-4 py-6 text-center">
             Geen items voldoen aan de filters.
           </p>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-slate-100">
             {filtered.map((i) => {
               const sel = selected.has(i.id);
               return (
                 <label
                   key={i.id}
-                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -211,14 +211,14 @@ export function BarcodesTab({ eq, sets }) {
                     onChange={() => toggle(i.id)}
                     className="w-4 h-4 accent-blue-600 flex-shrink-0"
                   />
-                  <span className="font-mono text-xs text-gray-700 w-24 flex-shrink-0">
+                  <span className="font-mono text-xs text-slate-700 w-24 flex-shrink-0">
                     {i.barcode || "—"}
                   </span>
-                  <span className="text-sm text-gray-900 flex-1 truncate">{i.name}</span>
-                  <span className="text-xs text-gray-500 hidden sm:inline w-32 truncate">
+                  <span className="text-sm text-slate-900 flex-1 truncate">{i.name}</span>
+                  <span className="text-xs text-slate-500 hidden sm:inline w-32 truncate">
                     {i.category}
                   </span>
-                  <span className="text-xs text-gray-500 hidden md:inline w-28 truncate">
+                  <span className="text-xs text-slate-500 hidden md:inline w-28 truncate">
                     {i.location}
                   </span>
                   <span
@@ -237,8 +237,8 @@ export function BarcodesTab({ eq, sets }) {
         )}
       </div>
 
-      <div className="sticky bottom-2 z-10 flex items-center justify-between gap-3 bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100">
-        <span className="text-sm text-gray-700">
+      <div className="sticky bottom-2 z-10 flex items-center justify-between gap-3 bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100">
+        <span className="text-sm text-slate-700">
           <strong>{selected.size}</strong> geselecteerd
         </span>
         <button

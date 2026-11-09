@@ -54,15 +54,15 @@ export function NewBonButton({ options }) {
       <span>Nieuwe bon aanmaken</span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-1"><path d="M6 9l6 6 6-6"/></svg>
     </button>
-    {open && <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+    {open && <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-md border border-slate-100 z-50 overflow-hidden">
       {options.map((opt) => <button
         key={opt.key}
         type="button"
         onClick={() => { setOpen(false); opt.onSelect(); }}
-        className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-50 last:border-0"
+        className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-slate-50 last:border-0"
       >
-        <p className="text-sm font-semibold text-gray-900">{opt.label}</p>
-        {opt.description && <p className="text-xs text-gray-500 mt-0.5">{opt.description}</p>}
+        <p className="text-sm font-semibold text-slate-900">{opt.label}</p>
+        {opt.description && <p className="text-xs text-slate-500 mt-0.5">{opt.description}</p>}
       </button>)}
     </div>}
   </div>;

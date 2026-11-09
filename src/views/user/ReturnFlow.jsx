@@ -163,19 +163,19 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
   };
 
   // BON-KEUZE
-  if (!activeBon) return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
-    <div className="bg-white border-b border-gray-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
+  if (!activeBon) return <div className="min-h-screen bg-slate-50">
+    <div className="bg-white border-b border-slate-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
       <button onClick={onCancel} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
-      <h2 className="text-lg font-bold text-gray-900">Kies een bon om te retourneren</h2><div className="w-16"/>
+      <h2 className="text-lg font-bold text-slate-900">Kies een bon om te retourneren</h2><div className="w-16"/>
     </div></div>
     <div className="max-w-lg mx-auto px-4 py-6 space-y-3">
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
-      {myBons.length===0 ? <div className="text-center py-12"><p className="text-4xl mb-3">{"\ud83d\udce6"}</p><p className="text-gray-500">Geen actieve bonnen om te retourneren</p></div>
-      : myBons.map(b => <div key={b.id} onClick={()=>setActiveBon(b)} className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100 hover:border-gray-200 cursor-pointer hover:shadow-md">
+      {myBons.length===0 ? <div className="text-center py-12"><p className="text-4xl mb-3">{"\ud83d\udce6"}</p><p className="text-slate-500">Geen actieve bonnen om te retourneren</p></div>
+      : myBons.map(b => <div key={b.id} onClick={()=>setActiveBon(b)} className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100 hover:border-slate-200 cursor-pointer hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2"><span className="font-mono text-sm font-bold text-blue-600">{b.bon_number}</span><BonBadge bon={b}/></div>
-            <p className="text-xs text-gray-500 mt-1">{(b.items||[]).filter(isActiveItem).map((i) => itemDisplayName(i)).join(", ")}</p>
+            <p className="text-xs text-slate-500 mt-1">{(b.items||[]).filter(isActiveItem).map((i) => itemDisplayName(i)).join(", ")}</p>
           </div>
           <span className="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700">Retour</span>
         </div>
@@ -184,10 +184,10 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
   </div>;
 
   const onBack = () => { if (presetBon) onCancel(); else setActiveBon(null); };
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 pb-40">
-    <div className="bg-white border-b border-gray-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
+  return <div className="min-h-screen bg-slate-50 pb-40">
+    <div className="bg-white border-b border-slate-100 shadow-sm"><div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
       <button onClick={onBack} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>Terug</button>
-      <h2 className="text-lg font-bold text-gray-900">Retour {activeBon.bon_number}</h2><div className="w-16"/>
+      <h2 className="text-lg font-bold text-slate-900">Retour {activeBon.bon_number}</h2><div className="w-16"/>
     </div></div>
     <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
       <ConnectionBanner loading={materialsLoading} error={materialsError} onRetry={refreshMaterials} resource="Materialen"/>
@@ -197,18 +197,18 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
         <p className="mt-1">Elke scan telt één stuk retour. Iets kwijt of kapot? Klik dat handmatig aan bij het item — de voorraad wordt dan direct bijgewerkt.</p>
       </div>
 
-      <div className="rounded-2xl p-5 shadow-sm border bg-white border-gray-100">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Scan materiaal</label>
+      <div className="rounded-2xl p-5 shadow-sm border bg-white border-slate-100">
+        <label className="block text-sm font-medium text-slate-700 mb-2">Scan materiaal</label>
         <div className="flex gap-2">
-          <input ref={scanRef} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Scan barcode..." value={scanInput} onChange={e=>{const v=e.target.value;setScanInput(v);scanValue.current=v;if(scanTimer.current)clearTimeout(scanTimer.current);if(v.trim().length>=3)scanTimer.current=setTimeout(()=>handleReturnScan(),150)}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();if(scanTimer.current)clearTimeout(scanTimer.current);handleReturnScan()}}} autoFocus autoComplete="off"/>
+          <input ref={scanRef} className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Scan barcode..." value={scanInput} onChange={e=>{const v=e.target.value;setScanInput(v);scanValue.current=v;if(scanTimer.current)clearTimeout(scanTimer.current);if(v.trim().length>=3)scanTimer.current=setTimeout(()=>handleReturnScan(),150)}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();if(scanTimer.current)clearTimeout(scanTimer.current);handleReturnScan()}}} autoFocus autoComplete="off"/>
           <button onClick={handleReturnScan} className="px-5 py-3 rounded-xl text-white font-semibold text-sm bg-emerald-500 hover:bg-emerald-600">{"\ud83d\udce5"}</button>
         </div>
         {scanMsg && <div className={`mt-3 rounded-xl px-4 py-3 text-sm font-medium ${scanMsg.ok?"bg-emerald-50 text-emerald-800":"bg-red-50 text-red-800"}`}>{scanMsg.text}</div>}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-        <div className="px-5 py-3 border-b border-gray-100"><h3 className="font-bold text-gray-900 text-sm">Items ({openItems.length})</h3></div>
-        {openItems.length === 0 ? <p className="px-5 py-6 text-sm text-gray-400">Alles is al retour</p>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
+        <div className="px-5 py-3 border-b border-slate-100"><h3 className="font-bold text-slate-900 text-sm">Items ({openItems.length})</h3></div>
+        {openItems.length === 0 ? <p className="px-5 py-6 text-sm text-slate-400">Alles is al retour</p>
         : openItems.map((bi) => {
           const c = cur(bi.id);
           const rem = remaining(bi);
@@ -217,14 +217,14 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
           const rowBg = done
             ? (someDamage ? "bg-amber-50/60" : "bg-emerald-50/60")
             : (total(bi.id) > 0 ? "bg-blue-50/60" : "bg-white");
-          return <div key={bi.id} className={`px-5 py-3 border-b border-gray-50 last:border-0 ${rowBg}`}>
+          return <div key={bi.id} className={`px-5 py-3 border-b border-slate-50 last:border-0 ${rowBg}`}>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="min-w-0">
                 <p className="text-sm font-medium flex items-center gap-2 flex-wrap">
                   <span>{bi.quantity}x {itemDisplayName(bi)}</span>
                   <KindBadge kind={bonItemKind(bi)} compact/>
                 </p>
-                <p className={`text-xs mt-0.5 ${done ? "text-gray-600" : "text-gray-500"}`}>
+                <p className={`text-xs mt-0.5 ${done ? "text-slate-600" : "text-slate-500"}`}>
                   {done ? "afgehandeld" : `${rem} nog te doen`}
                 </p>
               </div>
@@ -267,13 +267,13 @@ export function ReturnFlow({ eq, sets, materialsLoading, materialsError, refresh
       {submitError && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{submitError}</div>}
     </div>
 
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-xl p-4 z-40">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-md p-4 z-40">
       <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-semibold text-gray-900 text-sm">
+          <p className="font-semibold text-slate-900 text-sm">
             {totalReturned} retour{(totalLost + totalBroken) > 0 ? ` · ${totalLost + totalBroken} schade` : ""}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-slate-500">
             {untouchedCount > 0 ? `${untouchedCount} item${untouchedCount === 1 ? "" : "s"} nog onaangeraakt` : "alles gemarkeerd"}
           </p>
         </div>
@@ -292,10 +292,10 @@ function ConditionCounter({ label, color, value, canInc, disabled, onInc, onDec 
     amber:   { text: "text-amber-700",   plus: "bg-amber-500 hover:bg-amber-600" },
     red:     { text: "text-red-700",     plus: "bg-red-500 hover:bg-red-600" },
   }[color];
-  return <div className="border border-gray-200 rounded-xl p-2 flex flex-col items-center gap-1">
+  return <div className="border border-slate-200 rounded-xl p-2 flex flex-col items-center gap-1">
     <span className={`text-[11px] font-semibold uppercase tracking-wide ${colorMap.text}`}>{label}</span>
     <div className="flex items-center gap-1">
-      <button type="button" onClick={onDec} disabled={disabled || value === 0} className="w-7 h-7 rounded-lg bg-gray-100 text-gray-700 font-bold text-sm hover:bg-gray-200 disabled:opacity-30" aria-label={`${label} minder`}>-</button>
+      <button type="button" onClick={onDec} disabled={disabled || value === 0} className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 font-bold text-sm hover:bg-slate-200 disabled:opacity-30" aria-label={`${label} minder`}>-</button>
       <span className={`w-6 text-center font-bold ${colorMap.text}`}>{value}</span>
       <button type="button" onClick={onInc} disabled={disabled || !canInc} className={`w-7 h-7 rounded-lg text-white font-bold text-sm ${colorMap.plus} disabled:opacity-30`} aria-label={`${label} meer`}>+</button>
     </div>

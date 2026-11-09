@@ -260,18 +260,18 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       && (cat === "Alle" || i.category === cat);
   });
 
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 pb-32">
-    <div className="bg-white border-b border-gray-100 shadow-sm">
+  return <div className="min-h-screen bg-slate-50 pb-32">
+    <div className="bg-white border-b border-slate-100 shadow-sm">
       <div className="max-w-xl mx-auto px-5 py-4 flex items-center justify-between">
         <button onClick={()=>{if(loanStep>1)setLoanStep(loanStep-1);else{onCancel();setCart([]);setEndDate("");setStartDate(today());setQ("");setCat("Alle");setLoanStep(1)}}} className="flex items-center gap-2 text-blue-600 text-sm font-medium"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>{loanStep>1?"Vorige":"Terug"}</button>
-        <h2 className="text-lg font-bold text-gray-900">{isReservation?"Reservering":"Nieuwe bon"}</h2>
+        <h2 className="text-lg font-bold text-slate-900">{isReservation?"Reservering":"Nieuwe bon"}</h2>
         <div className="w-16"/>
       </div>
       <div className="max-w-xl mx-auto px-5 pb-3 flex items-center gap-2">
         {resSteps.map((label, idx) => {const s=idx+1; return <div key={s} className="flex items-center gap-2 flex-1">
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${loanStep>=s?isReservation?"bg-purple-600 text-white":"bg-blue-600 text-white":"bg-gray-200 text-gray-500"}`}>{s}</div>
-          <span className={`text-xs font-medium ${loanStep>=s?"text-gray-900":"text-gray-400"}`}>{label}</span>
-          {s<totalSteps&&<div className={`flex-1 h-0.5 rounded ${loanStep>s?isReservation?"bg-purple-600":"bg-blue-600":"bg-gray-200"}`}/>}
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${loanStep>=s?isReservation?"bg-purple-600 text-white":"bg-blue-600 text-white":"bg-slate-200 text-slate-500"}`}>{s}</div>
+          <span className={`text-xs font-medium ${loanStep>=s?"text-slate-900":"text-slate-400"}`}>{label}</span>
+          {s<totalSteps&&<div className={`flex-1 h-0.5 rounded ${loanStep>s?isReservation?"bg-purple-600":"bg-blue-600":"bg-slate-200"}`}/>}
         </div>;})}
       </div>
     </div>
@@ -284,30 +284,30 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         directe leen is de ophaaldatum vast op vandaag; bij een reservering
         mag de gebruiker beide kiezen. */}
     {loanStep===1 && <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-5">
-        <h3 className="font-bold text-gray-900 text-lg">{"\ud83d\udcc5"} {isReservation ? "Wanneer heb je het materiaal nodig?" : "Wanneer breng je het terug?"}</h3>
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
+        <h3 className="font-bold text-slate-900 text-lg">{"\ud83d\udcc5"} {isReservation ? "Wanneer heb je het materiaal nodig?" : "Wanneer breng je het terug?"}</h3>
         {isReservation ? <>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Ophaaldatum</label>
-            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${startDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-purple-500"}`} value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Ophaaldatum</label>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${startDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-purple-500"}`} value={startDate} onChange={e=>setStartDate(e.target.value)} min={today()}/>
             {startDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_START}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Retourdatum</label>
-            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-purple-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Retourdatum</label>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-purple-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={startDate||today()}/>
             {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
           </div>
         </> : <>
-          <p className="text-sm text-gray-600">Ophaaldatum: <span className="font-medium text-gray-900">{fmtDate(startDate)}</span> (vandaag)</p>
+          <p className="text-sm text-slate-600">Ophaaldatum: <span className="font-medium text-slate-900">{fmtDate(startDate)}</span> (vandaag)</p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Retourdatum</label>
-            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-gray-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={today()}/>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Retourdatum</label>
+            <input type="date" className={`w-full px-4 py-3.5 rounded-xl border bg-slate-50 text-base focus:outline-none focus:ring-2 ${endDateInvalid ? "border-red-300 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500"}`} value={endDate} onChange={e=>setEndDate(e.target.value)} min={today()}/>
             {endDateInvalid && <p className="mt-1.5 text-sm text-red-600">{WEEKEND_MSG_END}</p>}
           </div>
         </>}
         {startDate && endDate && !startDateInvalid && !endDateInvalid && <p className={`text-sm rounded-xl px-4 py-3 ${isReservation ? "text-purple-700 bg-purple-50" : "text-blue-700 bg-blue-50"}`}>{"\ud83d\udcc6"} Periode: {fmtDate(startDate)} t/m {fmtDate(endDate)} ({Math.max(1,Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24)))} dagen)</p>}
       </div>
-      <p className="text-xs text-gray-500 px-1">{"\u23f0"} Ophalen kan vanaf {avail.handover?.pickup_from || "13:00"}, terugbrengen vóór {avail.handover?.return_before || "12:00"} op de retourdag. Daardoor kan iemand anders het materiaal dezelfde dag weer meenemen.</p>
+      <p className="text-xs text-slate-500 px-1">{"\u23f0"} Ophalen kan vanaf {avail.handover?.pickup_from || "13:00"}, terugbrengen vóór {avail.handover?.return_before || "12:00"} op de retourdag. Daardoor kan iemand anders het materiaal dezelfde dag weer meenemen.</p>
       <button onClick={()=>setLoanStep(2)} disabled={!startDate||!endDate||startDateInvalid||endDateInvalid} className={`w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-40 shadow-lg ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-600 hover:bg-blue-700"}`}>
         Bekijk beschikbaarheid {"\u2192"}
       </button>
@@ -323,7 +323,7 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
         <span>Beschikbaarheid kon niet geladen worden.</span>
         <button onClick={avail.reload} className="font-semibold underline">Opnieuw</button>
       </div>}
-      {avail.loading && !avail.data && <div className="text-sm text-gray-500 px-1">Beschikbaarheid laden…</div>}
+      {avail.loading && !avail.data && <div className="text-sm text-slate-500 px-1">Beschikbaarheid laden…</div>}
 
       {/* Scan to add */}
       <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
@@ -336,28 +336,28 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
       </div>
 
       <div className="relative flex items-center gap-3">
-        <div className="flex-1 h-px bg-gray-200"/>
-        <span className="text-xs text-gray-400">of zoek handmatig</span>
-        <div className="flex-1 h-px bg-gray-200"/>
+        <div className="flex-1 h-px bg-slate-200"/>
+        <span className="text-xs text-slate-400">of zoek handmatig</span>
+        <div className="flex-1 h-px bg-slate-200"/>
       </div>
 
       <div className="relative">
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-gray-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="Zoek materiaal of set..." value={q} onChange={e=>setQ(e.target.value)}/>
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="Zoek materiaal of set..." value={q} onChange={e=>setQ(e.target.value)}/>
       </div>
 
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
         {[["both","Beide"],["material","Materialen"],["set","Sets"]].map(([k,l]) => (
-          <button key={k} onClick={()=>setKindFilter(k)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${kindFilter===k?(k==="set"?"bg-purple-600 text-white shadow-sm":k==="material"?"bg-blue-600 text-white shadow-sm":"bg-gray-700 text-white shadow-sm"):"text-gray-600 hover:text-gray-900"}`}>{l}</button>
+          <button key={k} onClick={()=>setKindFilter(k)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${kindFilter===k?(k==="set"?"bg-purple-600 text-white shadow-sm":k==="material"?"bg-blue-600 text-white shadow-sm":"bg-slate-700 text-white shadow-sm"):"text-slate-600 hover:text-slate-900"}`}>{l}</button>
         ))}
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {CATS.map(c => <button key={c} onClick={()=>setCat(c)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${cat===c?"bg-blue-600 text-white shadow-sm":"bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}>{c}</button>)}
+        {CATS.map(c => <button key={c} onClick={()=>setCat(c)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${cat===c?"bg-blue-600 text-white shadow-sm":"bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>{c}</button>)}
       </div>
 
       <div className="space-y-3">
-        {visibleForPeriod.length===0 ? <div className="bg-white rounded-2xl p-10 text-center border border-gray-100"><p className="text-gray-400">Niets gevonden</p></div>
+        {visibleForPeriod.length===0 ? <div className="bg-white rounded-2xl p-10 text-center border border-slate-100"><p className="text-slate-400">Niets gevonden</p></div>
         : visibleForPeriod.map((i) => {
           const key = cartKey(i.kind, i.id);
           const av = getAvailForItem(i);
@@ -366,28 +366,28 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
           const expanded = isSet && expandedSets.has(i.id);
           const over = inC > av;
           const soldOut = av === 0;
-          return <div key={key} className={`bg-white rounded-2xl px-5 py-4 border-2 transition-all ${inC > 0 ? (isSet?"border-purple-400 shadow-md":"border-blue-400 shadow-md") : (soldOut ? "border-gray-100 opacity-60" : "border-gray-100 hover:border-gray-200")}`}>
+          return <div key={key} className={`bg-white rounded-2xl px-5 py-4 border-2 transition-all ${inC > 0 ? (isSet?"border-purple-400 shadow-md":"border-blue-400 shadow-md") : (soldOut ? "border-slate-100 opacity-60" : "border-slate-100 hover:border-slate-200")}`}>
             <div className="flex items-center gap-4">
-              {i.photo ? <img src={i.photo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" alt=""/> : <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">{getIcon(i.category)}</div>}
+              {i.photo ? <img src={i.photo} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" alt=""/> : <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center text-2xl flex-shrink-0">{getIcon(i.category)}</div>}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-gray-900 text-base">{i.name}</p>
+                  <p className="font-semibold text-slate-900 text-base">{i.name}</p>
                   {isSet && <button type="button" onClick={() => toggleSetExpanded(i.id)} className="text-purple-600 hover:text-purple-800 text-sm leading-none px-1" title={expanded ? "Verberg samenstelling" : "Toon samenstelling"} aria-label={expanded ? "Verberg samenstelling" : "Toon samenstelling"}>{expanded ? "\u2304" : "\u25b8"}</button>}
                   <KindBadge kind={i.kind}/>
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">{i.category || "\u2014"} {"\u00b7"} <span className={`font-medium ${soldOut ? "text-red-600" : "text-emerald-600"}`}>{av} beschikbaar</span>{soldOut && <span className="text-red-600"> {"\u00b7"} niet beschikbaar in deze periode</span>}</p>
+                <p className="text-sm text-slate-500 mt-0.5">{i.category || "\u2014"} {"\u00b7"} <span className={`font-medium ${soldOut ? "text-red-600" : "text-emerald-600"}`}>{av} beschikbaar</span>{soldOut && <span className="text-red-600"> {"\u00b7"} niet beschikbaar in deze periode</span>}</p>
                 <AvailabilityInfo info={avail.infoFor(i)} unit={i.unit}/>
-                {isSet && expanded && <p className="text-xs text-gray-600 mt-2 bg-purple-50 rounded-lg px-3 py-2 whitespace-pre-line">{i.composition?.trim() ? i.composition : "(geen samenstelling vastgelegd)"}</p>}
+                {isSet && expanded && <p className="text-xs text-slate-600 mt-2 bg-purple-50 rounded-lg px-3 py-2 whitespace-pre-line">{i.composition?.trim() ? i.composition : "(geen samenstelling vastgelegd)"}</p>}
               </div>
               <div className="flex items-center gap-2">
-                {inC > 0 && <button onClick={() => removeFromCart(key)} className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-bold text-lg hover:bg-gray-200 flex items-center justify-center">-</button>}
+                {inC > 0 && <button onClick={() => removeFromCart(key)} className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 font-bold text-lg hover:bg-slate-200 flex items-center justify-center">-</button>}
                 {inC > 0 && <input
                   type="number"
                   min={0}
                   max={MAX_QTY}
                   value={inC}
                   onChange={(e) => setCartQty(i, e.target.value)}
-                  className={`w-14 h-10 rounded-xl border text-lg font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500 " + (isSet?"text-purple-600":"text-blue-600")}`}
+                  className={`w-14 h-10 rounded-xl border text-lg font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500 " + (isSet?"text-purple-600":"text-blue-600")}`}
                 />}
                 <button onClick={() => addToCart(i)} disabled={inC >= MAX_QTY || soldOut} className={`w-10 h-10 rounded-xl text-white font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center ${isSet?"bg-purple-600 hover:bg-purple-700":"bg-blue-600 hover:bg-blue-700"}`}>+</button>
               </div>
@@ -401,8 +401,8 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     {/* CONFIRM STEP */}
     {loanStep===confirmStep && <div className="max-w-xl mx-auto px-5 py-6 space-y-5">
       {confirmExtras}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-900 text-lg mb-4">{isReservation ? "\ud83d\udcc5 Reservering overzicht" : "\ud83d\uddd2 Bon overzicht"}</h3>
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 className="font-bold text-slate-900 text-lg mb-4">{isReservation ? "\ud83d\udcc5 Reservering overzicht" : "\ud83d\uddd2 Bon overzicht"}</h3>
         <div className="space-y-3">
           {cart.map((c) => {
             const lookup = c.kind === "set" ? (sets || []) : eq;
@@ -415,20 +415,20 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
             return <div key={c.key} className={`rounded-xl px-4 py-3 ${isSet?"bg-purple-50":"bg-blue-50"}`}>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-gray-900">{c.itemName}</span>
+                  <span className="font-medium text-slate-900">{c.itemName}</span>
                   <KindBadge kind={c.kind}/>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <button onClick={()=>removeFromCart(c.key)} className="w-8 h-8 rounded-lg bg-white text-gray-600 font-bold text-sm hover:bg-gray-100 flex items-center justify-center border border-gray-200">-</button>
+                  <button onClick={()=>removeFromCart(c.key)} className="w-8 h-8 rounded-lg bg-white text-slate-600 font-bold text-sm hover:bg-slate-100 flex items-center justify-center border border-slate-200">-</button>
                   <input
                     type="number"
                     min={0}
                     max={MAX_QTY}
                     value={c.qty}
                     onChange={(e) => { if (itemForCart) setCartQty(itemForCart, e.target.value); }}
-                    className={`w-12 h-8 rounded-lg border text-sm font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500 " + (isSet?"text-purple-700":"text-blue-700")}`}
+                    className={`w-12 h-8 rounded-lg border text-sm font-bold text-center focus:outline-none focus:ring-2 ${over ? "border-red-300 text-red-600 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500 " + (isSet?"text-purple-700":"text-blue-700")}`}
                   />
-                  <button onClick={()=>{if(itemForCart)addToCart(itemForCart)}} disabled={c.qty>=MAX_QTY} className="w-8 h-8 rounded-lg bg-white text-gray-600 font-bold text-sm hover:bg-gray-100 flex items-center justify-center border border-gray-200 disabled:opacity-30">+</button>
+                  <button onClick={()=>{if(itemForCart)addToCart(itemForCart)}} disabled={c.qty>=MAX_QTY} className="w-8 h-8 rounded-lg bg-white text-slate-600 font-bold text-sm hover:bg-slate-100 flex items-center justify-center border border-slate-200 disabled:opacity-30">+</button>
                   <button onClick={() => setCart((p) => p.filter((x) => x.key !== c.key))} className="text-red-400 hover:text-red-600 p-1 ml-1"><svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 5L5 13M5 5l8 8"/></svg></button>
                 </div>
               </div>
@@ -463,11 +463,11 @@ export function LoanFlow({ eq, materialsLoading, materialsError, refreshMaterial
     </div>}
 
     {/* Floating cart bar */}
-    {loanStep===itemStep && <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-xl p-4 z-40">
+    {loanStep===itemStep && <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-md p-4 z-40">
       <div className="max-w-xl mx-auto flex items-center justify-between">
         <div>
-          {cart.length > 0 ? <p className="font-semibold text-gray-900">{totalCartQty} item{totalCartQty !== 1 ? "s" : ""} geselecteerd</p> : <p className="text-gray-400">Selecteer materiaal of set</p>}
-          {cart.length > 0 && <p className="text-xs text-gray-500 mt-0.5">{cart.map(c => `${c.qty}x ${c.itemName}`).join(", ")}</p>}
+          {cart.length > 0 ? <p className="font-semibold text-slate-900">{totalCartQty} item{totalCartQty !== 1 ? "s" : ""} geselecteerd</p> : <p className="text-slate-400">Selecteer materiaal of set</p>}
+          {cart.length > 0 && <p className="text-xs text-slate-500 mt-0.5">{cart.map(c => `${c.qty}x ${c.itemName}`).join(", ")}</p>}
         </div>
         <button onClick={() => setLoanStep(confirmStep)} disabled={cart.length === 0} className={`px-6 py-3 rounded-xl text-white font-bold text-sm disabled:opacity-30 shadow-sm ${isReservation ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-600 hover:bg-blue-700"}`}>
           Ga verder {"\u2192"}

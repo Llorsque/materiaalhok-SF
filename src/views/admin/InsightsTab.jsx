@@ -55,23 +55,23 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
   const barW = (v, max) => `${Math.max(2, (v / Math.max(1, max)) * 100)}%`;
 
   return <div className="space-y-8">
-    <h3 className="text-lg font-bold text-gray-900">Inzichten (afgelopen jaar)</h3>
+    <h3 className="text-lg font-bold text-slate-900">Inzichten (afgelopen jaar)</h3>
 
     {/* Overview stats */}
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <Stat label="Bonnen" value={yearBons.length} color="text-blue-600" icon={"\ud83d\udcdd"}/>
       <Stat label="Items uitgeleend" value={allItems.reduce((s, i) => s + i.totalLoaned, 0)} color="text-amber-600" icon={"\ud83d\udce4"}/>
       <Stat label="Unieke items" value={allItems.filter(i => i.totalLoaned > 0).length} color="text-emerald-600" icon={"\ud83d\udce6"}/>
-      <Stat label="Nooit gebruikt" value={neverUsed.length} color="text-gray-500" icon={"\ud83d\udca4"}/>
+      <Stat label="Nooit gebruikt" value={neverUsed.length} color="text-slate-500" icon={"\ud83d\udca4"}/>
     </div>
 
     {/* Monthly chart */}
-    {months.length > 0 && <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h4 className="font-semibold text-gray-800 mb-4">{"\ud83d\udcc8"} Uitleningen per maand</h4>
+    {months.length > 0 && <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udcc8"} Uitleningen per maand</h4>
       <div className="space-y-2">
         {months.map(([m, count]) => <div key={m} className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 w-16 flex-shrink-0">{new Date(m + "-01").toLocaleDateString("nl-NL", { month: "short", year: "2-digit" })}</span>
-          <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+          <span className="text-xs text-slate-500 w-16 flex-shrink-0">{new Date(m + "-01").toLocaleDateString("nl-NL", { month: "short", year: "2-digit" })}</span>
+          <div className="flex-1 bg-slate-100 rounded-full h-6 overflow-hidden">
             <div className="h-full bg-blue-500 rounded-full flex items-center justify-end pr-2 transition-all" style={{ width: barW(count, maxMonth) }}>
               <span className="text-xs text-white font-bold">{count}</span>
             </div>
@@ -81,8 +81,8 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
     </div>}
 
     {/* Category breakdown */}
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h4 className="font-semibold text-gray-800 mb-4">{"\ud83d\udcca"} Gebruik per categorie</h4>
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udcca"} Gebruik per categorie</h4>
       <div className="space-y-3">
         {Object.entries(catStats).sort((a, b) => b[1].totalLoaned - a[1].totalLoaned).map(([cat, s]) => {
           const maxCat = Math.max(1, ...Object.values(catStats).map(c => c.totalLoaned));
@@ -90,10 +90,10 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
             <span className="text-lg w-8 text-center">{getIcon(cat)}</span>
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-900">{cat}</span>
-                <span className="text-xs text-gray-500">{s.totalLoaned} stuks in {s.bonCount} bonnen</span>
+                <span className="text-sm font-medium text-slate-900">{cat}</span>
+                <span className="text-xs text-slate-500">{s.totalLoaned} stuks in {s.bonCount} bonnen</span>
               </div>
-              <div className="bg-gray-100 rounded-full h-3 overflow-hidden">
+              <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
                 <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: barW(s.totalLoaned, maxCat) }}/>
               </div>
             </div>
@@ -104,68 +104,68 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
 
     <div className="grid md:grid-cols-2 gap-6">
       {/* Most used */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <h4 className="font-semibold text-gray-800 mb-4">{"\ud83d\udd25"} Meest uitgeleend</h4>
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udd25"} Meest uitgeleend</h4>
         <div className="space-y-3">
           {mostUsed.filter(i => i.totalLoaned > 0).slice(0, 15).map((i, idx) => <div key={i.name} className="flex items-center gap-3">
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx < 3 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}>{idx + 1}</span>
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx < 3 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>{idx + 1}</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{i.name}</p>
-              <p className="text-xs text-gray-500">{i.category}</p>
+              <p className="text-sm font-medium text-slate-900 truncate">{i.name}</p>
+              <p className="text-xs text-slate-500">{i.category}</p>
             </div>
             <div className="text-right flex-shrink-0">
-              <p className="text-sm font-bold text-gray-900">{i.totalLoaned}x</p>
-              <p className="text-xs text-gray-400">{i.bonCount} bonnen</p>
+              <p className="text-sm font-bold text-slate-900">{i.totalLoaned}x</p>
+              <p className="text-xs text-slate-400">{i.bonCount} bonnen</p>
             </div>
           </div>)}
         </div>
       </div>
 
       {/* Least used */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <h4 className="font-semibold text-gray-800 mb-4">{"\ud83d\udca4"} Minst uitgeleend</h4>
-        {neverUsed.length > 0 && <div className="mb-4 bg-gray-50 rounded-xl px-4 py-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Nooit gebruikt ({neverUsed.length})</p>
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udca4"} Minst uitgeleend</h4>
+        {neverUsed.length > 0 && <div className="mb-4 bg-slate-50 rounded-xl px-4 py-3">
+          <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Nooit gebruikt ({neverUsed.length})</p>
           <div className="flex flex-wrap gap-1">
-            {neverUsed.slice(0, 20).map(i => <span key={i.name} className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full text-xs">{i.name}</span>)}
-            {neverUsed.length > 20 && <span className="px-2 py-0.5 text-gray-400 text-xs">+{neverUsed.length - 20} meer</span>}
+            {neverUsed.slice(0, 20).map(i => <span key={i.name} className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded-full text-xs">{i.name}</span>)}
+            {neverUsed.length > 20 && <span className="px-2 py-0.5 text-slate-400 text-xs">+{neverUsed.length - 20} meer</span>}
           </div>
         </div>}
         <div className="space-y-3">
           {leastUsed.filter(i => i.totalLoaned > 0).slice(0, 10).map((i, idx) => <div key={i.name} className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{i.name}</p>
-              <p className="text-xs text-gray-500">{i.category} {"\u00b7"} {i.stock} op voorraad</p>
+              <p className="text-sm font-medium text-slate-900 truncate">{i.name}</p>
+              <p className="text-xs text-slate-500">{i.category} {"\u00b7"} {i.stock} op voorraad</p>
             </div>
-            <span className="text-sm text-gray-400 font-medium">{i.totalLoaned}x</span>
+            <span className="text-sm text-slate-400 font-medium">{i.totalLoaned}x</span>
           </div>)}
         </div>
       </div>
     </div>
 
     {/* User stats */}
-    {Object.keys(userStats).length > 0 && <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h4 className="font-semibold text-gray-800 mb-4">{"\ud83d\udc65"} Gebruik per gebruiker</h4>
+    {Object.keys(userStats).length > 0 && <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <h4 className="font-semibold text-slate-800 mb-4">{"\ud83d\udc65"} Gebruik per gebruiker</h4>
       <div className="space-y-3">
         {Object.entries(userStats).sort((a, b) => b[1].items - a[1].items).map(([user, s]) => {
           const maxUser = Math.max(1, ...Object.values(userStats).map(u => u.items));
           return <div key={user} className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-900 w-32 flex-shrink-0 truncate">{user}</span>
-            <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+            <span className="text-sm font-medium text-slate-900 w-32 flex-shrink-0 truncate">{user}</span>
+            <div className="flex-1 bg-slate-100 rounded-full h-5 overflow-hidden">
               <div className="h-full bg-purple-400 rounded-full flex items-center justify-end pr-2 transition-all" style={{ width: barW(s.items, maxUser) }}>
                 {s.items > 0 && <span className="text-xs text-white font-bold">{s.items}</span>}
               </div>
             </div>
-            <span className="text-xs text-gray-500 flex-shrink-0 w-16 text-right">{s.bons} bonnen</span>
+            <span className="text-xs text-slate-500 flex-shrink-0 w-16 text-right">{s.bons} bonnen</span>
           </div>;
         })}
       </div>
     </div>}
 
     {/* Usage rate */}
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h4 className="font-semibold text-gray-800 mb-2">{"\ud83d\udcca"} Gebruikspercentage</h4>
-      <p className="text-xs text-gray-500 mb-4">Hoeveel van de voorraad is het afgelopen jaar minstens 1x uitgeleend</p>
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <h4 className="font-semibold text-slate-800 mb-2">{"\ud83d\udcca"} Gebruikspercentage</h4>
+      <p className="text-xs text-slate-500 mb-4">Hoeveel van de voorraad is het afgelopen jaar minstens 1x uitgeleend</p>
       <div className="flex items-center gap-4">
         <div className="relative w-24 h-24">
           <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
@@ -173,12 +173,12 @@ export function InsightsTab({ eq, bons, oneYearAgo }) {
             <circle cx="18" cy="18" r="15.9" fill="none" stroke="#3b82f6" strokeWidth="3" strokeDasharray={`${((allItems.filter(i=>i.totalLoaned>0).length/Math.max(1,allItems.length))*100).toFixed(0)} 100`} strokeLinecap="round"/>
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-lg font-bold text-gray-900">{((allItems.filter(i=>i.totalLoaned>0).length/Math.max(1,allItems.length))*100).toFixed(0)}%</span>
+            <span className="text-lg font-bold text-slate-900">{((allItems.filter(i=>i.totalLoaned>0).length/Math.max(1,allItems.length))*100).toFixed(0)}%</span>
           </div>
         </div>
         <div>
-          <p className="text-sm text-gray-700"><span className="font-semibold text-emerald-600">{allItems.filter(i=>i.totalLoaned>0).length}</span> van de <span className="font-semibold">{allItems.length}</span> items is minstens 1x gebruikt</p>
-          <p className="text-sm text-gray-500 mt-1"><span className="font-semibold text-gray-400">{neverUsed.length}</span> items zijn nog nooit uitgeleend</p>
+          <p className="text-sm text-slate-700"><span className="font-semibold text-emerald-600">{allItems.filter(i=>i.totalLoaned>0).length}</span> van de <span className="font-semibold">{allItems.length}</span> items is minstens 1x gebruikt</p>
+          <p className="text-sm text-slate-500 mt-1"><span className="font-semibold text-slate-400">{neverUsed.length}</span> items zijn nog nooit uitgeleend</p>
         </div>
       </div>
     </div>

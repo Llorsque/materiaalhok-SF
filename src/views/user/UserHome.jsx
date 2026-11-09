@@ -34,7 +34,7 @@ function Toggle({ checked, disabled, onChange, id }) {
     aria-checked={checked}
     disabled={disabled}
     onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${checked ? "bg-blue-600" : "bg-gray-300"} disabled:opacity-40`}
+    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${checked ? "bg-blue-600" : "bg-slate-300"} disabled:opacity-40`}
   >
     <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}/>
   </button>;
@@ -83,9 +83,9 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
   const myBons = bons.filter((b) => b.user_id === user.id && b.status !== "completed");
   const otherActiveBons = bons.filter((b) => b.user_id !== user.id && b.status === "active");
 
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex flex-col">
+  return <div className="min-h-screen bg-slate-50 flex flex-col">
     <AppHeader branding={branding} role="user" onLogout={onLogout} user={user} onProfileClick={()=>setShowProfile(true)}>
-      <div className="max-w-xl mx-auto px-5 pb-3"><p className="text-sm text-gray-500">Welkom, {user.name}</p></div>
+      <div className="max-w-xl mx-auto px-5 pb-3"><p className="text-sm text-slate-500">Welkom, {user.name}</p></div>
     </AppHeader>
 
     {/* Profile modal */}
@@ -94,9 +94,9 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold" style={{backgroundColor:branding.color}}>{user.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}</div>
           <div>
-            <p className="text-lg font-bold text-gray-900">{user.name}</p>
-            <p className="text-sm text-gray-500">{user.email} {"\u00b7"} {user.role==="admin"?"Beheerder":"Gebruiker"}</p>
-            {user.login_barcode && <p className="text-xs font-mono text-gray-400 mt-1">Badge: {user.login_barcode}</p>}
+            <p className="text-lg font-bold text-slate-900">{user.name}</p>
+            <p className="text-sm text-slate-500">{user.email} {"\u00b7"} {user.role==="admin"?"Beheerder":"Gebruiker"}</p>
+            {user.login_barcode && <p className="text-xs font-mono text-slate-400 mt-1">Badge: {user.login_barcode}</p>}
           </div>
         </div>
 
@@ -107,42 +107,42 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
           const totalItems = userBons.reduce((s,b)=>s+bonActiveItems(b).reduce((t,i)=>t+i.quantity,0),0);
           return <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-blue-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-blue-600">{userBons.length}</p><p className="text-xs text-gray-500">Bonnen</p></div>
-              <div className="bg-amber-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-amber-600">{active.length}</p><p className="text-xs text-gray-500">Actief</p></div>
-              <div className="bg-emerald-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-emerald-600">{totalItems}</p><p className="text-xs text-gray-500">Items geleend</p></div>
+              <div className="bg-blue-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-blue-600">{userBons.length}</p><p className="text-xs text-slate-500">Bonnen</p></div>
+              <div className="bg-amber-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-amber-600">{active.length}</p><p className="text-xs text-slate-500">Actief</p></div>
+              <div className="bg-emerald-50 rounded-xl p-3 text-center"><p className="text-2xl font-bold text-emerald-600">{totalItems}</p><p className="text-xs text-slate-500">Items geleend</p></div>
             </div>
 
             {active.length>0 && <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Actieve bonnen</p>
-              <div className="space-y-2">{active.map(b=><div key={b.id} className={`rounded-xl p-3 border ${bonIsOverdue(b)?"border-red-200 bg-red-50":"border-gray-200 bg-gray-50"}`}>
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Actieve bonnen</p>
+              <div className="space-y-2">{active.map(b=><div key={b.id} className={`rounded-xl p-3 border ${bonIsOverdue(b)?"border-red-200 bg-red-50":"border-slate-200 bg-slate-50"}`}>
                 <div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-blue-600">{b.bon_number}</span><BonBadge bon={b}/></div>
-                <p className="text-xs text-gray-500 mt-1">{fmtDate(b.start_date)} {"\u2192"} {fmtDate(b.return_date)}</p>
-                <p className="text-xs text-gray-400 mt-1">{shortItems(b)}</p>
+                <p className="text-xs text-slate-500 mt-1">{fmtDate(b.start_date)} {"\u2192"} {fmtDate(b.return_date)}</p>
+                <p className="text-xs text-slate-400 mt-1">{shortItems(b)}</p>
               </div>)}</div>
             </div>}
 
             {completed.length>0 && <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Geschiedenis ({completed.length})</p>
-              <div className="space-y-2 max-h-64 overflow-y-auto">{completed.slice(0,20).map(b=><button key={b.id} type="button" onClick={()=>setSelectedBonId(b.id)} className="w-full text-left rounded-xl p-3 border border-gray-100 bg-white hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer">
-                <div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-gray-400">{b.bon_number}</span><span className="text-xs text-emerald-600">{"\u2705"} Compleet</span></div>
-                <p className="text-xs text-gray-500 mt-1">{fmtDate(b.start_date)} {"\u2192"} {fmtDate(b.return_date)}</p>
-                <p className="text-xs text-gray-400 mt-1">{shortItems(b)}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Geschiedenis ({completed.length})</p>
+              <div className="space-y-2 max-h-64 overflow-y-auto">{completed.slice(0,20).map(b=><button key={b.id} type="button" onClick={()=>setSelectedBonId(b.id)} className="w-full text-left rounded-xl p-3 border border-slate-100 bg-white hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
+                <div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-slate-400">{b.bon_number}</span><span className="text-xs text-emerald-600">{"\u2705"} Compleet</span></div>
+                <p className="text-xs text-slate-500 mt-1">{fmtDate(b.start_date)} {"\u2192"} {fmtDate(b.return_date)}</p>
+                <p className="text-xs text-slate-400 mt-1">{shortItems(b)}</p>
               </button>)}</div>
             </div>}
 
-            {userBons.length===0 && <p className="text-center text-gray-400 py-4">Nog geen bonnen</p>}
+            {userBons.length===0 && <p className="text-center text-slate-400 py-4">Nog geen bonnen</p>}
           </div>;
         })()}
 
-        <div className="border-t border-gray-100 pt-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase mb-3">E-mailvoorkeuren</p>
+        <div className="border-t border-slate-100 pt-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase mb-3">E-mailvoorkeuren</p>
           <div className="space-y-3">
             {NOTIFY_OPTIONS.map((opt) => {
               const checked = currentPref(opt.key) === 1;
-              return <div key={opt.key} className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+              return <div key={opt.key} className="flex items-start justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                 <div className="min-w-0">
-                  <label htmlFor={`toggle-${opt.key}`} className="text-sm font-semibold text-gray-800 cursor-pointer">{opt.title}</label>
-                  <p className="text-xs text-gray-500 mt-0.5">{opt.description}</p>
+                  <label htmlFor={`toggle-${opt.key}`} className="text-sm font-semibold text-slate-800 cursor-pointer">{opt.title}</label>
+                  <p className="text-xs text-slate-500 mt-0.5">{opt.description}</p>
                 </div>
                 <Toggle id={`toggle-${opt.key}`} checked={checked} disabled={notifyBusy === opt.key} onChange={(v) => toggleNotify(opt.key, v)}/>
               </div>;
@@ -151,7 +151,7 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
           {notifyError && <p className="text-xs text-red-600 mt-2">{notifyError}</p>}
         </div>
 
-        <button onClick={onLogout} className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-medium text-sm hover:bg-gray-200">Uitloggen</button>
+        <button onClick={onLogout} className="w-full py-3 rounded-xl bg-slate-100 text-slate-700 font-medium text-sm hover:bg-slate-200">Uitloggen</button>
       </div>
     </Modal>
 
@@ -165,32 +165,32 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
           bovenaan de pagina, direct onder de header: dit is waarvoor
           gebruikers de tool openen. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <button onClick={()=>onModeChange("loan", false)} className="py-10 rounded-3xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+        <button onClick={()=>onModeChange("loan", false)} className="py-10 rounded-3xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95">
           <span className="text-4xl block mb-2">{"\ud83d\udce4"}</span><span className="text-lg">Materiaal lenen</span>
         </button>
-        <button onClick={()=>onModeChange("loan", true)} className="py-10 rounded-3xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+        <button onClick={()=>onModeChange("loan", true)} className="py-10 rounded-3xl bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95">
           <span className="text-4xl block mb-2">{"\ud83d\udcc5"}</span><span className="text-lg">Reserveren</span>
         </button>
-        <button onClick={()=>onModeChange("pickup", false)} className="py-10 rounded-3xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+        <button onClick={()=>onModeChange("pickup", false)} className="py-10 rounded-3xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95">
           <span className="text-4xl block mb-2">{"\ud83d\udce6"}</span><span className="text-lg">Ophalen</span>
         </button>
-        <button onClick={()=>onModeChange("return", false)} className="py-10 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+        <button onClick={()=>onModeChange("return", false)} className="py-10 rounded-3xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md transition-all hover:scale-105 active:scale-95">
           <span className="text-4xl block mb-2">{"\ud83d\udce5"}</span><span className="text-lg">Retourneren</span>
         </button>
       </div>
 
       {/* Mijn actieve uitleningen — overzicht onder de acties. */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <p className="text-sm font-semibold text-gray-500 uppercase mb-3">Mijn actieve uitleningen{myBons.length>0?` (${myBons.length})`:""}</p>
-        {myBons.length===0 ? <p className="text-sm text-gray-400">Geen actieve uitleningen</p> :
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <p className="text-sm font-semibold text-slate-500 uppercase mb-3">Mijn actieve uitleningen{myBons.length>0?` (${myBons.length})`:""}</p>
+        {myBons.length===0 ? <p className="text-sm text-slate-400">Geen actieve uitleningen</p> :
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {myBons.map(b=><button key={b.id} type="button" onClick={()=>setSelectedBonId(b.id)} className={`text-left rounded-xl p-4 border transition-all cursor-pointer hover:shadow-md ${bonIsOverdue(b)?"border-red-200 bg-red-50 hover:border-red-300":"border-gray-100 bg-gray-50 hover:border-gray-300 hover:bg-white"}`}>
+            {myBons.map(b=><button key={b.id} type="button" onClick={()=>setSelectedBonId(b.id)} className={`text-left rounded-xl p-4 border transition-all cursor-pointer hover:shadow-md ${bonIsOverdue(b)?"border-red-200 bg-red-50 hover:border-red-300":"border-slate-100 bg-slate-50 hover:border-slate-300 hover:bg-white"}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-sm font-bold text-blue-600">{b.bon_number}</span>
                 <BonBadge bon={b}/>
               </div>
-              <p className="text-xs text-gray-400 mt-2 break-words">{shortItems(b)}</p>
-              <p className="text-xs text-gray-500 mt-1">Retour: {fmtDate(b.return_date)}</p>
+              <p className="text-xs text-slate-400 mt-2 break-words">{shortItems(b)}</p>
+              <p className="text-xs text-slate-500 mt-1">Retour: {fmtDate(b.return_date)}</p>
             </button>)}
           </div>
         }
@@ -199,16 +199,16 @@ export function UserHome({ user, branding, bons, bonsLoading, bonsError, refresh
       <MyBonDetailModal bon={selectedBon} sets={sets} userName={user.name} onClose={()=>setSelectedBonId(null)} onChanged={refreshBons}/>
 
       {/* Andere uitleningen in het hok (nieuw) — read-only */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <p className="text-sm font-semibold text-gray-500 uppercase mb-3">Andere uitleningen in het hok{otherActiveBons.length>0?` (${otherActiveBons.length})`:""}</p>
-        {otherActiveBons.length===0 ? <p className="text-sm text-gray-400">Niemand anders heeft op dit moment materiaal uit</p> :
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <p className="text-sm font-semibold text-slate-500 uppercase mb-3">Andere uitleningen in het hok{otherActiveBons.length>0?` (${otherActiveBons.length})`:""}</p>
+        {otherActiveBons.length===0 ? <p className="text-sm text-slate-400">Niemand anders heeft op dit moment materiaal uit</p> :
           <div className="space-y-2">
-            {otherActiveBons.map(b=><div key={b.id} className="rounded-xl px-4 py-3 border border-gray-100 bg-gray-50">
+            {otherActiveBons.map(b=><div key={b.id} className="rounded-xl px-4 py-3 border border-slate-100 bg-slate-50">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium text-gray-700">{b.user_name}</p>
-                <p className="text-xs text-gray-500">Retour: {fmtDate(b.return_date)}</p>
+                <p className="text-sm font-medium text-slate-700">{b.user_name}</p>
+                <p className="text-xs text-slate-500">Retour: {fmtDate(b.return_date)}</p>
               </div>
-              <p className="text-xs text-gray-500 mt-1 break-words">{shortItems(b)}</p>
+              <p className="text-xs text-slate-500 mt-1 break-words">{shortItems(b)}</p>
             </div>)}
           </div>
         }

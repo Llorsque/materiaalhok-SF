@@ -11,15 +11,15 @@ const TONE_CLASSES = {
   purple:  "bg-purple-100 text-purple-700",
   red:     "bg-red-100 text-red-700",
   blue:    "bg-blue-100 text-blue-700",
-  gray:    "bg-gray-100 text-gray-700",
+  gray:    "bg-slate-100 text-slate-700",
 };
 
 export function ViewToggle({ view, onChange, accent = "blue" }) {
   const activeClass = accent === "purple"
     ? "bg-purple-600 text-white"
     : "bg-blue-600 text-white";
-  const inactiveClass = "text-gray-600 hover:bg-gray-200";
-  return <div className="inline-flex rounded-xl bg-gray-100 p-1 text-xs font-medium" role="tablist" aria-label="Weergave">
+  const inactiveClass = "text-slate-600 hover:bg-slate-200";
+  return <div className="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-medium" role="tablist" aria-label="Weergave">
     <button
       type="button"
       role="tab"
@@ -47,20 +47,20 @@ export function Tile({
   onClick,
   media,
   title,
-  titleClassName = "font-semibold text-gray-900 text-sm truncate",
+  titleClassName = "font-semibold text-slate-900 text-sm truncate",
   subtitle,
   badges = [],
   extra,
 }) {
   return <div
     onClick={onClick}
-    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:border-gray-200 flex flex-col gap-3"
+    className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md hover:border-slate-200 flex flex-col gap-3"
   >
     <div className="flex items-center gap-3 min-w-0">
       {media && <div className="flex-shrink-0">{media}</div>}
       <div className="min-w-0 flex-1">
         <p className={titleClassName}>{title}</p>
-        {subtitle && <p className="text-xs text-gray-500 mt-0.5 truncate">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-slate-500 mt-0.5 truncate">{subtitle}</p>}
       </div>
     </div>
     {badges.length > 0 && <div className="flex flex-wrap gap-1.5 text-xs">

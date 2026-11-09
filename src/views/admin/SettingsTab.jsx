@@ -114,63 +114,63 @@ export function SettingsTab({ branding, setBranding }) {
   const canConfirm = !!preview && confirmText === "RESET" && !resetting && !resetResult;
 
   return <div className="space-y-6 max-w-xl">
-    <h3 className="text-lg font-bold text-gray-900">Instellingen</h3>
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
-      <h4 className="font-semibold text-gray-800">Branding</h4>
+    <h3 className="text-lg font-bold text-slate-900">Instellingen</h3>
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+      <h4 className="font-semibold text-slate-800">Branding</h4>
       <ImageUpload value={branding.logo} onChange={v=>setBranding(p=>({...p,logo:v}))} label="Logo"/>
       {branding.logo && <>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Logo formaat header ({branding.logoSize || 40}px)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Logo formaat header ({branding.logoSize || 40}px)</label>
           <div className="flex items-center gap-4">
             <input type="range" min="20" max="80" value={branding.logoSize || 40} onChange={e => setBranding(p => ({...p, logoSize: parseInt(e.target.value)}))} className="flex-1 accent-blue-600"/>
-            <div className="bg-gray-100 rounded-xl p-2 flex items-center justify-center" style={{width:80,height:80}}>
+            <div className="bg-slate-100 rounded-xl p-2 flex items-center justify-center" style={{width:80,height:80}}>
               <img src={branding.logo} className="rounded-lg object-contain" style={{width:branding.logoSize||40,height:branding.logoSize||40}} alt="preview"/>
             </div>
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Logo formaat loginscherm ({branding.loginLogoSize || 64}px)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Logo formaat loginscherm ({branding.loginLogoSize || 64}px)</label>
           <div className="flex items-center gap-4">
             <input type="range" min="32" max="160" value={branding.loginLogoSize || 64} onChange={e => setBranding(p => ({...p, loginLogoSize: parseInt(e.target.value)}))} className="flex-1 accent-blue-600"/>
-            <div className="bg-gray-100 rounded-xl p-2 flex items-center justify-center" style={{width:100,height:100}}>
+            <div className="bg-slate-100 rounded-xl p-2 flex items-center justify-center" style={{width:100,height:100}}>
               <img src={branding.logo} className="rounded-lg object-contain" style={{width:branding.loginLogoSize||64,height:branding.loginLogoSize||64}} alt="preview"/>
             </div>
           </div>
         </div>
       </>}
-      <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Titel</label><input className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.title} onChange={e=>setBranding(p=>({...p,title:e.target.value}))}/></div>
-      <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Ondertitel</label><input className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.subtitle} onChange={e=>setBranding(p=>({...p,subtitle:e.target.value}))}/></div>
-      <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Kleur</label><div className="flex items-center gap-3"><input type="color" value={branding.color} onChange={e=>setBranding(p=>({...p,color:e.target.value}))} className="w-10 h-10 rounded-lg cursor-pointer border-0"/><span className="text-sm text-gray-500">{branding.color}</span></div></div>
+      <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Titel</label><input className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.title} onChange={e=>setBranding(p=>({...p,title:e.target.value}))}/></div>
+      <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Ondertitel</label><input className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value={branding.subtitle} onChange={e=>setBranding(p=>({...p,subtitle:e.target.value}))}/></div>
+      <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Kleur</label><div className="flex items-center gap-3"><input type="color" value={branding.color} onChange={e=>setBranding(p=>({...p,color:e.target.value}))} className="w-10 h-10 rounded-lg cursor-pointer border-0"/><span className="text-sm text-slate-500">{branding.color}</span></div></div>
       <ImageUpload value={branding.loginBg} onChange={v=>setBranding(p=>({...p,loginBg:v}))} label="Login achtergrond"/>
     </div>
 
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
       <div>
-        <h4 className="font-semibold text-gray-800">Ophalen en terugbrengen</h4>
-        <p className="text-xs text-gray-500 mt-1">Materiaal moet op de retourdag vóór de inlevertijd terug zijn. Vanaf de ophaaltijd kan iemand anders het dezelfde dag meenemen. Na de inlevertijd telt een bon als te laat.</p>
+        <h4 className="font-semibold text-slate-800">Ophalen en terugbrengen</h4>
+        <p className="text-xs text-slate-500 mt-1">Materiaal moet op de retourdag vóór de inlevertijd terug zijn. Vanaf de ophaaltijd kan iemand anders het dezelfde dag meenemen. Na de inlevertijd telt een bon als te laat.</p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Inleveren vóór</label>
-          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={handover.handover_return_before} onChange={e=>setHandover(p=>({...p,handover_return_before:e.target.value}))}/>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Inleveren vóór</label>
+          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={handover.handover_return_before} onChange={e=>setHandover(p=>({...p,handover_return_before:e.target.value}))}/>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Ophalen vanaf</label>
-          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={handover.handover_pickup_from} onChange={e=>setHandover(p=>({...p,handover_pickup_from:e.target.value}))}/>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Ophalen vanaf</label>
+          <input type="time" step="900" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" value={handover.handover_pickup_from} onChange={e=>setHandover(p=>({...p,handover_pickup_from:e.target.value}))}/>
         </div>
       </div>
       {handoverInvalid && <p className="text-sm text-red-600">De ophaaltijd moet ná de inlevertijd liggen.</p>}
       <button onClick={saveHandover} disabled={!handoverDirty || handoverInvalid || settingsSaving} className="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40">Tijden opslaan</button>
     </div>
 
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
       <div>
-        <h4 className="font-semibold text-gray-800">Huurvoorwaarden externe verhuur</h4>
-        <p className="text-xs text-gray-500 mt-1">Deze tekst wordt onderaan de reserveringsmail voor externe huurders getoond. Laat leeg om geen voorwaarden mee te sturen.</p>
+        <h4 className="font-semibold text-slate-800">Huurvoorwaarden externe verhuur</h4>
+        <p className="text-xs text-slate-500 mt-1">Deze tekst wordt onderaan de reserveringsmail voor externe huurders getoond. Laat leeg om geen voorwaarden mee te sturen.</p>
       </div>
       <textarea
         rows={8}
-        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
         placeholder="Bijv. 'Materiaal wordt schoon en droog geretourneerd. Bij verlies of schade wordt de dagprijs in rekening gebracht...'"
         value={rentalTerms}
         onChange={(e) => setRentalTerms(e.target.value)}
@@ -188,7 +188,7 @@ export function SettingsTab({ branding, setBranding }) {
         </button>
         {rentalTermsDirty && !settingsSaving && <button
           onClick={() => setRentalTerms(savedRentalTerms)}
-          className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+          className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200"
         >
           Herstellen
         </button>}
@@ -213,10 +213,10 @@ export function SettingsTab({ branding, setBranding }) {
       </button>
     </div>
 
-    <div className="text-xs text-gray-400 text-center pt-2">Versie {__APP_VERSION__}</div>
+    <div className="text-xs text-slate-400 text-center pt-2">Versie {__APP_VERSION__}</div>
 
     <Modal open={resetOpen} onClose={() => !resetting && setResetOpen(false)} title="Reset bonnen voor livegang">
-      {previewLoading && <p className="text-sm text-gray-500">Preview laden…</p>}
+      {previewLoading && <p className="text-sm text-slate-500">Preview laden…</p>}
       {previewError && <p className="text-sm text-red-600">{previewError}</p>}
 
       {preview && !resetResult && <div className="space-y-4">
@@ -244,7 +244,7 @@ export function SettingsTab({ branding, setBranding }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
             Typ <span className="font-mono font-bold">RESET</span> om te bevestigen
           </label>
           <input
@@ -253,7 +253,7 @@ export function SettingsTab({ branding, setBranding }) {
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="RESET"
             disabled={resetting}
-            className="w-full px-3 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
           />
         </div>
 
@@ -263,7 +263,7 @@ export function SettingsTab({ branding, setBranding }) {
           <button
             onClick={() => setResetOpen(false)}
             disabled={resetting}
-            className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 disabled:opacity-50"
           >
             Annuleren
           </button>
@@ -286,7 +286,7 @@ export function SettingsTab({ branding, setBranding }) {
             <li>• Bonnummers beginnen weer bij 1</li>
           </ul>
         </div>
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-700">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700">
           <p className="font-medium mb-1">Backup opgeslagen als:</p>
           <code className="text-xs break-all">server/backups/{resetResult.backup.filename}</code>
         </div>

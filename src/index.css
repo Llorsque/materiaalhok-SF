@@ -1,3 +1,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* v2 huisstijl — rustige, koele neutrale tinten (slate), één accentkleur
+   (de branding-kleur uit Instellingen) en vaste bouwstenen. Nieuwe schermen
+   gebruiken de component-klassen hieronder; bestaande schermen zijn
+   mechanisch omgezet naar dezelfde tinten. */
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "cv11", "ss01";
+  }
+  /* Getallen in tabellen en tellers lijnen netjes uit. */
+  .tabular, td, .font-mono { font-variant-numeric: tabular-nums; }
+  /* Toetsenbordfocus altijd zichtbaar, muisklik niet. */
+  :focus-visible { outline: 2px solid rgb(51 65 85 / 0.55); outline-offset: 2px; }
+  /* iOS zoomt in op invoervelden kleiner dan 16px — op telefoons altijd 16px. */
+  @media (max-width: 640px) {
+    input, select, textarea { font-size: 16px !important; }
+  }
+}
+
+@layer components {
+  .card { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
+  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed; }
+  .btn-primary { @apply btn bg-slate-900 text-white hover:bg-slate-700; }
+  .btn-secondary { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50; }
+  .btn-ghost { @apply btn text-slate-600 hover:bg-slate-100; }
+  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+  .input { @apply w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-400; }
+  .label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
+  .chip { @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold; }
+  /* Horizontaal scrollende rij zonder zichtbare balk (tabs, filterchips). */
+  .scroll-row { @apply flex gap-2 overflow-x-auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .scroll-row::-webkit-scrollbar { display: none; }
+}

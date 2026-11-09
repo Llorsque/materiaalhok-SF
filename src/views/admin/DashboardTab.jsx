@@ -90,15 +90,15 @@ export function DashboardTab({
       <button
         type="button"
         onClick={() => setStatsOpen(true)}
-        className="inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white border border-gray-200 text-sm hover:bg-gray-50 shadow-sm"
+        className="inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-sm hover:bg-slate-50 shadow-sm"
         title="Cijfers en totalen"
       >
-        <span className="text-gray-500">Cijfers</span>
-        <span className="text-gray-300">·</span>
-        <span className="font-semibold text-gray-900">{totalStock}</span><span className="text-xs text-gray-500">voorraad</span>
-        <span className="text-gray-300">·</span>
-        <span className="font-semibold text-emerald-700">{Math.max(0, totalStock - totalUnavail)}</span><span className="text-xs text-gray-500">vrij</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400"><path d="M9 5l7 7-7 7"/></svg>
+        <span className="text-slate-500">Cijfers</span>
+        <span className="text-slate-300">·</span>
+        <span className="font-semibold text-slate-900">{totalStock}</span><span className="text-xs text-slate-500">voorraad</span>
+        <span className="text-slate-300">·</span>
+        <span className="font-semibold text-emerald-700">{Math.max(0, totalStock - totalUnavail)}</span><span className="text-xs text-slate-500">vrij</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400"><path d="M9 5l7 7-7 7"/></svg>
       </button>
     </div>
 
@@ -117,8 +117,8 @@ export function DashboardTab({
         {upcomingReservations.slice(0, MAX_ROWS).map((b) => <BonRow key={b.id}
           onClick={() => onBonClick(b)}
           left={<>
-            <p className="text-sm font-semibold text-gray-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
-            <p className="text-xs text-gray-500 truncate">Ophalen {fmtDate(b.start_date)}</p>
+            <p className="text-sm font-semibold text-slate-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
+            <p className="text-xs text-slate-500 truncate">Ophalen {fmtDate(b.start_date)}</p>
           </>}
           rightMono={b.bon_number}
         />)}
@@ -136,7 +136,7 @@ export function DashboardTab({
         {dueSoon.map((b) => <BonRow key={b.id}
           onClick={() => onBonClick(b)}
           left={<>
-            <p className="text-sm font-semibold text-gray-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
+            <p className="text-sm font-semibold text-slate-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
             <p className="text-xs text-amber-700 truncate">Retour {fmtDT(b.return_date)}</p>
           </>}
           rightMono={b.bon_number}
@@ -157,8 +157,8 @@ export function DashboardTab({
           return <BonRow key={b.id}
             onClick={() => onBonClick(b)}
             left={<>
-              <p className="text-sm font-semibold text-gray-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
-              <p className={`text-xs truncate ${overdue ? "text-red-700 font-medium" : "text-gray-500"}`}>Retour {fmtDate(b.return_date)}{overdue ? " — te laat" : ""}</p>
+              <p className="text-sm font-semibold text-slate-900 truncate">{(b.is_external ? b.external_org : b.user_name) || "\u2014"}</p>
+              <p className={`text-xs truncate ${overdue ? "text-red-700 font-medium" : "text-slate-500"}`}>Retour {fmtDate(b.return_date)}{overdue ? " — te laat" : ""}</p>
             </>}
             rightMono={b.bon_number}
           />;
@@ -181,13 +181,13 @@ export function DashboardTab({
     {/* Cijferpop-up */}
     <Modal open={statsOpen} onClose={() => setStatsOpen(false)} title="Cijfers en totalen">
       <div className="grid grid-cols-2 gap-3">
-        <StatTile label="Voorraad totaal" value={totalStock} color="text-gray-800" icon={"\ud83d\udce6"}/>
+        <StatTile label="Voorraad totaal" value={totalStock} color="text-slate-800" icon={"\ud83d\udce6"}/>
         <StatTile label="Beschikbaar" value={Math.max(0, totalStock - totalUnavail)} color="text-emerald-600" icon={"\u2705"}/>
         <StatTile label="Materialen" value={materialCount} color="text-indigo-600" icon={"\ud83e\uddf1"}/>
         <StatTile label="Sets" value={setCount} color="text-purple-600" icon={"\ud83c\udff7\ufe0f"}/>
         <StatTile label="Actieve bonnen" value={activeBons.length} color="text-amber-600" icon={"\ud83d\udce4"}/>
         <StatTile label="Reserveringen" value={reservedBons.length} color="text-purple-600" icon={"\ud83d\udcc5"}/>
-        <StatTile label="Waarde" value={fmt(totalValue)} color="text-gray-700" icon={"\ud83d\udcb0"} span={2}/>
+        <StatTile label="Waarde" value={fmt(totalValue)} color="text-slate-700" icon={"\ud83d\udcb0"} span={2}/>
       </div>
     </Modal>
   </div>;
@@ -201,24 +201,24 @@ function OverviewCard({ title, icon, accent, count, empty, seeAll, children }) {
     amber:    "bg-amber-50 text-amber-700",
     blue:     "bg-blue-50 text-blue-700",
     external: "bg-purple-50 text-purple-700",
-  }[accent] || "bg-gray-50 text-gray-700";
+  }[accent] || "bg-slate-50 text-slate-700";
   const items = [].concat(children).filter(Boolean);
-  return <section className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-    <header className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+  return <section className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+    <header className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
       <div className="flex items-center gap-2 min-w-0">
         <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-base ${accentClass}`}>{icon}</span>
         <div className="min-w-0">
-          <h3 className="text-sm font-bold text-gray-900 truncate">{title}</h3>
-          <p className="text-[11px] text-gray-500">{count} {count === 1 ? "regel" : "regels"} in totaal</p>
+          <h3 className="text-sm font-bold text-slate-900 truncate">{title}</h3>
+          <p className="text-[11px] text-slate-500">{count} {count === 1 ? "regel" : "regels"} in totaal</p>
         </div>
       </div>
     </header>
-    <div className="flex-1 divide-y divide-gray-50">
+    <div className="flex-1 divide-y divide-slate-50">
       {items.length === 0
-        ? <p className="px-5 py-8 text-sm text-gray-400 text-center">{empty}</p>
+        ? <p className="px-5 py-8 text-sm text-slate-400 text-center">{empty}</p>
         : items}
     </div>
-    {seeAll && <footer className="px-5 py-2.5 border-t border-gray-100 bg-gray-50/60 text-right">
+    {seeAll && <footer className="px-5 py-2.5 border-t border-slate-100 bg-slate-50/60 text-right">
       <button type="button" onClick={seeAll.onClick} className="text-xs font-semibold text-blue-600 hover:underline">
         {seeAll.label} {"\u2192"}
       </button>
@@ -230,7 +230,7 @@ function BonRow({ onClick, left, rightMono }) {
   return <button
     type="button"
     onClick={onClick}
-    className="w-full px-5 py-3 flex items-center justify-between gap-3 text-left hover:bg-gray-50"
+    className="w-full px-5 py-3 flex items-center justify-between gap-3 text-left hover:bg-slate-50"
   >
     <div className="min-w-0 flex-1">{left}</div>
     <span className="font-mono text-xs font-bold text-blue-600 flex-shrink-0">{rightMono}</span>
@@ -244,32 +244,32 @@ function ExternalBonRow({ bon, onClick }) {
   const waiting = isExternalWaitingOnPayment(bon);
   const phase   = externalPhaseLabel(bon);
   const price   = typeof bon.rental_price === "number" ? bon.rental_price : Number(bon.rental_price) || 0;
-  const rowBg   = waiting ? "bg-amber-50 hover:bg-amber-100" : "hover:bg-gray-50";
+  const rowBg   = waiting ? "bg-amber-50 hover:bg-amber-100" : "hover:bg-slate-50";
   const borderL = waiting ? "border-l-4 border-l-amber-500" : "";
-  const phaseText = waiting ? "text-amber-800 font-semibold" : "text-gray-500";
+  const phaseText = waiting ? "text-amber-800 font-semibold" : "text-slate-500";
   return <button
     type="button"
     onClick={onClick}
     className={`w-full px-5 py-3 flex items-center justify-between gap-3 text-left ${rowBg} ${borderL}`}
   >
     <div className="min-w-0 flex-1">
-      <p className="text-sm font-semibold text-gray-900 truncate">{bon.external_org || "\u2014"}</p>
+      <p className="text-sm font-semibold text-slate-900 truncate">{bon.external_org || "\u2014"}</p>
       <p className={`text-xs truncate ${phaseText}`}>
         {waiting && <span className="mr-1">{"\u26a0\ufe0f"}</span>}{phase}
       </p>
     </div>
     <div className="text-right flex-shrink-0">
       <span className="font-mono text-xs font-bold text-blue-600 block">{bon.bon_number}</span>
-      <span className={`text-xs ${price > 0 ? "text-gray-700 font-medium" : "text-gray-400"}`}>{price > 0 ? fmt(price) : "geen bedrag"}</span>
+      <span className={`text-xs ${price > 0 ? "text-slate-700 font-medium" : "text-slate-400"}`}>{price > 0 ? fmt(price) : "geen bedrag"}</span>
     </div>
   </button>;
 }
 
 function StatTile({ label, value, color, icon, span }) {
-  return <div className={`bg-gray-50 rounded-xl px-4 py-3 flex items-center gap-3 ${span === 2 ? "col-span-2" : ""}`}>
+  return <div className={`bg-slate-50 rounded-xl px-4 py-3 flex items-center gap-3 ${span === 2 ? "col-span-2" : ""}`}>
     <span className="text-2xl">{icon}</span>
     <div className="min-w-0">
-      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-xs text-slate-500">{label}</p>
       <p className={`text-lg font-bold ${color}`}>{value}</p>
     </div>
   </div>;

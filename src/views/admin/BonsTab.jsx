@@ -72,7 +72,7 @@ export function BonsTab({
     <div className="flex flex-wrap items-center gap-2 justify-between">
       <div className="flex gap-2 overflow-x-auto">
         {[["active","Actief"],["reserved","Gereserveerd"],["overdue","Te laat"],["completed","Afgerond"],["all","Alle"]].map(([k,l]) =>
-          <button key={k} onClick={() => setBonFilter(k)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap ${bonFilter === k ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{l}</button>
+          <button key={k} onClick={() => setBonFilter(k)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap ${bonFilter === k ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{l}</button>
         )}
       </div>
       {onNewBon && <button onClick={onNewBon} className="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 whitespace-nowrap">{"\u2795"} Nieuwe bon</button>}
@@ -84,7 +84,7 @@ export function BonsTab({
           value={userKey}
           onChange={(e) => setUserKey(e.target.value)}
           aria-label="Filter op gebruiker"
-          className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value={ALL_KEY}>Alle gebruikers ({bons.length})</option>
           {userOptions.externalCount > 0 && <option value={EXTERNAL_KEY}>Externe bonnen ({userOptions.externalCount})</option>}
@@ -94,7 +94,7 @@ export function BonsTab({
           value={sortOrder}
           onChange={(e) => setSort(e.target.value)}
           aria-label="Sorteren"
-          className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="newest">Nieuwste eerst</option>
           <option value="oldest">Oudste eerst</option>
@@ -104,7 +104,7 @@ export function BonsTab({
     </div>
 
     {sorted.length === 0
-      ? <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100"><p className="text-gray-500 text-sm">Geen bonnen</p></div>
+      ? <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-slate-100"><p className="text-slate-500 text-sm">Geen bonnen</p></div>
       : view === "list"
         ? <div className="space-y-2">{sorted.map(b => <BonCard key={b.id} bon={b} onClick={() => onBonClick(b)} showUser showAdminMark/>)}</div>
         : <TileGrid>{sorted.map(b => {

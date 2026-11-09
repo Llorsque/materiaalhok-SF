@@ -78,8 +78,9 @@ export function BackupBanner() {
   }
 
   return (
-    <div className={`border rounded-2xl px-5 py-4 mb-4 ${wrapClass}`}>
-      <div className="flex items-start gap-3">
+    <div className={`border rounded-2xl px-4 sm:px-5 py-4 mb-4 ${wrapClass}`}>
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
         <span className="text-lg flex-shrink-0">{"\u26a0\ufe0f"}</span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium">{message}</p>
@@ -87,10 +88,11 @@ export function BackupBanner() {
             <p className="text-xs mt-1 font-mono break-all">{runError}</p>
           )}
         </div>
+        </div>
         <button
           onClick={handleRun}
           disabled={busy}
-          className={`px-3 py-1.5 rounded-lg text-white text-xs font-medium flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed ${btnClass}`}
+          className={`px-3 py-2 rounded-lg text-white text-xs font-semibold flex-shrink-0 self-start disabled:opacity-60 disabled:cursor-not-allowed ${btnClass}`}
         >
           {busy ? "Bezig..." : "Maak nu een handmatige backup"}
         </button>
